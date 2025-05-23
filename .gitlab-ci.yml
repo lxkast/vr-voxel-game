@@ -35,23 +35,4 @@ unit-test-job:   # This job runs in the test stage.
 
 
 
-# Not a good idea to have URL in plain text, but worst they can do is send messages on private discord, so doesn't really matter
-notify-job:
-    stage: test
-    script:
-        - |
-            curl -X POST https://discord.com/api/webhooks/WEBHOOK_ID/WEBHOOK_TOKEN \
-            -H "Content-Type: application/json" \
-            -d "{
-            \"username\": \"GitLab\",
-            \"avatar_url\": \"https://about.gitlab.com/images/press/logo/png/gitlab-icon-rgb.png\",
-            \"embeds\": [{
-                \"title\": \"[$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME] New commit pushed to $CI_COMMIT_BRANCH\",
-                \"url\": \"$CI_PROJECT_URL/commit/$CI_COMMIT_SHA\",
-                \"description\": \"**$GITLAB_USER_NAME** pushed to \`$CI_COMMIT_BRANCH\`:\n[\`$(echo $CI_COMMIT_SHA | cut -c1-7)\`]($CI_PROJECT_URL/commit/$CI_COMMIT_SHA) - $CI_COMMIT_MESSAGE\",
-                \"color\": 13210336
-            }]
-            }"
-
-
 
