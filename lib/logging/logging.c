@@ -15,6 +15,14 @@ static const char *levelNames[5] = {
     "FATAL",
 };
 
+static const char *colourOpeners[] = {
+    "\033[33m",
+    "",
+    "\033[93m",
+    "\033[31m",
+    "\033[38;2;255;50;50m"
+};
+
 
 void log_init(FILE *out) {
     if (!outputFile)
@@ -44,6 +52,7 @@ void log_log(
     char timeStr[20];
     strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &currentTimeData);
 
+    fprintf(outputFile, "%s", colourOpeners[level]);
     fprintf(outputFile, "%s %-5s %s:%d:%s(): ", timeStr, levelNames[level], file, line, func);
 
     va_list args;
@@ -51,6 +60,6 @@ void log_log(
     vfprintf(outputFile, fmt, args);
     va_end(args);
 
-    fprintf(outputFile, "\n");
+    fprintf(outputFile, "\033[0m\n");
     fflush(outputFile);
 }
