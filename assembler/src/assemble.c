@@ -1,9 +1,9 @@
 #include <stdlib.h>
-#include <stdio.h>
-#include <add.h>
+#include <logging.h>
 
 int main(int argc, char **argv) {
-    int z = add(2, 4);
-    printf("%d\n", z);
+    log_init(stdout);
+    LOG_INFO("Assembler started.");
+
     return EXIT_SUCCESS;
 }

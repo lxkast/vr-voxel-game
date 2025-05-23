@@ -3,5 +3,5 @@ add_executable(emulator
 )
 
 target_link_libraries(emulator
-    PRIVATE add
+    PRIVATE logging add
 )
