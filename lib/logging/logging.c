@@ -44,9 +44,13 @@ void log_log(
         return;
 
     const time_t currentTime = time(NULL);
-
     struct tm currentTimeData;
+
+#if defined(_WIN32) || defined(_WIN64)
     localtime_s(&currentTimeData, &currentTime);
+#else
+    localtime_r(&currentTime, &currentTimeData);
+#endif
 
     char timeStr[20];
     strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &currentTimeData);
