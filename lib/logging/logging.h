@@ -46,4 +46,4 @@ Beautiful macro definitons.
 #define LOG_WARN(...) log_log(LOG_WARN, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define LOG_ERROR(...) log_log(LOG_ERROR, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define LOG_FATAL(...) \
-    do { log_log(LOG_FATAL, __FILE__, __LINE__, __func__, __VA_ARGS__); exit() } while(0)
+    do { log_log(LOG_FATAL, __FILE__, __LINE__, __func__, __VA_ARGS__); exit(EXIT_FAILURE); } while(0)
