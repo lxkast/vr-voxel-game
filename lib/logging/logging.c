@@ -1,10 +1,9 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdarg.h>
-
 #include "logging.h"
 
-static log_level_t currentLogLevel = LOG_DEBUG;
+static log_level_t currentLogLevel = LEVEL_DEBUG;
 static FILE *outputFile;
 
 static const char *levelNames[5] = {
@@ -47,7 +46,7 @@ void log_log(
     const time_t currentTime = time(NULL);
 
     struct tm currentTimeData;
-    localtime_r(&currentTime, &currentTimeData);
+    localtime_s(&currentTimeData, &currentTime);
 
     char timeStr[20];
     strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &currentTimeData);
