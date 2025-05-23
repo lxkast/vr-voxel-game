@@ -15,6 +15,7 @@ typedef enum {
 /*
 Initialises the logger, with an output stream/buffer.
 Examples would be stdout, stderr, etc.
+Only does anything on the first call.
 */
 void log_init(FILE *out);
 
