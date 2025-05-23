@@ -5,11 +5,11 @@
 
 
 typedef enum {
-    LOG_DEBUG,
-    LOG_INFO,
-    LOG_WARN,
-    LOG_ERROR,
-    LOG_FATAL
+    LEVEL_DEBUG,
+    LEVEL_INFO,
+    LEVEL_WARN,
+    LEVEL_ERROR,
+    LEVEL_FATAL
 } log_level_t;
 
 /*
@@ -41,9 +41,9 @@ void log_log(
 /*
 Beautiful macro definitons.
 */
-#define LOG_DEBUG(...) log_log(LOG_DEBUG, __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define LOG_INFO(...) log_log(LOG_INFO, __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define LOG_WARN(...) log_log(LOG_WARN, __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define LOG_ERROR(...) log_log(LOG_ERROR, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define LOG_DEBUG(...) log_log(LEVEL_DEBUG, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define LOG_INFO(...) log_log(LEVEL_INFO, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define LOG_WARN(...) log_log(LEVEL_WARN, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define LOG_ERROR(...) log_log(LEVEL_ERROR, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define LOG_FATAL(...) \
-    do { log_log(LOG_FATAL, __FILE__, __LINE__, __func__, __VA_ARGS__); exit(EXIT_FAILURE); } while(0)
+    do { log_log(LEVEL_FATAL, __FILE__, __LINE__, __func__, __VA_ARGS__); exit(EXIT_FAILURE); } while(0)
