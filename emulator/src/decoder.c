@@ -20,7 +20,7 @@
 #define BRANCH_VALUE 0x14000000       // 2^28 + 2^26
 
 /*
-    Creating enums for all the different types of instruction
+    Creating structs for all the different types of instruction
 */
 
 typedef struct {
@@ -67,3 +67,32 @@ typedef struct {
     uint8_t : 4;
     uint32_t operand : 26;
 } branchInstruction_t;
+
+/*
+    Takes an instruction and determines what type it is, then uses a subsequent
+    function to execute the instruction, depending on type. Checks for the HALT
+    function and throws a fatal error if no matches are found
+*/
+void decodeAndExecute(const int instruction) {
+    if (instruction == 0x8a000000) {
+        // TODO: HALT instruction
+    } else if ((instruction & DP_IMM_MASK) == DP_IMM_VALUE) {
+        DPImmInstruction_t decoded = *(DPImmInstruction_t*)&instruction;
+        executeDPIMM(decoded);
+        // TODO: execute instruction
+    } else if ((instruction & DP_REG_MASK) == DP_REG_VALUE) {
+        DPRegInstruction_t decoded = *(DPRegInstruction_t*)&instruction;
+        // TODO: execute instruction
+    } else if ((instruction & SDT_MASK) == SDT_VALUE) {
+        SDTInstruction_t decoded = *(SDTInstruction_t*)&instruction;
+        // TODO: execute instruction
+    } else if ((instruction & LOAD_LIT_MASK) == LOAD_LIT_VALUE) {
+        loadLitInstruction_t decoded = *(loadLitInstruction_t*)&instruction;
+        // TODO: execute instruction
+    } else if ((instruction & BRANCH_MASK) == BRANCH_VALUE) {
+        branchInstruction_t decoded = *(branchInstruction_t*)&instruction;
+        // TODO: execute instruction
+    } else {
+        LOG_FATAL("Unhandled instruction type");
+    }
+}
