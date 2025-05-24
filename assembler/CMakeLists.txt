@@ -7,5 +7,5 @@ add_executable(assembler
 )
 
 target_link_libraries(assembler
-    PRIVATE logging add
+    PRIVATE logging
 )
