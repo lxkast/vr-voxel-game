@@ -35,10 +35,11 @@ bool decodeAndExecute(processorState_t *state, const uint32_t rawInstruction) {
     } else if ((rawInstruction & DP_IMM_MASK) == DP_IMM_VALUE) {
         // example usage
         // executeDPIMM(instruction.dpimm);
+        write_gpReg64(state, 0, 1);
     } else if ((rawInstruction & DP_REG_MASK) == DP_REG_VALUE) {
         // TODO: execute instruction
     } else if ((rawInstruction & SDT_MASK) == SDT_VALUE) {
-        // TODO: execute instruction
+        // TODO: execute instructioe
     } else if ((rawInstruction & LOAD_LIT_MASK) == LOAD_LIT_VALUE) {
         // TODO: execute instruction
     } else if ((rawInstruction & BRANCH_MASK) == BRANCH_VALUE) {
