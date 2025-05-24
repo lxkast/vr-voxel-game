@@ -19,13 +19,20 @@
 stages:          # List of stages for jobs, and their order of execution
   - build
   - test
+  
+image: ubuntu:24.04
+
+before_script:
+ - apt-get update --yes
+ - apt-get install --yes cmake
 
 
 
 build-job:       # This job runs in the build stage, which runs first.
   stage: build
   script:
-    - echo "This should build the project"
+    - cmake .
+    - cmake --build .
 
 unit-test-job:   # This job runs in the test stage.
   stage: test    # It only starts when the job in the build stage completes successfully.
