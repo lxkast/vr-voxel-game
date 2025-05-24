@@ -61,6 +61,4 @@ typedef union {
     branchInstruction_t branch;
 } instruction_u;
 
-
-
 bool decodeAndExecute(const uint32_t rawInstruction);
