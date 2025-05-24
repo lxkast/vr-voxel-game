@@ -1,5 +1,5 @@
 #include <stdint.h>
-
+#include "logging.h"
 /*
     Defining masks, expected values to be used in later functions
 */
@@ -58,39 +58,44 @@ typedef struct {
     uint8_t : 1;
     uint8_t sf : 1;
     uint8_t : 6;
-    uint16_t simm19 : 19;
+    uint32_t simm19 : 19;
     uint8_t rt : 5;
-} loadLitInstruction_t;
+} LoadLitInstruction_t;
 
 typedef struct {
     uint8_t type : 2;
     uint8_t : 4;
     uint32_t operand : 26;
-} branchInstruction_t;
+} BranchInstruction_t;
+
+typedef union {
+    uint32_t raw;
+    DPImmInstruction_t dpimm;
+    DPRegInstruction_t dpreg;
+    SDTInstruction_t sdt;
+    LoadLitInstruction_t load;
+    BranchInstruction_t branch;
+} Instruction_u;
 
 /*
     Takes an instruction and determines what type it is, then uses a subsequent
     function to execute the instruction, depending on type. Checks for the HALT
     function and throws a fatal error if no matches are found
 */
-void decodeAndExecute(const int instruction) {
-    if (instruction == 0x8a000000) {
+void decodeAndExecute(const uint32_t rawInstruction) {
+    Instruction_u instruction = { .raw = rawInstruction };
+    if (rawInstruction == 0x8a000000) {
         // TODO: HALT instruction
-    } else if ((instruction & DP_IMM_MASK) == DP_IMM_VALUE) {
-        DPImmInstruction_t decoded = *(DPImmInstruction_t*)&instruction;
-        executeDPIMM(decoded);
+    } else if ((rawInstruction & DP_IMM_MASK) == DP_IMM_VALUE) {
+        // example usage
+        // executeDPIMM(instruction.dpimm);
+    } else if ((rawInstruction & DP_REG_MASK) == DP_REG_VALUE) {
         // TODO: execute instruction
-    } else if ((instruction & DP_REG_MASK) == DP_REG_VALUE) {
-        DPRegInstruction_t decoded = *(DPRegInstruction_t*)&instruction;
+    } else if ((rawInstruction & SDT_MASK) == SDT_VALUE) {
         // TODO: execute instruction
-    } else if ((instruction & SDT_MASK) == SDT_VALUE) {
-        SDTInstruction_t decoded = *(SDTInstruction_t*)&instruction;
+    } else if ((rawInstruction & LOAD_LIT_MASK) == LOAD_LIT_VALUE) {
         // TODO: execute instruction
-    } else if ((instruction & LOAD_LIT_MASK) == LOAD_LIT_VALUE) {
-        loadLitInstruction_t decoded = *(loadLitInstruction_t*)&instruction;
-        // TODO: execute instruction
-    } else if ((instruction & BRANCH_MASK) == BRANCH_VALUE) {
-        branchInstruction_t decoded = *(branchInstruction_t*)&instruction;
+    } else if ((rawInstruction & BRANCH_MASK) == BRANCH_VALUE) {
         // TODO: execute instruction
     } else {
         LOG_FATAL("Unhandled instruction type");
