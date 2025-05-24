@@ -5,8 +5,11 @@
 #include <glad/gles2.h>
 #endif
 #include <GLFW/glfw3.h>
+#include <logging.h>
 
 int main(void) {
+    log_init(stdout);
+
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -15,14 +18,14 @@ int main(void) {
 
     GLFWwindow *window = glfwCreateWindow(640, 480, "Hello, Window!", NULL, NULL);
     if (window == NULL) {
-        // TODO: logs
+        LOG_ERROR("Failed to create GLFW window");
         glfwTerminate();
         return -1;
     }
     glfwMakeContextCurrent(window);
 
     if (!gladLoadGL(glfwGetProcAddress)) {
-        // TODO: logs
+        LOG_ERROR("Failed to initialise glad");
         glfwTerminate();
         return -1;
     }
@@ -32,6 +35,8 @@ int main(void) {
         glfwGetFramebufferSize(window, &width, &height);
         glViewport(0, 0, width, height);
     }
+
+    LOG_INFO("Initialisation complete.");
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
