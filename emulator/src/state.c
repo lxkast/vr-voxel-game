@@ -1,5 +1,6 @@
 #include "state.h"
 #include <logging.h>
+#include <string.h>
 
 /*
     checks if state is a non-null pointer
@@ -93,7 +94,7 @@ uint64_t read_ZR(processorState_t *state) {
     if (!state) {
         LOG_FATAL("Cannot access null state to read ZR register");
     }
-    return state->spRegisters.ZR;
+    return 0;
 }
 
 /*
@@ -103,7 +104,6 @@ void write_ZR(processorState_t *state, uint64_t value) {
     if (!state) {
         LOG_FATAL("Cannot access null state to write to ZR register");
     }
-    state->spRegisters.ZR = value;
 }
 
 /*
@@ -124,4 +124,14 @@ void write_pState(processorState_t *state, pState_t value) {
         LOG_FATAL("Cannot access null state to write to PSTATE");
     }
     state->spRegisters.PSTATE = value;
+}
+
+void initState(processorState_t *state, const uint32_t *programInstructions, const uint32_t numInstructions) {
+    state->spRegisters.PC = 0;
+    state->spRegisters.SP = 0;
+    memset(state->gpRegisters.regs, 0, sizeof(state->gpRegisters.regs));
+    memset(state->memory, 0, sizeof(state->memory));
+
+
+    memcpy(state->memory, programInstructions, numInstructions * sizeof(uint32_t));
 }
