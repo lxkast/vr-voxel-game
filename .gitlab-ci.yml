@@ -24,27 +24,33 @@ image: ubuntu:24.04
 
 before_script:
  - apt-get update --yes
- - apt-get install --yes cmake
- - apt-get install --yes git
-
-
+ - apt-get install --yes cmake git build-essentials
 
 build-job:       # This job runs in the build stage, which runs first.
   stage: build
   script:
     - cmake .
     - cmake --build .
+  artifacts:
+    paths:
+      - assembler/assembler
+      - emulator/emulate
+    expire_in: 1 hour
 
 unit-test-job:   # This job runs in the test stage.
   stage: test    # It only starts when the job in the build stage completes successfully.
+  dependencies:
+    - build-job
   script:
-    - git clone https://gitlab.doc.ic.ac.uk/teaching-fellows/armv8_testsuite.git
+    - git clone https://oauth2:${ACCESS_TOKEN}@gitlab.doc.ic.ac.uk/teaching-fellows/armv8_testsuite.git
     - cd armv8_testsuite/
     - cp ../assembler/assembler solution/assemble
     - cp ../emulator/emulate solution/emulate
     - ./install
     - source .venv/bin/activate
     - ./run -pf
+  variables:
+    ACCESS_TOKEN: $MY_PAT_SECRET 
 
 
 
