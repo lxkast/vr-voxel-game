@@ -24,7 +24,7 @@ image: ubuntu:24.04
 
 before_script:
  - apt-get update --yes
- - apt-get install --yes cmake git
+ - apt-get install --yes cmake git python3 python3-venv
 
 build-job:       # This job runs in the build stage, which runs first.
   stage: build
