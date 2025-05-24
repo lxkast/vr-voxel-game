@@ -35,7 +35,8 @@ bool decodeAndExecute(processorState_t *state, const uint32_t rawInstruction) {
     } else if ((rawInstruction & DP_IMM_MASK) == DP_IMM_VALUE) {
         // example usage
         // executeDPIMM(instruction.dpimm);
-        write_gpReg64(state, 0, 1);
+        write_gpReg64(state, 1, 1);
+        state->spRegisters.PSTATE.Z = true;
     } else if ((rawInstruction & DP_REG_MASK) == DP_REG_VALUE) {
         // TODO: execute instruction
     } else if ((rawInstruction & SDT_MASK) == SDT_VALUE) {
@@ -48,5 +49,6 @@ bool decodeAndExecute(processorState_t *state, const uint32_t rawInstruction) {
         LOG_FATAL("Unhandled instruction type");
     }
     state->spRegisters.PC += 4;
+    
     return true;
 }

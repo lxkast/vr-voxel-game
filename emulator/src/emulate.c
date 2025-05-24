@@ -17,11 +17,11 @@ void mainLoop(processorState_t *state) {
 }
 
 void write(processorState_t *state, FILE *file) {
-    fprintf(file, "Registers:");
+    fprintf(file, "Registers:\n");
     for (int i = 0; i < 31; i++) {
-        fprintf(file, "X%02d = %16llx \n", i, read_gpReg64(state, i));
+        fprintf(file, "X%02d = %016lx \n", i, read_gpReg64(state, i));
     }
-    fprintf(file, "PC = %16llx", state->spRegisters.PC);
+    fprintf(file, "PC = %016lx\n", state->spRegisters.PC);
 
     fprintf(file, "PSTATE : ");
     if (state->spRegisters.PSTATE.N) {
@@ -45,11 +45,11 @@ void write(processorState_t *state, FILE *file) {
         fprintf(file, "-");
     }
 
-    fprintf(file, "Non-zero memory:");
-    for (int i = 0; i < MEMORY_SIZE; i+=32) {
-        const uint64_t value = read_mem64(state, i);
+    fprintf(file, "\nNon-zero memory:\n");
+    for (int i = 0; i < MEMORY_SIZE; i+=4) {
+        const uint32_t value = read_mem32(state, i);
         if (value) {
-            fprintf(file, "0x%08X %8llx\n", i, value);
+            fprintf(file, "0x%08X : %08x\n", i, value);
         }
     }
 }
