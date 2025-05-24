@@ -44,6 +44,7 @@ unit-test-job:   # This job runs in the test stage.
   script:
     - git clone https://oauth2:${ACCESS_TOKEN}@gitlab.doc.ic.ac.uk/teaching-fellows/armv8_testsuite.git
     - cd armv8_testsuite/
+    - mkdir solution
     - cp ../assembler/assembler solution/assemble
     - cp ../emulator/emulate solution/emulate
     - ./install
