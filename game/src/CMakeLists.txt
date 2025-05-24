@@ -16,6 +16,8 @@ add_executable(extension
         ${SRC_FILES}
 )
 
+target_link_libraries(${PROJECT_NAME} PRIVATE logging)
+
 if(OPENGL_FOUND)
     target_compile_definitions(${PROJECT_NAME} PUBLIC USE_GL=1)
 else()
