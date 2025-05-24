@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "state.h"
+
 /*
     Creating bitfields for all the different types of instruction
 */
@@ -61,4 +63,4 @@ typedef union {
     branchInstruction_t branch;
 } instruction_u;
 
-bool decodeAndExecute(const uint32_t rawInstruction);
+bool decodeAndExecute(processorState_t *state, const uint32_t rawInstruction);

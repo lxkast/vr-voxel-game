@@ -1,6 +1,5 @@
 #include "decoder.h"
 #include "logging.h"
-#include "state.h"
 /*
     Defining masks, expected values to be used in later functions
 */
