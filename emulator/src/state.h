@@ -8,6 +8,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define MEMORY_SIZE_BITS 21
+#define MEMORY_SIZE (1 << MEMORY_SIZE_BITS)
+typedef uint8_t memory_t[MEMORY_SIZE];
+
 typedef uint8_t reg_t;
 
 typedef struct {
@@ -31,6 +35,7 @@ typedef struct {
 typedef struct {
     gpRegisters_t gpRegisters;
     spRegisters_t spRegisters;
+    memory_t memory;
 } processorState_t;
 
 uint32_t read_gpReg32(processorState_t *state, reg_t register);
