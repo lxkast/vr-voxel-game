@@ -10,15 +10,12 @@
 int main(void) {
     log_init(stdout);
 
-    char *err;
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
     GLFWwindow *window = glfwCreateWindow(640, 480, "Hello, Window!", NULL, NULL);
-    printf("%d", glfwGetError(&err));
-    printf("%s", err);
     if (window == NULL) {
         LOG_ERROR("Failed to create GLFW window");
         glfwTerminate();
@@ -39,6 +36,7 @@ int main(void) {
     }
 
     LOG_INFO("Initialisation complete.");
+    LOG_INFO("Using OpenGL %s", glGetString(GL_VERSION));
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
