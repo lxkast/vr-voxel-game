@@ -7,21 +7,28 @@
     Example use:
 
 
-    futil_file_t *fp = futil_open("code.b");
+    futil_file_t *fp = futil_open("code.b", FUTIL_FILE_READ);
 
     int size = futil_fileSize(fp);
     uint32_t *buf = (uint32_t *)malloc(size);
 
-    int read = futil_readBinary(fp, buf, size);
+    futil_readBinary(fp, buf, size);
+
+    futil_close(fp);
 */
 
 typedef FILE futil_file_t;
+
+typedef enum {
+    FUTIL_FILE_READ,
+    FUTIL_FILE_WRITE
+} futil_fileOpenMode_t;
 
 
 /*
     This function opens a file, returning a pointer to it.
 */
-futil_file_t *futil_open(const char *fileName);
+futil_file_t *futil_open(const char *fileName, futil_fileOpenMode_t mode);
 
 
 /*
