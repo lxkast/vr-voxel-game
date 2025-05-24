@@ -60,22 +60,22 @@ typedef struct {
     uint8_t : 6;
     uint32_t simm19 : 19;
     uint8_t rt : 5;
-} LoadLitInstruction_t;
+} loadLitInstruction_t;
 
 typedef struct {
     uint8_t type : 2;
     uint8_t : 4;
     uint32_t operand : 26;
-} BranchInstruction_t;
+} branchInstruction_t;
 
 typedef union {
     uint32_t raw;
     DPImmInstruction_t dpimm;
     DPRegInstruction_t dpreg;
     SDTInstruction_t sdt;
-    LoadLitInstruction_t load;
-    BranchInstruction_t branch;
-} Instruction_u;
+    loadLitInstruction_t load;
+    branchInstruction_t branch;
+} instruction_u;
 
 /*
     Takes an instruction and determines what type it is, then uses a subsequent
@@ -83,7 +83,7 @@ typedef union {
     function and throws a fatal error if no matches are found
 */
 void decodeAndExecute(const uint32_t rawInstruction) {
-    Instruction_u instruction = { .raw = rawInstruction };
+    instruction_u instruction = { .raw = rawInstruction };
     if (rawInstruction == 0x8a000000) {
         // TODO: HALT instruction
     } else if ((rawInstruction & DP_IMM_MASK) == DP_IMM_VALUE) {
