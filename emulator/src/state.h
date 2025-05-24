@@ -45,5 +45,8 @@ void write_PC(processorState_t *state, uint64_t value);
 uint64_t read_SP(processorState_t *state);
 void write_SP(processorState_t *state, uint64_t value);
 
+uint64_t read_ZR(processorState_t *state);
+void write_ZR(processorState_t *state, uint64_t value);
+
 pState_t read_pState(processorState_t *state);
 void write_pState(processorState_t *state, pState_t value);

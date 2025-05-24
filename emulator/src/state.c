@@ -73,7 +73,7 @@ uint64_t read_SP(processorState_t *state) {
     if (!state) {
         LOG_FATAL("Cannot access null state to read SP register");
     }
-    return state->spRegisters.PC;
+    return state->spRegisters.SP;
 }
 
 /*
@@ -83,7 +83,27 @@ void write_SP(processorState_t *state, uint64_t value) {
     if (!state) {
         LOG_FATAL("Cannot access null state to write to SP register");
     }
-    state->spRegisters.PC = value;
+    state->spRegisters.SP = value;
+}
+
+/*
+    read 64-bit value from ZR register
+*/
+uint64_t read_ZR(processorState_t *state) {
+    if (!state) {
+        LOG_FATAL("Cannot access null state to read ZR register");
+    }
+    return state->spRegisters.ZR;
+}
+
+/*
+    write 64-bit value to ZR register
+*/
+void write_ZR(processorState_t *state, uint64_t value) {
+    if (!state) {
+        LOG_FATAL("Cannot access null state to write to ZR register");
+    }
+    state->spRegisters.ZR = value;
 }
 
 /*
