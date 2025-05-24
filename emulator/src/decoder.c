@@ -46,5 +46,6 @@ bool decodeAndExecute(processorState_t *state, const uint32_t rawInstruction) {
     } else {
         LOG_FATAL("Unhandled instruction type");
     }
+    state->spRegisters.PC += 4;
     return true;
 }
