@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include "state.h"
+#include "decoder.h"
 
 #define OPI_ARITHMETIC 2
 #define OPI_WIDE_MOVE 5
