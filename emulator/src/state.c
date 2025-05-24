@@ -129,8 +129,9 @@ void write_pState(processorState_t *state, pState_t value) {
 void initState(processorState_t *state, const uint32_t *programInstructions, const uint32_t numInstructions) {
     state->spRegisters.PC = 0;
     state->spRegisters.SP = 0;
-    state->gpRegisters = {0};
-    state->memory = {0};
+    memset(state->gpRegisters.regs, 0, sizeof(state->gpRegisters.regs));
+    memset(state->memory, 0, sizeof(state->memory));
+
 
     memcpy(state->memory, programInstructions, numInstructions * sizeof(uint32_t));
 }

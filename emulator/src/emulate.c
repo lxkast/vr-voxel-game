@@ -13,7 +13,7 @@ void mainLoop(processorState_t *state) {
     do {
         // fetch
         instruction = read_mem32(state, state->spRegisters.PC);
-    } while (decodeAndExecute(instruction));
+    } while (decodeAndExecute(state, instruction));
 }
 
 void write(processorState_t *state, FILE *file) {
