@@ -24,7 +24,7 @@ image: ubuntu:24.04
 
 before_script:
  - apt-get update --yes
- - apt-get install --yes cmake git build-essentials
+ - apt-get install --yes cmake git
 
 build-job:       # This job runs in the build stage, which runs first.
   stage: build
