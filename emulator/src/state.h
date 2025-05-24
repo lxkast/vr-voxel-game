@@ -32,3 +32,18 @@ typedef struct {
     gpRegisters_t gpRegisters;
     spRegisters_t spRegisters;
 } processorState_t;
+
+uint32_t read_gpReg32(processorState_t *state, reg_t register);
+void write_gpReg32(processorState_t *state, reg_t register, uint32_t value);
+
+uint64_t read_gpReg64(processorState_t *state, reg_t reg);
+void write_gpReg64(processorState_t *state, reg_t reg, uint64_t value);
+
+uint64_t read_PC(processorState_t *state);
+void write_PC(processorState_t *state, uint64_t value);
+
+uint64_t read_SP(processorState_t *state);
+void write_SP(processorState_t *state, uint64_t value);
+
+pState_t read_pState(processorState_t *state);
+void write_pState(processorState_t *state, pState_t value);
