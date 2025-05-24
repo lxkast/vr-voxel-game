@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /*
     Creating bitfields for all the different types of instruction
@@ -62,4 +63,4 @@ typedef union {
 
 
 
-void decodeAndExecute(const uint32_t rawInstruction);
+bool decodeAndExecute(const uint32_t rawInstruction);

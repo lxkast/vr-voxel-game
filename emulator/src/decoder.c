@@ -1,5 +1,6 @@
 #include "decoder.h"
 #include "logging.h"
+#include "state.h"
 /*
     Defining masks, expected values to be used in later functions
 */
@@ -24,12 +25,14 @@
 /*
     Takes an instruction and determines what type it is, then uses a subsequent
     function to execute the instruction, depending on type. Checks for the HALT
-    function and throws a fatal error if no matches are found
+    function and throws a fatal error if no matches are found.
+
+    Modifies the program counter
 */
-void decodeAndExecute(const uint32_t rawInstruction) {
+bool decodeAndExecute(processorState_t *state, const uint32_t rawInstruction) {
     instruction_u instruction = { .raw = rawInstruction };
     if (rawInstruction == 0x8a000000) {
-        // TODO: HALT instruction
+        return false;
     } else if ((rawInstruction & DP_IMM_MASK) == DP_IMM_VALUE) {
         // example usage
         // executeDPIMM(instruction.dpimm);
@@ -44,4 +47,5 @@ void decodeAndExecute(const uint32_t rawInstruction) {
     } else {
         LOG_FATAL("Unhandled instruction type");
     }
+    return true;
 }

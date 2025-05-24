@@ -26,7 +26,6 @@ typedef struct {
 } pState_t;
 
 typedef struct {
-    uint64_t ZR;
     uint64_t PC;
     uint64_t SP; // don't need to implement this.
     pState_t PSTATE;
@@ -55,3 +54,5 @@ void write_ZR(processorState_t *state, uint64_t value);
 
 pState_t read_pState(processorState_t *state);
 void write_pState(processorState_t *state, pState_t value);
+
+void initState(processorState_t *state, const uint32_t *programInstructions, uint32_t numInstructions);
