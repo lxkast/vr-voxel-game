@@ -87,6 +87,12 @@ int su_linkProgram(GLuint program);
         22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10,  9, \
         8,  7,  6,  5,  4,  3,  2,  1,  0)
 
+/*
+    programPtr: Ptr to (uninitialised) GLuint.
+    preLink: Block of code to run pre-linking
+    fail: Block of code to run on fail
+    ...: Filenames of shaders.
+*/
 #define BUILD_SHADER_PROGRAM(programPtr, preLink, fail, ...) \
     do { \
         int success = 1; \
