@@ -3,6 +3,8 @@
 #include <GLFW/glfw3.h>
 #include <logging.h>
 
+#include "shaderutil.h"
+
 #if defined(__APPLE__) && defined(__MACH__)
 #define MINOR_VERSION 2
 #else
@@ -10,6 +12,10 @@
 #endif
 
 int main(void) {
+    /*
+        Initialisation
+    */
+
     log_init(stdout);
 
     glfwInit();
@@ -31,7 +37,7 @@ int main(void) {
         return -1;
     }
 
-        {
+    {
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
         glViewport(0, 0, width, height);
@@ -39,6 +45,27 @@ int main(void) {
 
     LOG_INFO("Initialisation complete.");
     LOG_INFO("Using OpenGL %s", glGetString(GL_VERSION));
+
+
+    /*
+        Initialising shaders
+    */
+
+    GLuint shader;
+    BUILD_SHADER_PROGRAM(
+        &shader, {}, {
+            LOG_ERROR("Couldn't build shader program");
+            return -1;
+        },
+        "shaders/basic.vert",
+        "shaders/basic.frag"
+    );
+
+
+    /*
+        Main loop
+    */
+
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
