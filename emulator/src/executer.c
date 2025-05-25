@@ -143,7 +143,7 @@ void executeMovz(processorState_t *state, const DPImmInstruction_t instruction, 
 }
 // this is used to allow function pointers to work more neatly
 void executeNoOp() {
-    // intentionally empty
+    LOG_FATAL("No op executed");
 }
 
 // Creating arrays of function pointers
@@ -175,4 +175,46 @@ void executeDPImm(processorState_t *state, const DPImmInstruction_t instruction)
     } else {
         LOG_FATAL("Unsupported instruction type");
     }
+}
+
+void registerBranch(processorState_t *state, branchOperand_t operand) {
+    if ((operand.branchRegister.xn & 0x1F) == 0x1F) {
+        LOG_FATAL("Branch to xzr not supported");
+    }
+    uint64_t registerValue = read_gpReg64(state, operand.branchRegister.xn);
+    state->spRegisters.PC = registerValue;
+}
+
+void unconditionalBranch(processorState_t *state, branchOperand_t operand) {
+    LOG_DEBUG("uncond branch");
+    state->spRegisters.PC += operand.branchUnconditional.offset * 4;
+}
+
+bool evalCondition(processorState_t *state, uint32_t condition) {
+    pState_t flags = state->spRegisters.PSTATE;
+    switch (condition) {
+        case 0x0: return flags.Z;
+        case 0x1: return !flags.Z;
+        case 0xA: return flags.N == flags.V;
+        case 0xB: return flags.N != flags.V;
+        case 0xC: return !flags.Z & (flags.N == flags.V);
+        case 0xD: return !(!flags.Z & (flags.N == flags.V));
+        case 0xE: return true;
+        default: LOG_FATAL("Unsupported condition code (%x)", condition);
+    }
+}
+
+void conditionalBranch(processorState_t *state, branchOperand_t operand) {
+    if (evalCondition(state, operand.branchCondition.cond)) {
+        state->spRegisters.PC += operand.branchCondition.offset * 4;
+    } else {
+        state->spRegisters.PC += 4;
+    }
+}
+
+BranchOperation branchOperations[] = {unconditionalBranch, conditionalBranch, executeNoOp, registerBranch};
+
+void executeBranch(processorState_t *state, const branchInstruction_t instruction) {
+    branchOperand_t operand = { .raw=instruction.operand };
+    branchOperations[instruction.type](state, operand);
 }

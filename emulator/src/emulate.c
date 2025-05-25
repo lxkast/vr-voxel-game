@@ -13,6 +13,7 @@ void mainLoop(processorState_t *state) {
     do {
         // fetch
         instruction = read_mem32(state, state->spRegisters.PC);
+        LOG_INFO("Executing instruction 0x%x", instruction);
     } while (decodeAndExecute(state, instruction));
 }
 

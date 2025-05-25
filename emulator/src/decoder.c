@@ -1,4 +1,6 @@
 #include "decoder.h"
+
+#include "executer.h"
 #include "logging.h"
 /*
     Defining masks, expected values to be used in later functions
@@ -43,7 +45,8 @@ bool decodeAndExecute(processorState_t *state, const uint32_t rawInstruction) {
     } else if ((rawInstruction & LOAD_LIT_MASK) == LOAD_LIT_VALUE) {
         // TODO: execute instruction
     } else if ((rawInstruction & BRANCH_MASK) == BRANCH_VALUE) {
-        // TODO: execute instruction
+        executeBranch(state, instruction.branch);
+        return true;
     } else {
         LOG_FATAL("Unhandled instruction type");
     }
