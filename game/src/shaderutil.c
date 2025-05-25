@@ -95,7 +95,7 @@ int su_initialiseShader(GLuint *shader, const char *fileName, su_shader_t type) 
     return 0;
 }
 
-int su_createShaderProgramFromHandles(GLuint *program, const int n, const GLuint *shaderHandles) {
+int su_createProgramFromHandles(GLuint *program, const int n, const GLuint *shaderHandles) {
     int success;
 
     const GLuint programHandle = glCreateProgram();
@@ -104,21 +104,11 @@ int su_createShaderProgramFromHandles(GLuint *program, const int n, const GLuint
         glAttachShader(programHandle, shaderHandles[i]);
     }
 
-    glLinkProgram(programHandle);
-
-    glGetProgramiv(programHandle, GL_LINK_STATUS, &success);
-    if (!success) {
-        char infoLog[512];
-        glGetProgramInfoLog(programHandle, sizeof(infoLog), NULL, infoLog);
-        LOG_ERROR("Failed to link shader program:\n%s", infoLog);
-        return -1;
-    }
-
     *program = programHandle;
     return 0;
 }
 
-int su_createShaderProgramFromFilenames(GLuint *program, const int n, ...) {
+int su_createProgramFromFilenames(GLuint *program, const int n, ...) {
     GLuint *shaderHandles = malloc(sizeof(GLuint) * n);
 
     va_list args;
@@ -134,12 +124,28 @@ int su_createShaderProgramFromFilenames(GLuint *program, const int n, ...) {
     }
     va_end(args);
 
-    if (su_createShaderProgramFromHandles(program, n, shaderHandles) != 0) {
+    if (su_createProgramFromHandles(program, n, shaderHandles) != 0) {
         free(shaderHandles);
         return -1;
     }
 
     free(shaderHandles);
+
+    return 0;
+}
+
+int su_linkProgram(const GLuint program) {
+    int success;
+
+    glLinkProgram(program);
+
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    if (!success) {
+        char infoLog[512];
+        glGetProgramInfoLog(program, sizeof(infoLog), NULL, infoLog);
+        LOG_ERROR("Failed to link shader program:\n%s", infoLog);
+        return -1;
+    }
 
     return 0;
 }

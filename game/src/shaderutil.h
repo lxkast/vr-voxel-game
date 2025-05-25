@@ -10,12 +10,16 @@
     ```
         GLuint programHandle;
         if (
-            su_createShaderProgramFromFilenames(&programHandle, 1,
+            su_createProgramFromFilenames(&programHandle, 2,
                 "shaders/basic.vert",
                 "shaders/basic.frag"
-            )
+            ) != 0
         ) {
             LOG_ERROR("Failed to create shader program");
+            return -1;
+        }
+        if (su_linkProgram(programHandle) != 0) {
+            LOG_ERROR("Failed to link shader program");
             return -1;
         }
     ```
@@ -41,10 +45,15 @@ int su_initialiseShader(GLuint *shader, const char *fileName, su_shader_t type);
 /*
     Creates a shader program given an array of size n of shader objects.
 */
-int su_createShaderProgramFromHandles(GLuint *program, int n, const GLuint *shaderHandles);
+int su_createProgramFromHandles(GLuint *program, int n, const GLuint *shaderHandles);
 
 /*
     Creates a shader program based of varargs of filenames.
     Automatically determines the type for each shader.
 */
-int su_createShaderProgramFromFilenames(GLuint *program, int n, ...);
+int su_createProgramFromFilenames(GLuint *program, int n, ...);
+
+/*
+    Links the shader program.
+*/
+int su_linkProgram(GLuint program);
