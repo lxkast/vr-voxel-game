@@ -86,12 +86,53 @@ void executeSubs(processorState_t *state, const DPImmInstruction_t instruction, 
     }
 }
 
-// Creating an array of function pointers
+void executeMovn(processorState_t *state, const DPImmInstruction_t instruction, const wideMoveOperand_t operand) {
+    const uint64_t op = operand.imm16 << (operand.hw * 16);
+    if (instruction.sf) {
+        const uint64_t result = ~op;
+        write_gpReg64(state, instruction.rd, result);
+    } else {
+        if (operand.hw > 1) {
+            LOG_FATAL("executeMovn: operand.hw > 1 (in 32bit mode)");
+        }
+        const uint32_t result = ~(uint32_t)op;
+        write_gpReg32(state, instruction.rd, result);
+    }
+}
+
+void executeMovk(processorState_t *state, const DPImmInstruction_t instruction, const wideMoveOperand_t operand) {
+    const uint64_t op = operand.imm16 << (operand.hw * 16);
+    if (instruction.sf) {
+        const uint64_t result = op;
+        write_gpReg64(state, instruction.rd, result);
+    } else {
+        if (operand.hw > 1) {
+            LOG_FATAL("executeMovn: operand.hw > 1 (in 32bit mode)");
+        }
+        const uint32_t result = (uint32_t)op;
+        write_gpReg32(state, instruction.rd, result);
+    }
+}
+
+void executeMovz(processorState_t *state, DPImmInstruction_t instruction, wideMoveOperand_t operand) {}
+
+void executeNoOp() {
+    // intentionally empty
+}
+
+// Creating arrays of function pointers
 ArithmeticOperation arithmeticOperations[] = {
     executeAdd,
     executeAdds,
     executeSub,
     executeSubs
+};
+
+WideMoveOperation wideMoveOperations[] = {
+    executeMovn,
+    executeNoOp,
+    executeMovz,
+    executeMovk
 };
 
 // executes a DP immediate instruction
@@ -102,7 +143,9 @@ void executeDPImm(processorState_t *state, const DPImmInstruction_t instruction)
         const arithmeticOperand_t operand = op.arithmeticOperand;
         arithmeticOperations[instruction.opc](state, instruction, operand);
     }else if (instruction.opi == OPI_WIDE_MOVE) {
-        // TODO: Execute wide move instruction
+        const DPImmOperand_u op = { .raw = instruction.operand };
+        const wideMoveOperand_t operand = op.wideMoveOperand;
+        wideMoveOperations[instruction.opc](state, instruction, operand);
     } else {
         LOG_FATAL("Unsupported instruction type");
     }
