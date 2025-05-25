@@ -4,7 +4,8 @@
 
 typedef enum {
     SU_VERTEX,
-    SU_FRAGMENT
+    SU_FRAGMENT,
+    SU_DETERMINE
 } su_shader_t;
 
 int su_initialiseShader(GLuint *shader, const char *fileName, su_shader_t type);

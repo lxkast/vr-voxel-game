@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <logging.h>
+#include <string.h>
 
 
 #include "shaderutil.h"
@@ -43,6 +44,18 @@ int loadShaderSource(const GLuint shader, const char *fileName) {
     return 0;
 }
 
+GLenum findShaderType(const char *fileName) {
+    char *extension = strrchr(fileName, '.');
+    if (!extension) return -1;
+    if (strcmp(extension, ".vert") == 0) {
+        return GL_VERTEX_SHADER;
+    }
+    if (strcmp(extension, ".frag") == 0) {
+        return GL_FRAGMENT_SHADER;
+    }
+    return GL_INVALID_ENUM;
+}
+
 int su_initialiseShader(GLuint *shader, const char *fileName, su_shader_t type) {
     GLenum realType;
     switch (type) {
@@ -52,8 +65,12 @@ int su_initialiseShader(GLuint *shader, const char *fileName, su_shader_t type) 
         case SU_FRAGMENT:
             realType = GL_FRAGMENT_SHADER;
             break;
+        case SU_DETERMINE:
+            if ((realType = findShaderType(fileName)) != GL_INVALID_ENUM) {
+                break;
+            }
         default:
-            LOG_ERROR("Unknown shader type");
+            LOG_ERROR("Failed to understand shader type");
             return -1;
     }
 
@@ -102,16 +119,15 @@ int su_createShaderProgramFromHandles(GLuint *program, const int n, const GLuint
 }
 
 int su_createShaderProgramFromFilenames(GLuint *program, const int n, ...) {
-    GLuint *shaderHandles = malloc(sizeof(GLuint) * n / 2);
+    GLuint *shaderHandles = malloc(sizeof(GLuint) * n);
 
     va_list args;
 
     va_start(args, n);
     for (int i = 0; i < n; i++) {
-        const char shaderType = va_arg(args, su_shader_t);
         const char *filename = va_arg(args, char *);
-        if (su_initialiseShader(shaderHandles + i, filename, shaderType) != 0) {
-            LOG_ERROR("Failed to initialise shader of type %d", shaderType);
+        if (su_initialiseShader(shaderHandles + i, filename, SU_DETERMINE) != 0) {
+            LOG_ERROR("Failed to initialise shader no. %d", i);
             free(shaderHandles);
             return -1;
         }
