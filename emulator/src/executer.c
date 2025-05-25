@@ -38,7 +38,7 @@ void executeAdds(processorState_t *state, const DPImmInstruction_t instruction, 
         state->spRegisters.PSTATE.N = result >> 63;     // Negative flag
         state->spRegisters.PSTATE.Z = result == 0;      // Zero flag
         state->spRegisters.PSTATE.C = result < rn;     // Carry flag
-        state->spRegisters.PSTATE.V = ((rn ^ op2) & ~(op2 ^ result)) >> 63;   // signed overflow/underflow flag
+        state->spRegisters.PSTATE.V = ((rn ^ op2) & ~(result ^ op2)) >> 63;   // signed overflow/underflow flag
 
         write_gpReg64(state, instruction.rd, result);
     } else {
@@ -50,7 +50,7 @@ void executeAdds(processorState_t *state, const DPImmInstruction_t instruction, 
         state->spRegisters.PSTATE.N = result >> 31;     // Negative flag
         state->spRegisters.PSTATE.Z = result == 0;      // Zero flag
         state->spRegisters.PSTATE.C = result < rn;     // Carry flag
-        state->spRegisters.PSTATE.V = ((rn ^ op2) & ~(op2 ^ result)) >> 31;   // signed overflow/underflow flag
+        state->spRegisters.PSTATE.V = ((rn ^ op2) & ~(result ^ op2)) >> 31;   // signed overflow/underflow flag
 
         write_gpReg32(state, instruction.rd, result);
     }
@@ -80,7 +80,7 @@ void executeSubs(processorState_t *state, const DPImmInstruction_t instruction, 
         state->spRegisters.PSTATE.N = result >> 63;     // Negative flag
         state->spRegisters.PSTATE.Z = result == 0;      // Zero flag
         state->spRegisters.PSTATE.C = rn >= op2;     // Carry flag
-        state->spRegisters.PSTATE.V = ((rn ^ result) & ~(rn ^ op2)) >> 63;   // signed overflow/underflow flag
+        state->spRegisters.PSTATE.V = ((rn ^ op2) & ~(result ^ op2)) >> 63;   // signed overflow/underflow flag
 
         write_gpReg64(state, instruction.rd, result);
     } else {
@@ -92,7 +92,7 @@ void executeSubs(processorState_t *state, const DPImmInstruction_t instruction, 
         state->spRegisters.PSTATE.N = result >> 31;     // Negative flag
         state->spRegisters.PSTATE.Z = result == 0;      // Zero flag
         state->spRegisters.PSTATE.C = rn >= op2;        // Carry flag
-        state->spRegisters.PSTATE.V = ((rn ^ result) & ~(rn ^ op2)) >> 31;   // signed overflow/underflow flag
+        state->spRegisters.PSTATE.V = ((rn ^ op2) & ~(result ^ op2)) >> 31;   // signed overflow/underflow flag
 
         write_gpReg32(state, instruction.rd, result);
     }
