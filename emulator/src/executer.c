@@ -181,25 +181,35 @@ void executeDPImm(processorState_t *state, const DPImmInstruction_t instruction)
         const wideMoveOperand_t operand = op.wideMoveOperand;
         wideMoveOperations[instruction.opc](state, instruction, operand);
     } else {
-        LOG_FATAL("Unsupported instruction type");
+        LOG_FATAL("Unsupported instruction type for DPImm instruction");
     }
 }
 
-void registerBranch(processorState_t *state, branchOperand_t operand) {
+void executeDPReg(processorState_t *state, const DPRegInstruction_t instruction) {
+    if (~instruction.m && ((instruction.opr | 0x6) == 0xE || (instruction.opr | 0x7) == 0x7) ) {
+        // TODO: Execute Arithmetic and Logical Operation
+    } else if (instruction.m && instruction.opr == 0x8) {
+        // TODO: Execute multiply instruction
+    } else {
+        LOG_FATAL("Unsupported instruction type for DPReg instruction");
+    }
+}
+
+void registerBranch(processorState_t *state, const branchOperand_t operand) {
     if ((operand.branchRegister.xn & 0x1F) == 0x1F) {
         LOG_FATAL("Branch to xzr not supported");
     }
-    uint64_t registerValue = read_gpReg64(state, operand.branchRegister.xn);
+    const uint64_t registerValue = read_gpReg64(state, operand.branchRegister.xn);
     state->spRegisters.PC = registerValue;
 }
 
-void unconditionalBranch(processorState_t *state, branchOperand_t operand) {
+void unconditionalBranch(processorState_t *state, const branchOperand_t operand) {
     LOG_DEBUG("uncond branch");
     state->spRegisters.PC += operand.branchUnconditional.offset * 4;
 }
 
-bool evalCondition(processorState_t *state, uint32_t condition) {
-    pState_t flags = state->spRegisters.PSTATE;
+bool evalCondition(processorState_t *state, const uint32_t condition) {
+    const pState_t flags = state->spRegisters.PSTATE;
     switch (condition) {
         case 0x0: return flags.Z;
         case 0x1: return !flags.Z;
@@ -223,6 +233,6 @@ void conditionalBranch(processorState_t *state, branchOperand_t operand) {
 BranchOperation branchOperations[] = {unconditionalBranch, conditionalBranch, executeNoOp, registerBranch};
 
 void executeBranch(processorState_t *state, const branchInstruction_t instruction) {
-    branchOperand_t operand = { .raw=instruction.operand };
+    const branchOperand_t operand = { .raw=instruction.operand };
     branchOperations[instruction.type](state, operand);
 }

@@ -36,12 +36,15 @@ extern void executeAdds(processorState_t *state, DPImmInstruction_t instruction,
 extern void executeSub(processorState_t *state, DPImmInstruction_t instruction, arithmeticOperand_t operand);
 extern void executeSubs(processorState_t *state, DPImmInstruction_t instruction, arithmeticOperand_t operand);
 
-void executeMovn(processorState_t *state, DPImmInstruction_t instruction, wideMoveOperand_t operand);
-void executeMovz(processorState_t *state, DPImmInstruction_t instruction, wideMoveOperand_t operand);
-void executeMovk(processorState_t *state, DPImmInstruction_t instruction, wideMoveOperand_t operand);
+extern void executeMovn(processorState_t *state, DPImmInstruction_t instruction, wideMoveOperand_t operand);
+extern void executeMovz(processorState_t *state, DPImmInstruction_t instruction, wideMoveOperand_t operand);
+extern void executeMovk(processorState_t *state, DPImmInstruction_t instruction, wideMoveOperand_t operand);
 
 extern void executeDPImm(processorState_t *state, DPImmInstruction_t instruction);
 
+typedef void (*ArithAndLogOperation)(processorState_t *state, DPRegInstruction_t instruction);
+
+extern void executeDPReg(processorState_t *state, DPRegInstruction_t instruction);
 
 typedef void (*BranchOperation)(processorState_t *state, branchOperand_t operand);
 
