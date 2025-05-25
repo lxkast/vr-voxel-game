@@ -6,7 +6,7 @@
     checks if state is a non-null pointer
     and reg is a valid index into the register file
  */
-static void checkValidStateAndGPRegister(processorState_t *state, reg_t reg) {
+static void checkValidStateAndGPRegister(processorState_t *state, const reg_t reg) {
     if (!state) {
         LOG_FATAL("Cannot access null state to access general purpose register");
     }
@@ -18,7 +18,7 @@ static void checkValidStateAndGPRegister(processorState_t *state, reg_t reg) {
 /*
     read 32-bit value from a general-purpose register
 */
-uint32_t read_gpReg32(processorState_t *state, reg_t reg) {
+uint32_t read_gpReg32(processorState_t *state, const reg_t reg) {
     checkValidStateAndGPRegister(state, reg);
     return state->gpRegisters.regs[reg];
 }
@@ -26,7 +26,7 @@ uint32_t read_gpReg32(processorState_t *state, reg_t reg) {
 /*
     write 32-bit value to a general-purpose register
  */
-void write_gpReg32(processorState_t *state, reg_t reg, uint32_t value) {
+void write_gpReg32(processorState_t *state, const reg_t reg, const uint32_t value) {
     checkValidStateAndGPRegister(state, reg);
     state->gpRegisters.regs[reg] = value;
 }
@@ -34,7 +34,7 @@ void write_gpReg32(processorState_t *state, reg_t reg, uint32_t value) {
 /*
     read 64-bit value from a general-purpose register
 */
-uint64_t read_gpReg64(processorState_t *state, reg_t reg) {
+uint64_t read_gpReg64(processorState_t *state, const reg_t reg) {
     checkValidStateAndGPRegister(state, reg);
     return state->gpRegisters.regs[reg];
 }
@@ -42,7 +42,7 @@ uint64_t read_gpReg64(processorState_t *state, reg_t reg) {
 /*
     write 64-bit value to a general-purpose register
 */
-void write_gpReg64(processorState_t *state, reg_t reg, uint64_t value) {
+void write_gpReg64(processorState_t *state, const reg_t reg, const uint64_t value) {
     checkValidStateAndGPRegister(state, reg);
     state->gpRegisters.regs[reg] = value;
 }
@@ -60,7 +60,7 @@ uint64_t read_PC(processorState_t *state) {
 /*
     write 64-bit value to PC register
 */
-void write_PC(processorState_t *state, uint64_t value) {
+void write_PC(processorState_t *state, const uint64_t value) {
     if (!state) {
         LOG_FATAL("Cannot access null state to write to PC register");
     }
@@ -80,7 +80,7 @@ uint64_t read_SP(processorState_t *state) {
 /*
     write 64-bit value to SP register
 */
-void write_SP(processorState_t *state, uint64_t value) {
+void write_SP(processorState_t *state, const uint64_t value) {
     if (!state) {
         LOG_FATAL("Cannot access null state to write to SP register");
     }
@@ -119,7 +119,7 @@ pState_t read_pState(processorState_t *state) {
 /*
     write all condition codes in PSTATE
 */
-void write_pState(processorState_t *state, pState_t value) {
+void write_pState(processorState_t *state, const pState_t value) {
     if (!state) {
         LOG_FATAL("Cannot access null state to write to PSTATE");
     }
