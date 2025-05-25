@@ -185,9 +185,22 @@ void executeDPImm(processorState_t *state, const DPImmInstruction_t instruction)
     }
 }
 
+LogicalOperation logicalOperations[] = {
+    executeAnd,
+    executeBic,
+    executeOrr,
+    executeOrn,
+    executeEor,
+    executeEon,
+    executeAnds,
+    executeBics,
+};
+
 void executeDPReg(processorState_t *state, const DPRegInstruction_t instruction) {
-    if (~instruction.m && ((instruction.opr | 0x6) == 0xE || (instruction.opr | 0x7) == 0x7) ) {
-        // TODO: Execute Arithmetic and Logical Operation
+    if (~instruction.m && (instruction.opr | 0x6) == 0xE) {
+        // TODO: Execute Arithmetic Instruction
+    } else if (~instruction.m && (instruction.opr | 0x7) == 0x7) {
+        // TODO: Execute Logical Instruction
     } else if (instruction.m && instruction.opr == 0x8) {
         // TODO: Execute multiply instruction
     } else {

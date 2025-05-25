@@ -99,7 +99,7 @@ typedef struct {
     uint8_t : 1;
     uint8_t shift : 2;
     uint8_t : 1;
-} DPRegOprArithmetic_t;
+} arithmeticOpr_t;
 #pragma pack(pop)
 
 #pragma pack(push, 1)
@@ -107,13 +107,13 @@ typedef struct {
     uint8_t N : 1;
     uint8_t shift : 2;
     uint8_t : 1;
-} DPRegOprLogical_t;
+} logicalOpr_t;
 #pragma pack(pop)
 
 typedef union {
     uint8_t raw;
-    DPRegOprArithmetic_t arithmetic;
-    DPRegOprLogical_t branchCondition;
+    arithmeticOpr_t arithmetic;
+    logicalOpr_t branchCondition;
 } DPRegOpr_t;
 
 extern void executeDPImm(processorState_t *state, DPImmInstruction_t dpimm);

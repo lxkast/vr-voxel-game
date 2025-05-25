@@ -42,7 +42,16 @@ extern void executeMovk(processorState_t *state, DPImmInstruction_t instruction,
 
 extern void executeDPImm(processorState_t *state, DPImmInstruction_t instruction);
 
-typedef void (*ArithAndLogOperation)(processorState_t *state, DPRegInstruction_t instruction);
+typedef void (*LogicalOperation)(processorState_t *state, DPRegInstruction_t instruction);
+
+extern void executeAnd(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr);
+extern void executeBic(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr);
+extern void executeOrr(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr);
+extern void executeOrn(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr);
+extern void executeEor(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr);
+extern void executeEon(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr);
+extern void executeAnds(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr);
+extern void executeBics(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr);
 
 extern void executeDPReg(processorState_t *state, DPRegInstruction_t instruction);
 
