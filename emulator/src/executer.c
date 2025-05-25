@@ -13,11 +13,13 @@ void executeAdd(processorState_t *state, const DPImmInstruction_t instruction, c
         const uint64_t result = read_gpReg64(state, operand.rn) + op2;
         write_gpReg64(state, instruction.rd, result);
     } else {
+        // op2 is guaranteed to be <= 32 bits, so casting it down to uint32_t is fine
         const uint32_t result = read_gpReg32(state, operand.rn) + (uint32_t)op2;
         write_gpReg32(state, instruction.rd, result);
     }
 }
 
+// performs the add operation, storing values in flags
 void executeAdds(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
     if (instruction.sf) {
         const uint64_t op2 = operand.imm12 << (operand.sh * 12);
@@ -53,11 +55,13 @@ void executeSub(processorState_t *state, const DPImmInstruction_t instruction, c
         const uint64_t result = read_gpReg64(state, operand.rn) - op2;
         write_gpReg64(state, instruction.rd, result);
     } else {
+        // op2 is guaranteed to be <= 32 bits, so casting it down to uint32_t is fine
         const uint32_t result = read_gpReg32(state, operand.rn) - (uint32_t)op2;
         write_gpReg32(state, instruction.rd, result);
     }
 }
 
+// performs the sub operation, storing values in flags
 void executeSubs(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
     if (instruction.sf) {
         const uint64_t op2 = operand.imm12 << (operand.sh * 12);
@@ -79,12 +83,16 @@ void executeSubs(processorState_t *state, const DPImmInstruction_t instruction, 
         // Setting flags
         state->spRegisters.PSTATE.N = result >> 31;     // Negative flag
         state->spRegisters.PSTATE.Z = result == 0;      // Zero flag
-        state->spRegisters.PSTATE.C = rn >= op2;     // Carry flag
+        state->spRegisters.PSTATE.C = rn >= op2;        // Carry flag
         state->spRegisters.PSTATE.V = ((rn ^ result) & ~(rn ^ op2)) >> 31;   // signed overflow/underflow flag
 
         write_gpReg32(state, instruction.rd, result);
     }
 }
+
+/*
+    Defining the functions for wide move operations.
+*/
 
 void executeMovn(processorState_t *state, const DPImmInstruction_t instruction, const wideMoveOperand_t operand) {
     const uint64_t op = operand.imm16 << (operand.hw * 16);
@@ -95,6 +103,7 @@ void executeMovn(processorState_t *state, const DPImmInstruction_t instruction, 
         if (operand.hw > 1) {
             LOG_FATAL("executeMovn: operand.hw > 1 (in 32bit mode)");
         }
+        // op is guaranteed to be <= 32 bits, so casting it down to uint32_t is fine
         const uint32_t result = ~(uint32_t)op;
         write_gpReg32(state, instruction.rd, result);
     }
@@ -107,8 +116,9 @@ void executeMovk(processorState_t *state, const DPImmInstruction_t instruction, 
         write_gpReg64(state, instruction.rd, result);
     } else {
         if (operand.hw > 1) {
-            LOG_FATAL("executeMovn: operand.hw > 1 (in 32bit mode)");
+            LOG_FATAL("executeMovk: operand.hw > 1 (in 32bit mode)");
         }
+        // op is guaranteed to be <= 32 bits, so casting it down to uint32_t is fine
         const uint32_t result = (uint32_t)op;
         write_gpReg32(state, instruction.rd, result);
     }
@@ -116,6 +126,7 @@ void executeMovk(processorState_t *state, const DPImmInstruction_t instruction, 
 
 void executeMovz(processorState_t *state, DPImmInstruction_t instruction, wideMoveOperand_t operand) {}
 
+// this is used to allow function pointers to work more neatly
 void executeNoOp() {
     // intentionally empty
 }
