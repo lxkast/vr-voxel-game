@@ -2,6 +2,8 @@
 #include <logging.h>
 #include "executer.h"
 
+#include "memory.h"
+
 /*
     Defining the functions for arithmetic operations. NOTE: these do not correctly handle
     the optional cases when rn or rd = 11111.
@@ -15,7 +17,7 @@ _Static_assert(sizeof(branchInstruction_t) == 4, "branchInstruction_t must be 4 
 _Static_assert(sizeof(instruction_u) == 4, "instruction_u must be 4 bytes");
 
 void executeAdd(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
-    const uint64_t op2 = operand.imm12 << (operand.sh * 12);
+    const uint64_t op2 = ((uint64_t) operand.imm12) << (operand.sh * 12);
 
     if (instruction.sf) {
         const uint64_t result = read_gpReg64(state, operand.rn) + op2;
@@ -30,7 +32,7 @@ void executeAdd(processorState_t *state, const DPImmInstruction_t instruction, c
 // performs the add operation, storing values in flags
 void executeAdds(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
     if (instruction.sf) {
-        const uint64_t op2 = operand.imm12 << (operand.sh * 12);
+        const uint64_t op2 = ((uint64_t) operand.imm12) << (operand.sh * 12);
         const uint64_t rn = read_gpReg64(state, operand.rn);
         const uint64_t result = rn + op2;
 
@@ -62,7 +64,7 @@ void executeAdds(processorState_t *state, const DPImmInstruction_t instruction, 
 }
 
 void executeSub(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
-    const uint64_t op2 = operand.imm12 << (operand.sh * 12);
+    const uint64_t op2 = ((uint64_t) operand.imm12) << (operand.sh * 12);
 
     if (instruction.sf) {
         const uint64_t result = read_gpReg64(state, operand.rn) - op2;
@@ -77,7 +79,7 @@ void executeSub(processorState_t *state, const DPImmInstruction_t instruction, c
 // performs the sub operation, storing values in flags
 void executeSubs(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
     if (instruction.sf) {
-        const uint64_t op2 = operand.imm12 << (operand.sh * 12);
+        const uint64_t op2 = ((uint64_t) operand.imm12) << (operand.sh * 12);
         const uint64_t rn = read_gpReg64(state, operand.rn);
         const uint64_t result = rn - op2;
 
@@ -111,7 +113,7 @@ void executeSubs(processorState_t *state, const DPImmInstruction_t instruction, 
 */
 
 void executeMovn(processorState_t *state, const DPImmInstruction_t instruction, const wideMoveOperand_t operand) {
-    const uint64_t op = operand.imm16 << (operand.hw * 16);
+    const uint64_t op = ((uint64_t) operand.imm16) << (operand.hw * 16);
     if (instruction.sf) {
         const uint64_t result = ~op;
         write_gpReg64(state, instruction.rd, result);
@@ -126,7 +128,7 @@ void executeMovn(processorState_t *state, const DPImmInstruction_t instruction, 
 }
 
 void executeMovz(processorState_t *state, const DPImmInstruction_t instruction, const wideMoveOperand_t operand) {
-    const uint64_t op = operand.imm16 << (operand.hw * 16);
+    const uint64_t op = ((uint64_t) operand.imm16) << (operand.hw * 16);
     if (instruction.sf) {
         const uint64_t result = op;
         write_gpReg64(state, instruction.rd, result);
@@ -141,8 +143,8 @@ void executeMovz(processorState_t *state, const DPImmInstruction_t instruction, 
 }
 
 void executeMovk(processorState_t *state, const DPImmInstruction_t instruction, const wideMoveOperand_t operand) {
-    const uint64_t op = operand.imm16 << (operand.hw * 16);
-    const uint64_t mask = ~(0xFFFF << (operand.hw * 16));
+    const uint64_t op = ((uint64_t) operand.imm16) << (operand.hw * 16);
+    const uint64_t mask = ~(0xFFFFl << (operand.hw * 16));
     if (instruction.sf) {
         const uint64_t rd = read_gpReg64(state,instruction.rd);
         const uint64_t result = rd & mask | op;
@@ -237,9 +239,12 @@ void executeBranch(processorState_t *state, const branchInstruction_t instructio
 
 void executeLoadLiteral(processorState_t *state, loadLitInstruction_t operation) {
     if (operation.rt == 0x1F) LOG_FATAL("SP not supported");
+    uint32_t address = read_PC(state) + operation.simm19 * 4;
     if (operation.sf) {
-        write_gpReg64(state, operation.rt, operation.simm19);
+        uint64_t data = read_mem64(state, address);
+        write_gpReg64(state, operation.rt, data);
     } else {
-        write_gpReg32(state, operation.rt, operation.simm19);
+        uint32_t data = read_mem32(state, address);
+        write_gpReg32(state, operation.rt, data);
     }
 }
