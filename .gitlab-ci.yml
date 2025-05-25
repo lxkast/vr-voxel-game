@@ -54,9 +54,8 @@ unit-test-job:   # This job runs in the test stage.
     ACCESS_TOKEN: $MY_PAT_SECRET 
   rules:
     - changes:
-        paths:
-        - emulator/**
-        - assembler/**
+        - emulator/**/*
+        - assembler/**/*
 
 
 
