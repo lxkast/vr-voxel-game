@@ -259,19 +259,19 @@ void executeLoadLiteral(processorState_t *state, loadLitInstruction_t instructio
 
 uint64_t computeOffset(processorState_t *state, SDTInstruction_t instruction) {
     SDTOffset_u offset_type = { .raw = instruction.offset };
-    if ((instruction.offset & REGISTER_OFFSET_MASK) == REGISTER_OFFSET_VALUE) {
+    if (instruction.u) {
+        if (instruction.sf) {
+            return instruction.offset * 8;
+        } else {
+            return instruction.offset * 4;
+        }
+    } else if ((instruction.offset & REGISTER_OFFSET_MASK) == REGISTER_OFFSET_VALUE) {
         return read_gpReg64(state, offset_type.registerOffset.xm);
     } else if ((instruction.offset & PRE_POST_INDEX_MASK) == PRE_POST_INDEX_VALUE) {
         if (offset_type.prePostIndex.i) {
             return offset_type.prePostIndex.simm9;
         } else {
             return 0;
-        }
-    } else if (instruction.u) {
-        if (instruction.sf) {
-            return instruction.offset * 8;
-        } else {
-            return instruction.offset * 4;
         }
     } else {
         LOG_FATAL("Offset type does not exist");
@@ -285,7 +285,7 @@ void executeSDT(processorState_t *state, SDTInstruction_t instruction) {
     uint64_t address = offset + read_gpReg64(state, instruction.xn);
     bool postIndex = false;
     SDTOffset_u offset_type = { .raw = instruction.offset };
-    if ((instruction.offset & PRE_POST_INDEX_MASK) == PRE_POST_INDEX_VALUE) {
+    if (!instruction.u && (instruction.offset & PRE_POST_INDEX_MASK) == PRE_POST_INDEX_VALUE) {
         if (offset_type.prePostIndex.i) {
             write_gpReg64(state, instruction.xn, address);
         } else {
