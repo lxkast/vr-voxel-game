@@ -9,7 +9,7 @@
 #include "shaderutil.h"
 
 int loadShaderSource(const GLuint shader, const char *fileName) {
-    FILE *fp = fopen(fileName, "r");
+    FILE *fp = fopen(fileName, "rb");
     if (!fp) {
         LOG_ERROR("Error opening file %s", fileName);
         return -1;
