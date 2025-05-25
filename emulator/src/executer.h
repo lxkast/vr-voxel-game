@@ -44,6 +44,8 @@ extern uint32_t ror32(uint32_t rm, uint32_t operand);
 typedef uint64_t (*BitWise64Operation)(uint64_t rm, uint64_t operand);
 typedef uint32_t (*BitWise32Operation)(uint32_t rm, uint32_t operand);
 
+typedef void (*ArithmeticRegOperation)(processorState_t *state, DPRegInstruction_t instruction, arithmeticOpr_t opr);
+
 extern void executeDPReg(processorState_t *state, DPRegInstruction_t instruction);
 
 typedef void (*BranchOperation)(processorState_t *state, branchOperand_t operand);
