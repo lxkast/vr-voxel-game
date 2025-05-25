@@ -35,10 +35,11 @@ void executeAdds(processorState_t *state, const DPImmInstruction_t instruction, 
         const uint64_t result = rn + op2;
 
         // Setting flags
-        state->spRegisters.PSTATE.N = result >> 63;     // Negative flag
-        state->spRegisters.PSTATE.Z = result == 0;      // Zero flag
-        state->spRegisters.PSTATE.C = result < rn;     // Carry flag
-        state->spRegisters.PSTATE.V = ((rn ^ op2) & ~(op2 ^ result)) >> 63;   // signed overflow/underflow flag
+        pState_t pState;
+        pState.N = result >> 63;     // Negative flag
+        pState.Z = result == 0;      // Zero flag
+        pState.C = result < rn;     // Carry flag
+        pState.V = ((rn ^ op2) & ~(op2 ^ result)) >> 63;   // signed overflow/underflow flag
 
         write_gpReg64(state, instruction.rd, result);
     } else {
@@ -47,11 +48,13 @@ void executeAdds(processorState_t *state, const DPImmInstruction_t instruction, 
         const uint32_t result = rn + op2;
 
         // Setting flags
-        state->spRegisters.PSTATE.N = result >> 31;     // Negative flag
-        state->spRegisters.PSTATE.Z = result == 0;      // Zero flag
-        state->spRegisters.PSTATE.C = result < rn;     // Carry flag
-        state->spRegisters.PSTATE.V = ((rn ^ op2) & ~(op2 ^ result)) >> 31;   // signed overflow/underflow flag
+        pState_t pState;
+        pState.N = result >> 31;     // Negative flag
+        pState.Z = result == 0;      // Zero flag
+        pState.C = result < rn;     // Carry flag
+        pState.V = ((rn ^ op2) & ~(op2 ^ result)) >> 31;   // signed overflow/underflow flag
 
+        write_pState(state, pState);
         write_gpReg32(state, instruction.rd, result);
     }
 }
@@ -76,12 +79,13 @@ void executeSubs(processorState_t *state, const DPImmInstruction_t instruction, 
         const uint64_t rn = read_gpReg64(state, operand.rn);
         const uint64_t result = rn - op2;
 
-        // Setting flags
-        state->spRegisters.PSTATE.N = result >> 63;     // Negative flag
-        state->spRegisters.PSTATE.Z = result == 0;      // Zero flag
-        state->spRegisters.PSTATE.C = rn >= op2;     // Carry flag
-        state->spRegisters.PSTATE.V = ((rn ^ result) & ~(rn ^ op2)) >> 63;   // signed overflow/underflow flag
+        pState_t pState;
+        pState.N = result >> 63;     // Negative flag
+        pState.Z = result == 0;      // Zero flag
+        pState.C = rn >= op2;     // Carry flag
+        pState.V = ((rn ^ result) & ~(rn ^ op2)) >> 63;   // signed overflow/underflow flag
 
+        write_pState(state, pState);
         write_gpReg64(state, instruction.rd, result);
     } else {
         const uint32_t op2 = operand.imm12 << (operand.sh * 12);
@@ -89,10 +93,11 @@ void executeSubs(processorState_t *state, const DPImmInstruction_t instruction, 
         const uint32_t result = rn - op2;
 
         // Setting flags
-        state->spRegisters.PSTATE.N = result >> 31;     // Negative flag
-        state->spRegisters.PSTATE.Z = result == 0;      // Zero flag
-        state->spRegisters.PSTATE.C = rn >= op2;        // Carry flag
-        state->spRegisters.PSTATE.V = ((rn ^ result) & ~(rn ^ op2)) >> 31;   // signed overflow/underflow flag
+        pState_t pState;
+        pState.N = result >> 31;     // Negative flag
+        pState.Z = result == 0;      // Zero flag
+        pState.C = rn >= op2;        // Carry flag
+        pState.V = ((rn ^ result) & ~(rn ^ op2)) >> 31;   // signed overflow/underflow flag
 
         write_gpReg32(state, instruction.rd, result);
     }
@@ -190,16 +195,16 @@ void registerBranch(processorState_t *state, branchOperand_t operand) {
         LOG_FATAL("Branch to xzr not supported");
     }
     uint64_t registerValue = read_gpReg64(state, operand.branchRegister.xn);
-    state->spRegisters.PC = registerValue;
+    write_PC(state, registerValue);
 }
 
 void unconditionalBranch(processorState_t *state, branchOperand_t operand) {
     LOG_DEBUG("uncond branch");
-    state->spRegisters.PC += operand.branchUnconditional.offset * 4;
+    increment_PC(state, operand.branchUnconditional.offset * 4);
 }
 
 bool evalCondition(processorState_t *state, uint32_t condition) {
-    pState_t flags = state->spRegisters.PSTATE;
+    pState_t flags = read_pState(state);
     switch (condition) {
         case 0x0: return flags.Z;
         case 0x1: return !flags.Z;
@@ -214,9 +219,9 @@ bool evalCondition(processorState_t *state, uint32_t condition) {
 
 void conditionalBranch(processorState_t *state, branchOperand_t operand) {
     if (evalCondition(state, operand.branchCondition.cond)) {
-        state->spRegisters.PC += operand.branchCondition.offset * 4;
+        increment_PC(state, operand.branchCondition.offset * 4);
     } else {
-        state->spRegisters.PC += 4;
+        increment_PC(state, 4);
     }
 }
 

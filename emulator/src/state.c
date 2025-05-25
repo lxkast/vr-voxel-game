@@ -68,6 +68,16 @@ void write_PC(processorState_t *state, const uint64_t value) {
 }
 
 /*
+    increments PC register by amount
+*/
+void increment_PC(processorState_t *state, int64_t amount) {
+    if (!state) {
+        LOG_FATAL("Cannot access null state to increment PC register");
+    }
+    state->spRegisters.PC += amount;
+}
+
+/*
     read 64-bit value from SP register
 */
 uint64_t read_SP(processorState_t *state) {
@@ -137,7 +147,6 @@ void initState(processorState_t *state, const uint32_t *programInstructions, con
 
     memset(state->gpRegisters.regs, 0, sizeof(state->gpRegisters.regs));
     memset(state->memory, 0, sizeof(state->memory));
-
 
     memcpy(state->memory, programInstructions, numInstructions * sizeof(uint32_t));
 }

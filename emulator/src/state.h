@@ -45,6 +45,7 @@ void write_gpReg64(processorState_t *state, reg_t reg, uint64_t value);
 
 uint64_t read_PC(processorState_t *state);
 void write_PC(processorState_t *state, uint64_t value);
+void increment_PC(processorState_t *state, int64_t amount);
 
 uint64_t read_SP(processorState_t *state);
 void write_SP(processorState_t *state, uint64_t value);
