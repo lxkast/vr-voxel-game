@@ -38,9 +38,9 @@ bool decodeAndExecute(processorState_t *state, const uint32_t rawInstruction) {
     if ((rawInstruction & DP_IMM_MASK) == DP_IMM_VALUE) {
         executeDPImm(state, instruction.dpimm);
     } else if ((rawInstruction & DP_REG_MASK) == DP_REG_VALUE) {
-        // TODO: execute instruction
+        LOG_FATAL("Unhandled instruction type");
     } else if ((rawInstruction & SDT_MASK) == SDT_VALUE) {
-        // TODO: execute instruction
+        LOG_FATAL("Unhandled instruction type");
     } else if ((rawInstruction & LOAD_LIT_MASK) == LOAD_LIT_VALUE) {
         executeLoadLiteral(state, instruction.load);
     } else if ((rawInstruction & BRANCH_MASK) == BRANCH_VALUE) {

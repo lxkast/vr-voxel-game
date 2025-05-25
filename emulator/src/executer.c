@@ -35,11 +35,12 @@ void executeAdds(processorState_t *state, const DPImmInstruction_t instruction, 
         const uint64_t result = rn + op2;
 
         // Setting flags
+
         pState_t pState;
         pState.N = result >> 63;     // Negative flag
         pState.Z = result == 0;      // Zero flag
         pState.C = result < rn;     // Carry flag
-        pState.V = ((rn ^ op2) & ~(op2 ^ result)) >> 63;   // signed overflow/underflow flag
+        pState.V = ((rn ^ op2) & ~(result ^ op2)) >> 63;   // signed overflow/underflow flag
 
         write_pState(state, pState);
         write_gpReg64(state, instruction.rd, result);
@@ -53,7 +54,7 @@ void executeAdds(processorState_t *state, const DPImmInstruction_t instruction, 
         pState.N = result >> 31;     // Negative flag
         pState.Z = result == 0;      // Zero flag
         pState.C = result < rn;     // Carry flag
-        pState.V = ((rn ^ op2) & ~(op2 ^ result)) >> 31;   // signed overflow/underflow flag
+        pState.V = ((rn ^ op2) & ~(result ^ op2)) >> 31;   // signed overflow/underflow flag
 
         write_pState(state, pState);
         write_gpReg32(state, instruction.rd, result);
@@ -84,7 +85,7 @@ void executeSubs(processorState_t *state, const DPImmInstruction_t instruction, 
         pState.N = result >> 63;     // Negative flag
         pState.Z = result == 0;      // Zero flag
         pState.C = rn >= op2;     // Carry flag
-        pState.V = ((rn ^ result) & ~(rn ^ op2)) >> 63;   // signed overflow/underflow flag
+        pState.V = ((rn ^ op2) & ~(result ^ op2)) >> 63;   // signed overflow/underflow flag
 
         write_pState(state, pState);
         write_gpReg64(state, instruction.rd, result);
@@ -98,7 +99,7 @@ void executeSubs(processorState_t *state, const DPImmInstruction_t instruction, 
         pState.N = result >> 31;     // Negative flag
         pState.Z = result == 0;      // Zero flag
         pState.C = rn >= op2;        // Carry flag
-        pState.V = ((rn ^ result) & ~(rn ^ op2)) >> 31;   // signed overflow/underflow flag
+        pState.V = ((rn ^ op2) & ~(result ^ op2)) >> 31;   // signed overflow/underflow flag
 
         write_pState(state, pState);
         write_gpReg32(state, instruction.rd, result);
