@@ -52,9 +52,11 @@ int main(void) {
     */
 
 
-    GLuint shader;
+    GLuint program;
     BUILD_SHADER_PROGRAM(
-        &shader, {}, {
+        &program, {
+            glBindAttribLocation(program, 0, "aPos");
+        }, {
             LOG_ERROR("Couldn't build shader program");
             return -1;
         },
@@ -67,6 +69,8 @@ int main(void) {
         Cube
     */
 
+
+    GLuint vao;
     {
         static const float vertices[] = {
             // Front face
@@ -108,7 +112,7 @@ int main(void) {
             5, 4, 0
         };
 
-        GLuint vao, vbo, ebo;
+        GLuint vbo, ebo;
 
         glGenVertexArrays(1, &vao);
         glGenBuffers(1, &vbo);
@@ -136,6 +140,10 @@ int main(void) {
 
 
     while (!glfwWindowShouldClose(window)) {
+        glBindVertexArray(vao);
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+
         glfwPollEvents();
         glfwSwapBuffers(window);
 
