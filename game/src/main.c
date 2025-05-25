@@ -3,12 +3,18 @@
 #include <GLFW/glfw3.h>
 #include <logging.h>
 
+#if defined(__APPLE__) && defined(__MACH__)
+#define MINOR_VERSION 2
+#else
+#define MINOR_VERSION 1
+#endif
+
 int main(void) {
     log_init(stdout);
 
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, MINOR_VERSION);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
     GLFWwindow *window = glfwCreateWindow(640, 480, "Hello, Window!", NULL, NULL);
