@@ -22,16 +22,31 @@ _Static_assert(sizeof(SDTInstruction_t) == 4, "SDTInstruction_t must be 4 bytes"
 _Static_assert(sizeof(loadLitInstruction_t) == 4, "loadLitInstruction_t must be 4 bytes");
 _Static_assert(sizeof(branchInstruction_t) == 4, "branchInstruction_t must be 4 bytes");
 
+void op_write_gpReg64(processorState_t *state, register_t reg, uint64_t value) {
+    if (reg == 0x1F) {
+        write_ZR(state, value);
+    } else {
+        write_gpReg64(state, reg,  value);
+    }
+}
+void op_write_gpReg32(processorState_t *state, register_t reg, uint32_t value) {
+    if (reg == 0x1F) {
+        write_ZR(state, value);
+    } else {
+        write_gpReg32(state, reg,  value);
+    }
+}
+
 void executeAdd(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
     const uint64_t op2 = ((uint64_t) operand.imm12) << (operand.sh * 12);
 
     if (instruction.sf) {
         const uint64_t result = read_gpReg64(state, operand.rn) + op2;
-        write_gpReg64(state, instruction.rd, result);
+        op_write_gpReg64(state, instruction.rd, result);
     } else {
         // op2 is guaranteed to be <= 32 bits, so casting it down to uint32_t is fine
         const uint32_t result = read_gpReg32(state, operand.rn) + (uint32_t)op2;
-        write_gpReg32(state, instruction.rd, result);
+        op_write_gpReg32(state, instruction.rd, result);
     }
 }
 
@@ -51,7 +66,7 @@ void executeAdds(processorState_t *state, const DPImmInstruction_t instruction, 
         pState.V = ((rn ^ op2) & ~(result ^ op2)) >> 63;   // signed overflow/underflow flag
 
         write_pState(state, pState);
-        write_gpReg64(state, instruction.rd, result);
+        op_write_gpReg64(state, instruction.rd, result);
     } else {
         const uint32_t op2 = operand.imm12 << (operand.sh * 12);
         const uint32_t rn = read_gpReg32(state, operand.rn);
@@ -65,7 +80,7 @@ void executeAdds(processorState_t *state, const DPImmInstruction_t instruction, 
         pState.V = ((rn ^ op2) & ~(result ^ op2)) >> 31;   // signed overflow/underflow flag
 
         write_pState(state, pState);
-        write_gpReg32(state, instruction.rd, result);
+        op_write_gpReg32(state, instruction.rd, result);
     }
 }
 
@@ -74,11 +89,11 @@ void executeSub(processorState_t *state, const DPImmInstruction_t instruction, c
 
     if (instruction.sf) {
         const uint64_t result = read_gpReg64(state, operand.rn) - op2;
-        write_gpReg64(state, instruction.rd, result);
+        op_write_gpReg64(state, instruction.rd, result);
     } else {
         // op2 is guaranteed to be <= 32 bits, so casting it down to uint32_t is fine
         const uint32_t result = read_gpReg32(state, operand.rn) - (uint32_t)op2;
-        write_gpReg32(state, instruction.rd, result);
+        op_write_gpReg32(state, instruction.rd, result);
     }
 }
 
@@ -96,7 +111,7 @@ void executeSubs(processorState_t *state, const DPImmInstruction_t instruction, 
         pState.V = ((rn ^ op2) & ~(result ^ op2)) >> 63;   // signed overflow/underflow flag
 
         write_pState(state, pState);
-        write_gpReg64(state, instruction.rd, result);
+        op_write_gpReg64(state, instruction.rd, result);
     } else {
         const uint32_t op2 = operand.imm12 << (operand.sh * 12);
         const uint32_t rn = read_gpReg32(state, operand.rn);
@@ -110,7 +125,7 @@ void executeSubs(processorState_t *state, const DPImmInstruction_t instruction, 
         pState.V = ((rn ^ op2) & ~(result ^ op2)) >> 31;   // signed overflow/underflow flag
 
         write_pState(state, pState);
-        write_gpReg32(state, instruction.rd, result);
+        op_write_gpReg32(state, instruction.rd, result);
     }
 }
 
