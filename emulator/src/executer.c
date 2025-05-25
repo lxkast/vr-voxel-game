@@ -2,6 +2,8 @@
 #include <logging.h>
 #include "executer.h"
 
+#include "memory.h"
+
 /*
     Defining the functions for arithmetic operations. NOTE: these do not correctly handle
     the optional cases when rn or rd = 11111.
@@ -15,7 +17,7 @@ _Static_assert(sizeof(branchInstruction_t) == 4, "branchInstruction_t must be 4 
 _Static_assert(sizeof(instruction_u) == 4, "instruction_u must be 4 bytes");
 
 void executeAdd(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
-    const uint64_t op2 = operand.imm12 << (operand.sh * 12);
+    const uint64_t op2 = ((uint64_t) operand.imm12) << (operand.sh * 12);
 
     if (instruction.sf) {
         const uint64_t result = read_gpReg64(state, operand.rn) + op2;
@@ -30,16 +32,19 @@ void executeAdd(processorState_t *state, const DPImmInstruction_t instruction, c
 // performs the add operation, storing values in flags
 void executeAdds(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
     if (instruction.sf) {
-        const uint64_t op2 = operand.imm12 << (operand.sh * 12);
+        const uint64_t op2 = ((uint64_t) operand.imm12) << (operand.sh * 12);
         const uint64_t rn = read_gpReg64(state, operand.rn);
         const uint64_t result = rn + op2;
 
         // Setting flags
-        state->spRegisters.PSTATE.N = result >> 63;     // Negative flag
-        state->spRegisters.PSTATE.Z = result == 0;      // Zero flag
-        state->spRegisters.PSTATE.C = result < rn;     // Carry flag
-        state->spRegisters.PSTATE.V = ((rn ^ op2) & ~(op2 ^ result)) >> 63;   // signed overflow/underflow flag
 
+        pState_t pState;
+        pState.N = result >> 63;     // Negative flag
+        pState.Z = result == 0;      // Zero flag
+        pState.C = result < rn;     // Carry flag
+        pState.V = ((rn ^ op2) & ~(result ^ op2)) >> 63;   // signed overflow/underflow flag
+
+        write_pState(state, pState);
         write_gpReg64(state, instruction.rd, result);
     } else {
         const uint32_t op2 = operand.imm12 << (operand.sh * 12);
@@ -47,17 +52,19 @@ void executeAdds(processorState_t *state, const DPImmInstruction_t instruction, 
         const uint32_t result = rn + op2;
 
         // Setting flags
-        state->spRegisters.PSTATE.N = result >> 31;     // Negative flag
-        state->spRegisters.PSTATE.Z = result == 0;      // Zero flag
-        state->spRegisters.PSTATE.C = result < rn;     // Carry flag
-        state->spRegisters.PSTATE.V = ((rn ^ op2) & ~(op2 ^ result)) >> 31;   // signed overflow/underflow flag
+        pState_t pState;
+        pState.N = result >> 31;     // Negative flag
+        pState.Z = result == 0;      // Zero flag
+        pState.C = result < rn;     // Carry flag
+        pState.V = ((rn ^ op2) & ~(result ^ op2)) >> 31;   // signed overflow/underflow flag
 
+        write_pState(state, pState);
         write_gpReg32(state, instruction.rd, result);
     }
 }
 
 void executeSub(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
-    const uint64_t op2 = operand.imm12 << (operand.sh * 12);
+    const uint64_t op2 = ((uint64_t) operand.imm12) << (operand.sh * 12);
 
     if (instruction.sf) {
         const uint64_t result = read_gpReg64(state, operand.rn) - op2;
@@ -72,16 +79,17 @@ void executeSub(processorState_t *state, const DPImmInstruction_t instruction, c
 // performs the sub operation, storing values in flags
 void executeSubs(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
     if (instruction.sf) {
-        const uint64_t op2 = operand.imm12 << (operand.sh * 12);
+        const uint64_t op2 = ((uint64_t) operand.imm12) << (operand.sh * 12);
         const uint64_t rn = read_gpReg64(state, operand.rn);
         const uint64_t result = rn - op2;
 
-        // Setting flags
-        state->spRegisters.PSTATE.N = result >> 63;     // Negative flag
-        state->spRegisters.PSTATE.Z = result == 0;      // Zero flag
-        state->spRegisters.PSTATE.C = rn >= op2;     // Carry flag
-        state->spRegisters.PSTATE.V = ((rn ^ result) & ~(rn ^ op2)) >> 63;   // signed overflow/underflow flag
+        pState_t pState;
+        pState.N = result >> 63;     // Negative flag
+        pState.Z = result == 0;      // Zero flag
+        pState.C = rn >= op2;     // Carry flag
+        pState.V = ((rn ^ op2) & ~(result ^ op2)) >> 63;   // signed overflow/underflow flag
 
+        write_pState(state, pState);
         write_gpReg64(state, instruction.rd, result);
     } else {
         const uint32_t op2 = operand.imm12 << (operand.sh * 12);
@@ -89,11 +97,13 @@ void executeSubs(processorState_t *state, const DPImmInstruction_t instruction, 
         const uint32_t result = rn - op2;
 
         // Setting flags
-        state->spRegisters.PSTATE.N = result >> 31;     // Negative flag
-        state->spRegisters.PSTATE.Z = result == 0;      // Zero flag
-        state->spRegisters.PSTATE.C = rn >= op2;        // Carry flag
-        state->spRegisters.PSTATE.V = ((rn ^ result) & ~(rn ^ op2)) >> 31;   // signed overflow/underflow flag
+        pState_t pState;
+        pState.N = result >> 31;     // Negative flag
+        pState.Z = result == 0;      // Zero flag
+        pState.C = rn >= op2;        // Carry flag
+        pState.V = ((rn ^ op2) & ~(result ^ op2)) >> 31;   // signed overflow/underflow flag
 
+        write_pState(state, pState);
         write_gpReg32(state, instruction.rd, result);
     }
 }
@@ -103,7 +113,7 @@ void executeSubs(processorState_t *state, const DPImmInstruction_t instruction, 
 */
 
 void executeMovn(processorState_t *state, const DPImmInstruction_t instruction, const wideMoveOperand_t operand) {
-    const uint64_t op = operand.imm16 << (operand.hw * 16);
+    const uint64_t op = ((uint64_t) operand.imm16) << (operand.hw * 16);
     if (instruction.sf) {
         const uint64_t result = ~op;
         write_gpReg64(state, instruction.rd, result);
@@ -118,7 +128,7 @@ void executeMovn(processorState_t *state, const DPImmInstruction_t instruction, 
 }
 
 void executeMovz(processorState_t *state, const DPImmInstruction_t instruction, const wideMoveOperand_t operand) {
-    const uint64_t op = operand.imm16 << (operand.hw * 16);
+    const uint64_t op = ((uint64_t) operand.imm16) << (operand.hw * 16);
     if (instruction.sf) {
         const uint64_t result = op;
         write_gpReg64(state, instruction.rd, result);
@@ -133,8 +143,8 @@ void executeMovz(processorState_t *state, const DPImmInstruction_t instruction, 
 }
 
 void executeMovk(processorState_t *state, const DPImmInstruction_t instruction, const wideMoveOperand_t operand) {
-    const uint64_t op = operand.imm16 << (operand.hw * 16);
-    const uint64_t mask = ~(0xFFFF << (operand.hw * 16));
+    const uint64_t op = ((uint64_t) operand.imm16) << (operand.hw * 16);
+    const uint64_t mask = ~(0xFFFFl << (operand.hw * 16));
     if (instruction.sf) {
         const uint64_t rd = read_gpReg64(state,instruction.rd);
         const uint64_t result = rd & mask | op;
@@ -325,12 +335,12 @@ void registerBranch(processorState_t *state, const branchOperand_t operand) {
         LOG_FATAL("Branch to xzr not supported");
     }
     const uint64_t registerValue = read_gpReg64(state, operand.branchRegister.xn);
-    state->spRegisters.PC = registerValue;
+    write_PC(state, registerValue);
 }
 
 void unconditionalBranch(processorState_t *state, const branchOperand_t operand) {
     LOG_DEBUG("uncond branch");
-    state->spRegisters.PC += operand.branchUnconditional.offset * 4;
+    increment_PC(state, operand.branchUnconditional.offset * 4);
 }
 
 bool evalCondition(processorState_t *state, const uint32_t condition) {
@@ -349,9 +359,9 @@ bool evalCondition(processorState_t *state, const uint32_t condition) {
 
 void conditionalBranch(processorState_t *state, branchOperand_t operand) {
     if (evalCondition(state, operand.branchCondition.cond)) {
-        state->spRegisters.PC += operand.branchCondition.offset * 4;
+        increment_PC(state, operand.branchCondition.offset * 4);
     } else {
-        state->spRegisters.PC += 4;
+        increment_PC(state, 4);
     }
 }
 
@@ -360,4 +370,16 @@ BranchOperation branchOperations[] = {unconditionalBranch, conditionalBranch, ex
 void executeBranch(processorState_t *state, const branchInstruction_t instruction) {
     const branchOperand_t operand = { .raw=instruction.operand };
     branchOperations[instruction.type](state, operand);
+}
+
+void executeLoadLiteral(processorState_t *state, loadLitInstruction_t operation) {
+    if (operation.rt == 0x1F) LOG_FATAL("SP not supported");
+    uint32_t address = read_PC(state) + operation.simm19 * 4;
+    if (operation.sf) {
+        uint64_t data = read_mem64(state, address);
+        write_gpReg64(state, operation.rt, data);
+    } else {
+        uint32_t data = read_mem32(state, address);
+        write_gpReg32(state, operation.rt, data);
+    }
 }

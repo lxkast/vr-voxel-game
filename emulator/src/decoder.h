@@ -48,7 +48,7 @@ typedef struct {
 #pragma pack(push, 1)
 typedef struct {
     uint32_t rt : 5;
-    uint32_t simm19 : 19;
+    int32_t simm19 : 19;
     uint32_t : 6;
     uint32_t sf : 1;
     uint32_t : 1;
@@ -72,20 +72,26 @@ typedef union {
     branchInstruction_t branch;
 } instruction_u;
 
+#pragma pack(push, 1)
 typedef struct {
     int32_t offset : 26;
 } branchUnconditional_t;
+#pragma pack(pop)
 
+#pragma pack(push, 1)
 typedef struct {
     uint32_t : 5;
     uint32_t xn : 5;
 } branchRegister_t;
+#pragma pack(pop)
 
+#pragma pack(push, 1)
 typedef struct {
     uint32_t cond : 4;
     uint32_t : 1;
     int32_t offset : 19;
 } branchCondition_t;
+#pragma pack(pop)
 
 typedef union {
     uint32_t raw;
@@ -93,6 +99,27 @@ typedef union {
     branchRegister_t branchRegister;
     branchCondition_t branchCondition;
 } branchOperand_t;
+
+#pragma pack(push, 1)
+typedef struct {
+    uint32_t rn : 5;
+    uint32_t imm12 : 12;
+    uint32_t sh : 1;
+} arithmeticOperand_t;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct {
+    uint32_t imm16 : 16;
+    uint32_t hw : 2;
+} wideMoveOperand_t;
+#pragma pack(pop)
+
+typedef union {
+    uint32_t raw;
+    arithmeticOperand_t arithmeticOperand;
+    wideMoveOperand_t wideMoveOperand;
+} DPImmOperand_u;
 
 #pragma pack(push, 1)
 typedef struct {

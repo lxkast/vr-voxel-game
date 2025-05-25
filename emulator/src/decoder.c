@@ -40,16 +40,16 @@ bool decodeAndExecute(processorState_t *state, const uint32_t rawInstruction) {
     } else if ((rawInstruction & DP_REG_MASK) == DP_REG_VALUE) {
         executeDPReg(state, instruction.dpreg);
     } else if ((rawInstruction & SDT_MASK) == SDT_VALUE) {
-        // TODO: execute instruction
+        LOG_FATAL("Unhandled instruction type");
     } else if ((rawInstruction & LOAD_LIT_MASK) == LOAD_LIT_VALUE) {
-        // TODO: execute instruction
+        executeLoadLiteral(state, instruction.load);
     } else if ((rawInstruction & BRANCH_MASK) == BRANCH_VALUE) {
         executeBranch(state, instruction.branch);
         return true;
     } else {
         LOG_FATAL("Unhandled instruction type");
     }
-    state->spRegisters.PC += 4;
+    increment_PC(state, 4);
     
     return true;
 }
