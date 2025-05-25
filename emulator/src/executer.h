@@ -42,7 +42,6 @@ void executeMovk(processorState_t *state, DPImmInstruction_t instruction, wideMo
 
 extern void executeDPImm(processorState_t *state, DPImmInstruction_t instruction);
 
-
 typedef void (*BranchOperation)(processorState_t *state, branchOperand_t operand);
 
 extern void executeBranch(processorState_t *state, branchInstruction_t operation);
