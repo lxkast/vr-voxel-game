@@ -21,6 +21,7 @@ _Static_assert(sizeof(DPRegInstruction_t) == 4, "DPRegInstruction_t must be 4 by
 _Static_assert(sizeof(SDTInstruction_t) == 4, "SDTInstruction_t must be 4 bytes");
 _Static_assert(sizeof(loadLitInstruction_t) == 4, "loadLitInstruction_t must be 4 bytes");
 _Static_assert(sizeof(branchInstruction_t) == 4, "branchInstruction_t must be 4 bytes");
+_Static_assert(sizeof(instruction_u) == 4, "instruction_u must be 4 bytes");
 
 void op_write_gpReg64(processorState_t *state, register_t reg, uint64_t value) {
     if (reg == 0x1F) {
