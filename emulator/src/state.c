@@ -1,6 +1,6 @@
-#include "state.h"
 #include <logging.h>
 #include <string.h>
+#include "state.h"
 
 /*
     checks if state is a non-null pointer

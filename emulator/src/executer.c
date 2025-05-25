@@ -1,6 +1,6 @@
 #include <assert.h>
+#include <logging.h>
 #include "executer.h"
-#include "logging.h"
 
 /*
     Defining the functions for arithmetic operations. NOTE: these do not correctly handle

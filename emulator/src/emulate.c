@@ -2,7 +2,6 @@
 #include <logging.h>
 #include <futil.h>
 #include <string.h>
-
 #include "state.h"
 #include "memory.h"
 #include "decoder.h"
