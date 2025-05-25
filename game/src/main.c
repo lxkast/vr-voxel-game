@@ -43,6 +43,11 @@ int main(void) {
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
         glfwSwapBuffers(window);
+
+        GLenum err;
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            LOG_ERROR("OpenGL error: %d", err);
+        }
     }
 
     return 0;
