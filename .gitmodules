@@ -1,3 +1,6 @@
 [submodule "extension/external/glfw"]
 	path = extension/external/glfw
 	url = https://github.com/glfw/glfw
+[submodule "extension/external/cglm"]
+	path = extension/external/cglm
+	url = https://github.com/recp/cglm
