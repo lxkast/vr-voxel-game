@@ -2,6 +2,8 @@
 #include <logging.h>
 #include "executer.h"
 
+#include "memory.h"
+
 /*
     Defining the functions for arithmetic operations. NOTE: these do not correctly handle
     the optional cases when rn or rd = 11111.
@@ -237,9 +239,12 @@ void executeBranch(processorState_t *state, const branchInstruction_t instructio
 
 void executeLoadLiteral(processorState_t *state, loadLitInstruction_t operation) {
     if (operation.rt == 0x1F) LOG_FATAL("SP not supported");
+    uint32_t address = read_PC(state) + operation.simm19 * 4;
     if (operation.sf) {
-        write_gpReg64(state, operation.rt, operation.simm19);
+        uint64_t data = read_mem64(state, address);
+        write_gpReg64(state, operation.rt, data);
     } else {
-        write_gpReg32(state, operation.rt, operation.simm19);
+        uint32_t data = read_mem32(state, address);
+        write_gpReg32(state, operation.rt, data);
     }
 }
