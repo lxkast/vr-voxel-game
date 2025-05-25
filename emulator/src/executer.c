@@ -226,3 +226,12 @@ void executeBranch(processorState_t *state, const branchInstruction_t instructio
     branchOperand_t operand = { .raw=instruction.operand };
     branchOperations[instruction.type](state, operand);
 }
+
+void executeLoadLiteral(processorState_t *state, loadLitInstruction_t operation) {
+    if (operation.rt == 0x1F) LOG_FATAL("SP not supported");
+    if (operation.sf) {
+        write_gpReg64(state, operation.rt, operation.simm19);
+    } else {
+        write_gpReg32(state, operation.rt, operation.simm19);
+    }
+}

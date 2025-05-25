@@ -42,7 +42,7 @@ bool decodeAndExecute(processorState_t *state, const uint32_t rawInstruction) {
     } else if ((rawInstruction & SDT_MASK) == SDT_VALUE) {
         // TODO: execute instruction
     } else if ((rawInstruction & LOAD_LIT_MASK) == LOAD_LIT_VALUE) {
-        // TODO: execute instruction
+        executeLoadLiteral(state, instruction.load);
     } else if ((rawInstruction & BRANCH_MASK) == BRANCH_VALUE) {
         executeBranch(state, instruction.branch);
         return true;

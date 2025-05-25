@@ -48,7 +48,7 @@ typedef struct {
 #pragma pack(push, 1)
 typedef struct {
     uint32_t rt : 5;
-    uint32_t simm19 : 19;
+    int32_t simm19 : 19;
     uint32_t : 6;
     uint32_t sf : 1;
     uint32_t : 1;
