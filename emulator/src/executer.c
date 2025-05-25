@@ -169,7 +169,7 @@ void executeMovk(processorState_t *state, const DPImmInstruction_t instruction, 
     const uint64_t mask = ~(0xFFFFl << (operand.hw * 16));
     if (instruction.sf) {
         const uint64_t rd = read_gpReg64(state,instruction.rd);
-        const uint64_t result = rd & mask | op;
+        const uint64_t result = (rd & mask) | op;
         write_gpReg64(state, instruction.rd, result);
     } else {
         if (operand.hw > 1) {
@@ -177,7 +177,7 @@ void executeMovk(processorState_t *state, const DPImmInstruction_t instruction, 
         }
         // op and mask are guaranteed to be <= 32 bits, so casting them down to uint32_t is fine
         const uint32_t rd = read_gpReg32(state,instruction.rd);
-        const uint32_t result = rd & (uint32_t)mask | (uint32_t)op;
+        const uint32_t result = (rd & (uint32_t)mask) | (uint32_t)op;
         write_gpReg32(state, instruction.rd, result);
     }
 }
@@ -217,21 +217,21 @@ void executeDPImm(processorState_t *state, const DPImmInstruction_t instruction)
     }
 }
 
-void registerBranch(processorState_t *state, branchOperand_t operand) {
+void registerBranch(processorState_t *state, const branchOperand_t operand) {
     if ((operand.branchRegister.xn & 0x1F) == 0x1F) {
         LOG_FATAL("Branch to xzr not supported");
     }
-    uint64_t registerValue = read_gpReg64(state, operand.branchRegister.xn);
+    const uint64_t registerValue = read_gpReg64(state, operand.branchRegister.xn);
     write_PC(state, registerValue);
 }
 
-void unconditionalBranch(processorState_t *state, branchOperand_t operand) {
+void unconditionalBranch(processorState_t *state, const branchOperand_t operand) {
     LOG_DEBUG("uncond branch");
     increment_PC(state, operand.branchUnconditional.offset * 4);
 }
 
-bool evalCondition(processorState_t *state, uint32_t condition) {
-    pState_t flags = read_pState(state);
+bool evalCondition(processorState_t *state, const uint32_t condition) {
+    const pState_t flags = read_pState(state);
     switch (condition) {
         case 0x0: return flags.Z;
         case 0x1: return !flags.Z;
@@ -244,7 +244,7 @@ bool evalCondition(processorState_t *state, uint32_t condition) {
     }
 }
 
-void conditionalBranch(processorState_t *state, branchOperand_t operand) {
+void conditionalBranch(processorState_t *state, const branchOperand_t operand) {
     if (evalCondition(state, operand.branchCondition.cond)) {
         increment_PC(state, operand.branchCondition.offset * 4);
     } else {
@@ -259,22 +259,22 @@ void executeBranch(processorState_t *state, const branchInstruction_t instructio
     branchOperations[instruction.type](state, operand);
 }
 
-void executeLoadLiteral(processorState_t *state, loadLitInstruction_t instruction) {
+void executeLoadLiteral(processorState_t *state, const loadLitInstruction_t instruction) {
     if (instruction.rt == STACK_POINTER)
         LOG_FATAL("SP not supported");
 
-    uint64_t address = read_PC(state) + instruction.simm19 * 4;
+    const uint64_t address = read_PC(state) + instruction.simm19 * 4;
     if (instruction.sf) {
-        uint64_t data = read_mem64(state, address);
+        const uint64_t data = read_mem64(state, address);
         write_gpReg64(state, instruction.rt, data);
     } else {
-        uint32_t data = read_mem32(state, address);
+        const uint32_t data = read_mem32(state, address);
         write_gpReg32(state, instruction.rt, data);
     } 
 }
 
-uint64_t computeOffset(processorState_t *state, SDTInstruction_t instruction) {
-    SDTOffset_u offset_type = { .raw = instruction.offset };
+uint64_t computeOffset(processorState_t *state, const SDTInstruction_t instruction) {
+    const SDTOffset_u offset_type = { .raw = instruction.offset };
     if (instruction.u) {
         if (instruction.sf) {
             return instruction.offset * 8;
@@ -294,32 +294,32 @@ uint64_t computeOffset(processorState_t *state, SDTInstruction_t instruction) {
     }
 }
 
-void executeSDT(processorState_t *state, SDTInstruction_t instruction) {
+void executeSDT(processorState_t *state, const SDTInstruction_t instruction) {
     if (instruction.rt == STACK_POINTER || instruction.xn == STACK_POINTER)
         LOG_FATAL("SP not supported");
 
-    uint64_t offset = computeOffset(state, instruction);
-    uint64_t address = offset + read_gpReg64(state, instruction.xn);
+    const uint64_t offset = computeOffset(state, instruction);
+    const uint64_t address = offset + read_gpReg64(state, instruction.xn);
 
     if (instruction.sf) {
         if (instruction.l) {
-            uint64_t data = read_mem64(state, address);
+            const uint64_t data = read_mem64(state, address);
             write_gpReg64(state, instruction.rt, data);
         } else {
-            uint64_t data = read_gpReg64(state, instruction.rt);
+            const uint64_t data = read_gpReg64(state, instruction.rt);
             write_mem64(state, address, data);
         }
     } else {
         if (instruction.l) {
-            uint32_t data = read_mem32(state, address);
+            const uint32_t data = read_mem32(state, address);
             write_gpReg32(state, instruction.rt, data);
         } else {
-            uint64_t data = read_gpReg32(state, instruction.rt);
+            const uint64_t data = read_gpReg32(state, instruction.rt);
             write_mem32(state, address, data);
         }
     }
     
-    SDTOffset_u offset_type = { .raw = instruction.offset };
+    const SDTOffset_u offset_type = { .raw = instruction.offset };
     if (!instruction.u && (instruction.offset & PRE_POST_INDEX_MASK) == PRE_POST_INDEX_VALUE) {
         if (offset_type.prePostIndex.i) {
             write_gpReg64(state, instruction.xn, address);
