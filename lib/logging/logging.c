@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdarg.h>
+#include <pthread.h>
 #include "logging.h"
 
 #define MAX_OUTPUT_FILES 8
@@ -8,6 +9,8 @@
 static log_level_t currentLogLevel = LEVEL_DEBUG;
 static FILE *outputFile[MAX_OUTPUT_FILES];
 static size_t currentFileN = 0;
+
+static pthread_mutex_t logMutex = PTHREAD_MUTEX_INITIALIZER;
 
 static const char *levelNames[5] = {
     "DEBUG",
@@ -67,6 +70,7 @@ void log_log(
     strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &currentTimeData);
 
     for (int i = 0; i < currentFileN; i++) {
+        pthread_mutex_lock(&logMutex);
         fprintf(outputFile[i], " %s %s %-5s %s:%d:%s(): ", colourOpeners[level], timeStr, levelNames[level], file, line, func);
 
         va_list args;
@@ -76,5 +80,6 @@ void log_log(
 
         fprintf(outputFile[i], "\033[0m\n");
         fflush(outputFile[i]);
+        pthread_mutex_unlock(&logMutex);
     }
 }
