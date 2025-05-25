@@ -1,5 +1,5 @@
+#include <logging.h>
 #include "memory.h"
-#include "logging.h"
 
 #define NOT_NULL(ptr) { if (!ptr) LOG_FATAL("NULL pointer"); }
 
