@@ -239,66 +239,66 @@ void executeAnd(processorState_t *state, const DPRegInstruction_t instruction, c
     if (instruction.sf) {
         const uint64_t op2 = bitWise64Operations[opr.shift](read_gpReg64(state,instruction.rm),instruction.operand);
         const uint64_t result = read_gpReg64(state,instruction.rn) & op2;
-        write_gpReg64(state, instruction.rm, result);
+        write_gpReg64(state, instruction.rd, result);
     } else {
         const uint32_t op2 = bitWise32Operations[opr.shift](read_gpReg32(state,instruction.rm),instruction.operand);
         const uint32_t result = read_gpReg32(state,instruction.rn) & op2;
-        write_gpReg32(state, instruction.rm, result);
+        write_gpReg32(state, instruction.rd, result);
     }
 }
 void executeBic(processorState_t *state, const DPRegInstruction_t instruction, const logicalOpr_t opr) {
     if (instruction.sf) {
         const uint64_t op2 = bitWise64Operations[opr.shift](read_gpReg64(state,instruction.rm),instruction.operand);
         const uint64_t result = read_gpReg64(state,instruction.rn) & ~op2;
-        write_gpReg64(state, instruction.rm, result);
+        write_gpReg64(state, instruction.rd, result);
     } else {
         const uint32_t op2 = bitWise32Operations[opr.shift](read_gpReg32(state,instruction.rm),instruction.operand);
         const uint32_t result = read_gpReg32(state,instruction.rn) & ~op2;
-        write_gpReg32(state, instruction.rm, result);
+        write_gpReg32(state, instruction.rd, result);
     }
 }
 void executeOrr(processorState_t *state, const DPRegInstruction_t instruction, const logicalOpr_t opr) {
     if (instruction.sf) {
         const uint64_t op2 = bitWise64Operations[opr.shift](read_gpReg64(state,instruction.rm),instruction.operand);
         const uint64_t result = read_gpReg64(state,instruction.rn) | op2;
-        write_gpReg64(state, instruction.rm, result);
+        write_gpReg64(state, instruction.rd, result);
     } else {
         const uint32_t op2 = bitWise32Operations[opr.shift](read_gpReg32(state,instruction.rm),instruction.operand);
         const uint32_t result = read_gpReg32(state,instruction.rn) | op2;
-        write_gpReg32(state, instruction.rm, result);
+        write_gpReg32(state, instruction.rd, result);
     }
 }
 void executeOrn(processorState_t *state, const DPRegInstruction_t instruction, const logicalOpr_t opr) {
     if (instruction.sf) {
         const uint64_t op2 = bitWise64Operations[opr.shift](read_gpReg64(state,instruction.rm),instruction.operand);
         const uint64_t result = read_gpReg64(state,instruction.rn) | ~op2;
-        write_gpReg64(state, instruction.rm, result);
+        write_gpReg64(state, instruction.rd, result);
     } else {
         const uint32_t op2 = bitWise32Operations[opr.shift](read_gpReg32(state,instruction.rm),instruction.operand);
         const uint32_t result = read_gpReg32(state,instruction.rn) | ~op2;
-        write_gpReg32(state, instruction.rm, result);
+        write_gpReg32(state, instruction.rd, result);
     }
 }
 void executeEor(processorState_t *state, const DPRegInstruction_t instruction, const logicalOpr_t opr) {
     if (instruction.sf) {
         const uint64_t op2 = bitWise64Operations[opr.shift](read_gpReg64(state,instruction.rm),instruction.operand);
         const uint64_t result = read_gpReg64(state,instruction.rn) ^ op2;
-        write_gpReg64(state, instruction.rm, result);
+        write_gpReg64(state, instruction.rd, result);
     } else {
         const uint32_t op2 = bitWise32Operations[opr.shift](read_gpReg32(state,instruction.rm),instruction.operand);
         const uint32_t result = read_gpReg32(state,instruction.rn) ^ op2;
-        write_gpReg32(state, instruction.rm, result);
+        write_gpReg32(state, instruction.rd, result);
     }
 }
 void executeEon(processorState_t *state, const DPRegInstruction_t instruction, const logicalOpr_t opr) {
     if (instruction.sf) {
         const uint64_t op2 = bitWise64Operations[opr.shift](read_gpReg64(state,instruction.rm),instruction.operand);
         const uint64_t result = read_gpReg64(state,instruction.rn) ^ ~op2;
-        write_gpReg64(state, instruction.rm, result);
+        write_gpReg64(state, instruction.rd, result);
     } else {
         const uint32_t op2 = bitWise32Operations[opr.shift](read_gpReg32(state,instruction.rm),instruction.operand);
         const uint32_t result = read_gpReg32(state,instruction.rn) ^ ~op2;
-        write_gpReg32(state, instruction.rm, result);
+        write_gpReg32(state, instruction.rd, result);
     }
 }
 void executeAnds(processorState_t *state, const DPRegInstruction_t instruction, const logicalOpr_t opr) {
@@ -314,7 +314,7 @@ void executeAnds(processorState_t *state, const DPRegInstruction_t instruction, 
 
         write_pState(state, pState);
 
-        write_gpReg64(state, instruction.rm, result);
+        write_gpReg64(state, instruction.rd, result);
     } else {
         const uint32_t op2 = bitWise32Operations[opr.shift](read_gpReg32(state,instruction.rm),instruction.operand);
         const uint32_t result = read_gpReg32(state,instruction.rn) & op2;
@@ -327,7 +327,7 @@ void executeAnds(processorState_t *state, const DPRegInstruction_t instruction, 
 
         write_pState(state, pState);
 
-        write_gpReg32(state, instruction.rm, result);
+        write_gpReg32(state, instruction.rd, result);
     }
 }
 void executeBics(processorState_t *state, const DPRegInstruction_t instruction, const logicalOpr_t opr) {
@@ -343,7 +343,7 @@ void executeBics(processorState_t *state, const DPRegInstruction_t instruction, 
 
         write_pState(state, pState);
 
-        write_gpReg64(state, instruction.rm, result);
+        write_gpReg64(state, instruction.rd, result);
     } else {
         const uint32_t op2 = bitWise32Operations[opr.shift](read_gpReg32(state,instruction.rm),instruction.operand);
         const uint32_t result = read_gpReg32(state,instruction.rn) & ~op2;
@@ -356,7 +356,7 @@ void executeBics(processorState_t *state, const DPRegInstruction_t instruction, 
 
         write_pState(state, pState);
 
-        write_gpReg32(state, instruction.rm, result);
+        write_gpReg32(state, instruction.rd, result);
     }
 }
 
