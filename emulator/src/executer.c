@@ -185,6 +185,55 @@ void executeDPImm(processorState_t *state, const DPImmInstruction_t instruction)
     }
 }
 
+uint64_t lsl64(const uint64_t rm, const uint64_t operand) {
+    return rm << operand;
+}
+uint64_t lsr64(const uint64_t rm, const uint64_t operand) {
+    return rm >> operand;
+}
+uint64_t asr64(const uint64_t rm, const uint64_t operand) {
+    return rm >> operand | (rm & 0x8000000000000000);
+}
+uint64_t ror64(const uint64_t rm, const uint64_t operand) {
+    return rm >> operand | rm << (64 - operand);
+}
+
+uint32_t lsl32(const uint32_t rm, const uint32_t operand) {
+    return rm << operand;
+}
+uint32_t lsr32(const uint32_t rm, const uint32_t operand) {
+    return rm >> operand;
+}
+uint32_t asr32(const uint32_t rm, const uint32_t operand) {
+    return rm >> operand | (rm & 0x80000000);
+}
+uint32_t ror32(const uint32_t rm, const uint32_t operand) {
+    return rm >> operand | rm << (32 - operand);
+}
+
+BitWise32Operation bitWise32Operations[] = {
+    lsl32,
+    lsr32,
+    asr32,
+    ror32,
+};
+
+BitWise64Operation bitWise64Operations[] = {
+    lsl64,
+    lsr64,
+    asr64,
+    ror64,
+};
+
+void executeAnd(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr) {}
+void executeBic(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr) {}
+void executeOrr(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr) {}
+void executeOrn(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr) {}
+void executeEor(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr) {}
+void executeEon(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr) {}
+void executeAnds(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr) {}
+void executeBics(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr) {}
+
 LogicalOperation logicalOperations[] = {
     executeAnd,
     executeBic,
@@ -197,9 +246,12 @@ LogicalOperation logicalOperations[] = {
 };
 
 void executeDPReg(processorState_t *state, const DPRegInstruction_t instruction) {
-    if (~instruction.m && (instruction.opr | 0x6) == 0xE) {
-        // TODO: Execute Arithmetic Instruction
-    } else if (~instruction.m && (instruction.opr | 0x7) == 0x7) {
+    // I had ~instruction.m, but the compiler said that would always be 1
+    if (instruction.m == 0 && (instruction.opr | 0x6) == 0xE) {
+        const DPRegOpr_u DPopr = {.raw = instruction.opr};
+        const logicalOpr_t opr = DPopr.logical;
+        logicalOperations[(instruction.opc << 1) + opr.N](state, instruction, opr);
+    } else if (instruction.m == 0 && (instruction.opr | 0x7) == 0x7) {
         // TODO: Execute Logical Instruction
     } else if (instruction.m && instruction.opr == 0x8) {
         // TODO: Execute multiply instruction

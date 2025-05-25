@@ -113,8 +113,8 @@ typedef struct {
 typedef union {
     uint8_t raw;
     arithmeticOpr_t arithmetic;
-    logicalOpr_t branchCondition;
-} DPRegOpr_t;
+    logicalOpr_t logical;
+} DPRegOpr_u;
 
 extern void executeDPImm(processorState_t *state, DPImmInstruction_t dpimm);
 

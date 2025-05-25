@@ -42,7 +42,7 @@ extern void executeMovk(processorState_t *state, DPImmInstruction_t instruction,
 
 extern void executeDPImm(processorState_t *state, DPImmInstruction_t instruction);
 
-typedef void (*LogicalOperation)(processorState_t *state, DPRegInstruction_t instruction);
+typedef void (*LogicalOperation)(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr);
 
 extern void executeAnd(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr);
 extern void executeBic(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr);
@@ -52,6 +52,18 @@ extern void executeEor(processorState_t *state, DPRegInstruction_t instruction, 
 extern void executeEon(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr);
 extern void executeAnds(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr);
 extern void executeBics(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr);
+
+extern uint64_t lsl64(uint64_t rm, uint64_t operand);
+extern uint64_t lsr64(uint64_t rm, uint64_t operand);
+extern uint64_t asr64(uint64_t rm, uint64_t operand);
+extern uint64_t ror64(uint64_t rm, uint64_t operand);
+extern uint32_t lsl32(uint32_t rm, uint32_t operand);
+extern uint32_t lsr32(uint32_t rm, uint32_t operand);
+extern uint32_t asr32(uint32_t rm, uint32_t operand);
+extern uint32_t ror32(uint32_t rm, uint32_t operand);
+
+typedef uint64_t (*BitWise64Operation)(uint64_t rm, uint64_t operand);
+typedef uint32_t (*BitWise32Operation)(uint32_t rm, uint32_t operand);
 
 extern void executeDPReg(processorState_t *state, DPRegInstruction_t instruction);
 
