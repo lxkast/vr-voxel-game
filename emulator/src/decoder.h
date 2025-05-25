@@ -73,6 +73,28 @@ typedef union {
     branchInstruction_t branch;
 } instruction_u;
 
+typedef struct {
+    int32_t offset : 26;
+} branchUnconditional_t;
+
+typedef struct {
+    uint32_t : 5;
+    uint32_t xn : 5;
+} branchRegister_t;
+
+typedef struct {
+    uint32_t cond : 4;
+    uint32_t : 1;
+    int32_t offset : 19;
+} branchCondition_t;
+
+typedef union {
+    uint32_t raw;
+    branchUnconditional_t branchUnconditional;
+    branchRegister_t branchRegister;
+    branchCondition_t branchCondition;
+} branchOperand_t;
+
 extern void executeDPImm(processorState_t *state, DPImmInstruction_t dpimm);
 
 bool decodeAndExecute(processorState_t *state, uint32_t rawInstruction);
