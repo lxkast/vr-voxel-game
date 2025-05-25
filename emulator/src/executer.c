@@ -117,14 +117,14 @@ void executeMovn(processorState_t *state, const DPImmInstruction_t instruction, 
     }
 }
 
-void executeMovk(processorState_t *state, const DPImmInstruction_t instruction, const wideMoveOperand_t operand) {
+void executeMovz(processorState_t *state, const DPImmInstruction_t instruction, const wideMoveOperand_t operand) {
     const uint64_t op = operand.imm16 << (operand.hw * 16);
     if (instruction.sf) {
         const uint64_t result = op;
         write_gpReg64(state, instruction.rd, result);
     } else {
         if (operand.hw > 1) {
-            LOG_FATAL("executeMovk: operand.hw > 1 (in 32bit mode)");
+            LOG_FATAL("executeMovz: operand.hw > 1 (in 32bit mode)");
         }
         // op is guaranteed to be <= 32 bits, so casting it down to uint32_t is fine
         const uint32_t result = (uint32_t)op;
@@ -132,7 +132,7 @@ void executeMovk(processorState_t *state, const DPImmInstruction_t instruction, 
     }
 }
 
-void executeMovz(processorState_t *state, const DPImmInstruction_t instruction, const wideMoveOperand_t operand) {
+void executeMovk(processorState_t *state, const DPImmInstruction_t instruction, const wideMoveOperand_t operand) {
     const uint64_t op = operand.imm16 << (operand.hw * 16);
     const uint64_t mask = ~(0xFFFF << (operand.hw * 16));
     if (instruction.sf) {
@@ -141,7 +141,7 @@ void executeMovz(processorState_t *state, const DPImmInstruction_t instruction, 
         write_gpReg64(state, instruction.rd, result);
     } else {
         if (operand.hw > 1) {
-            LOG_FATAL("executeMovz: operand.hw > 1 (in 32bit mode)");
+            LOG_FATAL("executeMovk: operand.hw > 1 (in 32bit mode)");
         }
         // op and mask are guaranteed to be <= 32 bits, so casting them down to uint32_t is fine
         const uint32_t rd = read_gpReg32(state,instruction.rd);

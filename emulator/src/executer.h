@@ -37,8 +37,8 @@ extern void executeSub(processorState_t *state, DPImmInstruction_t instruction, 
 extern void executeSubs(processorState_t *state, DPImmInstruction_t instruction, arithmeticOperand_t operand);
 
 void executeMovn(processorState_t *state, DPImmInstruction_t instruction, wideMoveOperand_t operand);
-void executeMovk(processorState_t *state, DPImmInstruction_t instruction, wideMoveOperand_t operand);
 void executeMovz(processorState_t *state, DPImmInstruction_t instruction, wideMoveOperand_t operand);
+void executeMovk(processorState_t *state, DPImmInstruction_t instruction, wideMoveOperand_t operand);
 
 extern void executeDPImm(processorState_t *state, DPImmInstruction_t instruction);
 
