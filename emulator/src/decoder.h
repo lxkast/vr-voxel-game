@@ -39,7 +39,9 @@ typedef struct {
     uint32_t xn : 5;
     uint32_t offset : 12;
     uint32_t l : 1;
-    uint32_t : 7;
+    uint32_t : 1;
+    uint32_t u : 1;
+    uint32_t : 5;
     uint32_t sf : 1;
     uint32_t : 1;
 } SDTInstruction_t;
@@ -120,6 +122,29 @@ typedef union {
     arithmeticOperand_t arithmeticOperand;
     wideMoveOperand_t wideMoveOperand;
 } DPImmOperand_u;
+
+#pragma pack(push, 1)
+typedef struct {
+    uint32_t : 6;
+    uint32_t xm : 5;
+    uint32_t : 1;
+} SDTRegisterOffset_t;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct {
+    uint32_t : 1;
+    uint32_t i : 1;
+    int32_t simm9 : 9;
+    uint32_t : 1;
+} SDTPrePostIndex_t;
+#pragma pack(pop)
+
+typedef union {
+    uint32_t raw;
+    SDTRegisterOffset_t registerOffset;
+    SDTPrePostIndex_t prePostIndex;
+} SDTOffset_u;
 
 extern void executeDPImm(processorState_t *state, DPImmInstruction_t dpimm);
 

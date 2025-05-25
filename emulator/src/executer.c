@@ -4,6 +4,18 @@
 
 #include "memory.h"
 
+/*
+    Defining the functions for arithmetic operations. NOTE: these do not correctly handle
+    the optional cases when rn or rd = 11111.
+*/
+#define STACK_POINTER 0x1F
+
+#define REGISTER_OFFSET_MASK 0x83F    // 2^11 + 2^5 + 2^4 + ... + 2^0
+#define REGISTER_OFFSET_VALUE 0x81A   // 2^11 + 2^4 + 2^3 + 2^1
+
+#define PRE_POST_INDEX_MASK 0x801     // 2^11 + 2^0
+#define PRE_POST_INDEX_VALUE 0x1      // 2^0
+
 _Static_assert(sizeof(DPImmInstruction_t) == 4, "DPImmInstruction_t must be 4 bytes");
 _Static_assert(sizeof(DPRegInstruction_t) == 4, "DPRegInstruction_t must be 4 bytes");
 _Static_assert(sizeof(SDTInstruction_t) == 4, "SDTInstruction_t must be 4 bytes");
@@ -247,14 +259,72 @@ void executeBranch(processorState_t *state, const branchInstruction_t instructio
     branchOperations[instruction.type](state, operand);
 }
 
-void executeLoadLiteral(processorState_t *state, loadLitInstruction_t operation) {
-    if (operation.rt == 0x1F) LOG_FATAL("SP not supported");
-    uint32_t address = read_PC(state) + operation.simm19 * 4;
-    if (operation.sf) {
+void executeLoadLiteral(processorState_t *state, loadLitInstruction_t instruction) {
+    if (instruction.rt == STACK_POINTER)
+        LOG_FATAL("SP not supported");
+
+    uint64_t address = read_PC(state) + instruction.simm19 * 4;
+    if (instruction.sf) {
         uint64_t data = read_mem64(state, address);
-        write_gpReg64(state, operation.rt, data);
+        write_gpReg64(state, instruction.rt, data);
     } else {
         uint32_t data = read_mem32(state, address);
-        write_gpReg32(state, operation.rt, data);
+        write_gpReg32(state, instruction.rt, data);
+    } 
+}
+
+uint64_t computeOffset(processorState_t *state, SDTInstruction_t instruction) {
+    SDTOffset_u offset_type = { .raw = instruction.offset };
+    if (instruction.u) {
+        if (instruction.sf) {
+            return instruction.offset * 8;
+        } else {
+            return instruction.offset * 4;
+        }
+    } else if ((instruction.offset & REGISTER_OFFSET_MASK) == REGISTER_OFFSET_VALUE) {
+        return read_gpReg64(state, offset_type.registerOffset.xm);
+    } else if ((instruction.offset & PRE_POST_INDEX_MASK) == PRE_POST_INDEX_VALUE) {
+        if (offset_type.prePostIndex.i) {
+            return offset_type.prePostIndex.simm9;
+        } else {
+            return 0;
+        }
+    } else {
+        LOG_FATAL("Offset type does not exist");
+    }
+}
+
+void executeSDT(processorState_t *state, SDTInstruction_t instruction) {
+    if (instruction.rt == STACK_POINTER || instruction.xn == STACK_POINTER)
+        LOG_FATAL("SP not supported");
+
+    uint64_t offset = computeOffset(state, instruction);
+    uint64_t address = offset + read_gpReg64(state, instruction.xn);
+
+    if (instruction.sf) {
+        if (instruction.l) {
+            uint64_t data = read_mem64(state, address);
+            write_gpReg64(state, instruction.rt, data);
+        } else {
+            uint64_t data = read_gpReg64(state, instruction.rt);
+            write_mem64(state, address, data);
+        }
+    } else {
+        if (instruction.l) {
+            uint32_t data = read_mem32(state, address);
+            write_gpReg32(state, instruction.rt, data);
+        } else {
+            uint64_t data = read_gpReg32(state, instruction.rt);
+            write_mem32(state, address, data);
+        }
+    }
+    
+    SDTOffset_u offset_type = { .raw = instruction.offset };
+    if (!instruction.u && (instruction.offset & PRE_POST_INDEX_MASK) == PRE_POST_INDEX_VALUE) {
+        if (offset_type.prePostIndex.i) {
+            write_gpReg64(state, instruction.xn, address);
+        } else {
+            write_gpReg64(state, instruction.xn, address + offset_type.prePostIndex.simm9);
+        }
     }
 }

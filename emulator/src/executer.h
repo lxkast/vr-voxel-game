@@ -20,6 +20,7 @@ void executeMovz(processorState_t *state, DPImmInstruction_t instruction, wideMo
 void executeMovk(processorState_t *state, DPImmInstruction_t instruction, wideMoveOperand_t operand);
 
 extern void executeDPImm(processorState_t *state, DPImmInstruction_t instruction);
+extern void executeSDT(processorState_t *state, SDTInstruction_t instruction);
 
 typedef void (*BranchOperation)(processorState_t *state, branchOperand_t operand);
 
