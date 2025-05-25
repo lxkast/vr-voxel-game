@@ -29,14 +29,13 @@
     Modifies the program counter
 */
 bool decodeAndExecute(processorState_t *state, const uint32_t rawInstruction) {
-    instruction_u instruction = { .raw = rawInstruction };
+    const instruction_u instruction = { .raw = rawInstruction };
     if (rawInstruction == 0x8a000000) {
         return false;
-    } else if ((rawInstruction & DP_IMM_MASK) == DP_IMM_VALUE) {
-        // example usage
-        // executeDPIMM(instruction.dpimm);
-        write_gpReg64(state, 1, 1);
-        state->spRegisters.PSTATE.Z = true;
+    }
+
+    if ((rawInstruction & DP_IMM_MASK) == DP_IMM_VALUE) {
+        executeDPImm(state, instruction.dpimm);
     } else if ((rawInstruction & DP_REG_MASK) == DP_REG_VALUE) {
         // TODO: execute instruction
     } else if ((rawInstruction & SDT_MASK) == SDT_VALUE) {

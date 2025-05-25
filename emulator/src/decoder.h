@@ -63,4 +63,6 @@ typedef union {
     branchInstruction_t branch;
 } instruction_u;
 
-bool decodeAndExecute(processorState_t *state, const uint32_t rawInstruction);
+extern void executeDPImm(processorState_t *state, DPImmInstruction_t dpimm);
+
+bool decodeAndExecute(processorState_t *state, uint32_t rawInstruction);
