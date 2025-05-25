@@ -1,0 +1,129 @@
+#include <glad/gl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <logging.h>
+
+
+#include "shaderutil.h"
+
+int loadShaderSource(const GLuint shader, const char *fileName) {
+    FILE *fp = fopen(fileName, "r");
+    if (!fp) {
+        LOG_ERROR("Error opening file %s", fileName);
+        return -1;
+    }
+
+    fseek(fp, 0, SEEK_END);
+    const size_t fileSize = ftell(fp);
+    rewind(fp);
+
+    char *buf = malloc(sizeof(char) * (fileSize + 1));
+    if (!buf) {
+        LOG_ERROR("Error allocating memory");
+        fclose(fp);
+        return -1;
+    }
+
+    const size_t bytesRead = fread(buf, sizeof(char), fileSize, fp);
+    if (bytesRead != fileSize) {
+        LOG_ERROR("Error reading file %s", fileName);
+        fclose(fp);
+        free(buf);
+        return -1;
+    }
+    fclose(fp);
+
+    buf[fileSize] = '\0';
+
+    glShaderSource(shader, 1, &buf, NULL);
+
+    free(buf);
+
+    return 0;
+}
+
+int su_initialiseShader(GLuint *shader, const char *fileName, su_shader_t type) {
+    GLenum realType;
+    switch (type) {
+        case SU_VERTEX:
+            realType = GL_VERTEX_SHADER;
+            break;
+        case SU_FRAGMENT:
+            realType = GL_FRAGMENT_SHADER;
+            break;
+        default:
+            LOG_ERROR("Unknown shader type");
+            return -1;
+    }
+
+    int success;
+    char infoLog[512];
+
+    GLuint shaderHandle = glCreateShader(realType);
+
+
+    if (loadShaderSource(shaderHandle, fileName) != 0) {
+        LOG_ERROR("Error loading shader %s", fileName);
+        return -1;
+    }
+    glCompileShader(shaderHandle);
+    glGetShaderiv(shaderHandle, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(shaderHandle, 512, NULL, infoLog);
+        LOG_ERROR("Error compiling shader %s:\n%s", fileName, infoLog);
+        return -1;
+    }
+    *shader = shaderHandle;
+    return 0;
+}
+
+int su_createShaderProgramFromHandles(GLuint *program, const int n, const GLuint *shaderHandles) {
+    int success;
+
+    const GLuint programHandle = glCreateProgram();
+
+    for (int i = 0; i < n; i++) {
+        glAttachShader(programHandle, shaderHandles[i]);
+    }
+
+    glLinkProgram(programHandle);
+
+    glGetProgramiv(programHandle, GL_LINK_STATUS, &success);
+    if (!success) {
+        char infoLog[512];
+        glGetProgramInfoLog(programHandle, sizeof(infoLog), NULL, infoLog);
+        LOG_ERROR("Failed to link shader program:\n%s", infoLog);
+        return -1;
+    }
+
+    *program = programHandle;
+    return 0;
+}
+
+int su_createShaderProgramFromFilenames(GLuint *program, const int n, ...) {
+    GLuint *shaderHandles = malloc(sizeof(GLuint) * n / 2);
+
+    va_list args;
+
+    va_start(args, n);
+    for (int i = 0; i < n; i++) {
+        const char shaderType = va_arg(args, su_shader_t);
+        const char *filename = va_arg(args, char *);
+        if (su_initialiseShader(shaderHandles + i, filename, shaderType) != 0) {
+            LOG_ERROR("Failed to initialise shader of type %d", shaderType);
+            free(shaderHandles);
+            return -1;
+        }
+    }
+    va_end(args);
+
+    if (su_createShaderProgramFromHandles(program, n, shaderHandles) != 0) {
+        free(shaderHandles);
+        return -1;
+    }
+
+    free(shaderHandles);
+
+    return 0;
+}
