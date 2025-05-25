@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "executer.h"
 #include "logging.h"
 
@@ -5,6 +6,13 @@
     Defining the functions for arithmetic operations. NOTE: these do not correctly handle
     the optional cases when rn or rd = 11111.
 */
+
+_Static_assert(sizeof(DPImmInstruction_t) == 4, "DPImmInstruction_t must be 4 bytes");
+_Static_assert(sizeof(DPRegInstruction_t) == 4, "DPRegInstruction_t must be 4 bytes");
+_Static_assert(sizeof(SDTInstruction_t) == 4, "SDTInstruction_t must be 4 bytes");
+_Static_assert(sizeof(loadLitInstruction_t) == 4, "loadLitInstruction_t must be 4 bytes");
+_Static_assert(sizeof(branchInstruction_t) == 4, "branchInstruction_t must be 4 bytes");
+_Static_assert(sizeof(instruction_u) == 4, "instruction_u must be 4 bytes");
 
 void executeAdd(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
     const uint64_t op2 = operand.imm12 << (operand.sh * 12);

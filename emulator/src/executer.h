@@ -8,16 +8,16 @@
 
 #pragma pack(push, 1)
 typedef struct {
-    uint8_t rn : 5;
-    uint16_t imm12 : 12;
-    uint8_t sh : 1;
+    uint32_t rn : 5;
+    uint32_t imm12 : 12;
+    uint32_t sh : 1;
 } arithmeticOperand_t;
 #pragma pack(pop)
 
 #pragma pack(push, 1)
 typedef struct {
-    uint16_t imm16 : 16;
-    uint8_t hw : 2;
+    uint32_t imm16 : 16;
+    uint32_t hw : 2;
 } wideMoveOperand_t;
 #pragma pack(pop)
 
