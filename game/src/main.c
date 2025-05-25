@@ -2,6 +2,7 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <logging.h>
+#include <cglm/cglm.h>
 
 #include "shaderutil.h"
 
@@ -135,14 +136,43 @@ int main(void) {
 
 
     /*
+        Add basic camera setup
+    */
+
+
+    {
+        mat4 model, view, projection;
+
+        glm_mat4_copy(GLM_MAT4_IDENTITY, model);
+
+        vec3 eye = { 2.5f, 2.0f, 2.5f };
+        glm_lookat(eye, GLM_VEC3_ZERO, GLM_YUP, view);
+
+        glm_perspective_default(640.0f / 480.0f, projection);
+
+        const int modelLocation = glGetUniformLocation(program, "model");
+        const int viewLocation = glGetUniformLocation(program, "view");
+        const int projectionLocation = glGetUniformLocation(program, "projection");
+
+        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
+        glUniformMatrix4fv(viewLocation, 1, GL_FALSE, view);
+        glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projection);
+    }
+
+
+    /*
         Main loop
     */
 
 
     while (!glfwWindowShouldClose(window)) {
+        glUseProgram(program);
+
         glBindVertexArray(vao);
         glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
+
+        glUseProgram(0);
 
         glfwPollEvents();
         glfwSwapBuffers(window);
