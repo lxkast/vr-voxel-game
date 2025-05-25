@@ -67,8 +67,7 @@ void log_log(
     strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &currentTimeData);
 
     for (int i = 0; i < currentFileN; i++) {
-        fprintf(outputFile[i], "%s", colourOpeners[level]);
-        fprintf(outputFile[i], "%s %-5s %s:%d:%s(): ", timeStr, levelNames[level], file, line, func);
+        fprintf(outputFile[i], " %s %s %-5s %s:%d:%s(): ", colourOpeners[level], timeStr, levelNames[level], file, line, func);
 
         va_list args;
         va_start(args, fmt);
