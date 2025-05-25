@@ -6,8 +6,7 @@
     the optional cases when rn or rd = 11111.
 */
 
-void executeAdd(processorState_t *state, const DPImmInstruction_t instruction) {
-    const arithmeticOperand_t operand = *(const arithmeticOperand_t*)&instruction.operand;
+void executeAdd(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
     const uint64_t op2 = operand.imm12 << (operand.sh * 12);
 
     if (instruction.sf) {
@@ -17,11 +16,9 @@ void executeAdd(processorState_t *state, const DPImmInstruction_t instruction) {
         const uint32_t result = read_gpReg32(state, operand.rn) + (uint32_t)op2;
         write_gpReg32(state, instruction.rd, result);
     }
-};
+}
 
-void executeAdds(processorState_t *state, const DPImmInstruction_t instruction) {
-    const arithmeticOperand_t operand = *(const arithmeticOperand_t*)&instruction.operand;
-
+void executeAdds(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
     if (instruction.sf) {
         const uint64_t op2 = operand.imm12 << (operand.sh * 12);
         const uint64_t rn = read_gpReg64(state, operand.rn);
@@ -47,10 +44,9 @@ void executeAdds(processorState_t *state, const DPImmInstruction_t instruction) 
 
         write_gpReg32(state, instruction.rd, result);
     }
-};
+}
 
-void executeSub(processorState_t *state, const DPImmInstruction_t instruction) {
-    const arithmeticOperand_t operand = *(const arithmeticOperand_t*)&instruction.operand;
+void executeSub(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
     const uint64_t op2 = operand.imm12 << (operand.sh * 12);
 
     if (instruction.sf) {
@@ -60,11 +56,9 @@ void executeSub(processorState_t *state, const DPImmInstruction_t instruction) {
         const uint32_t result = read_gpReg32(state, operand.rn) - (uint32_t)op2;
         write_gpReg32(state, instruction.rd, result);
     }
-};
+}
 
-void executeSubs(processorState_t *state, const DPImmInstruction_t instruction) {
-    const arithmeticOperand_t operand = *(const arithmeticOperand_t*)&instruction.operand;
-
+void executeSubs(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
     if (instruction.sf) {
         const uint64_t op2 = operand.imm12 << (operand.sh * 12);
         const uint64_t rn = read_gpReg64(state, operand.rn);
@@ -85,12 +79,12 @@ void executeSubs(processorState_t *state, const DPImmInstruction_t instruction) 
         // Setting flags
         state->spRegisters.PSTATE.N = result >> 31;     // Negative flag
         state->spRegisters.PSTATE.Z = result == 0;      // Zero flag
-        state->spRegisters.PSTATE.C = result > rn >= op2;     // Carry flag
+        state->spRegisters.PSTATE.C = rn >= op2;     // Carry flag
         state->spRegisters.PSTATE.V = ((rn ^ result) & ~(rn ^ op2)) >> 31;   // signed overflow/underflow flag
 
         write_gpReg32(state, instruction.rd, result);
     }
-};
+}
 
 // Creating an array of function pointers
 ArithmeticOperation arithmeticOperations[] = {
@@ -104,12 +98,10 @@ ArithmeticOperation arithmeticOperations[] = {
 void executeDPImm(processorState_t *state, const DPImmInstruction_t instruction) {
     if (instruction.opi == OPI_ARITHMETIC) {
         // Execute arithmetic instruction
-        if (instruction.opc < 4) {
-            arithmeticOperations[instruction.opc](state, instruction);
-        } else {
-            LOG_FATAL("Unsupported arithmetic operation");
-        }
-    } else if (instruction.opi == OPI_WIDE_MOVE) {
+        const DPImmOperand_u op = { .raw = instruction.operand };
+        const arithmeticOperand_t operand = op.arithmeticOperand;
+        arithmeticOperations[instruction.opc](state, instruction, operand);
+    }else if (instruction.opi == OPI_WIDE_MOVE) {
         // TODO: Execute wide move instruction
     } else {
         LOG_FATAL("Unsupported instruction type");

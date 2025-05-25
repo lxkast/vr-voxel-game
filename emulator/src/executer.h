@@ -1,13 +1,10 @@
 #pragma once
 
 #include <stdint.h>
-#include "state.h"
 #include "decoder.h"
 
 #define OPI_ARITHMETIC 2
 #define OPI_WIDE_MOVE 5
-
-typedef void (*ArithmeticOperation)(processorState_t *state, const DPImmInstruction_t instruction);
 
 typedef struct {
     uint8_t sh : 1;
@@ -15,4 +12,22 @@ typedef struct {
     uint8_t rn : 5;
 } arithmeticOperand_t;
 
-extern void executeDPImm(processorState_t *state, const DPImmInstruction_t instruction);
+typedef struct {
+    uint8_t hw : 2;
+    uint16_t imm16 : 16;
+} wideMoveOperand_t;
+
+typedef union {
+    uint32_t raw;
+    arithmeticOperand_t arithmeticOperand;
+    wideMoveOperand_t wideMoveOperand;
+} DPImmOperand_u;
+
+typedef void (*ArithmeticOperation)(processorState_t *state, DPImmInstruction_t instruction, arithmeticOperand_t operand);
+
+extern void executeAdd(processorState_t *state, DPImmInstruction_t instruction, arithmeticOperand_t operand);
+extern void executeAdds(processorState_t *state, DPImmInstruction_t instruction, arithmeticOperand_t operand);
+extern void executeSub(processorState_t *state, DPImmInstruction_t instruction, arithmeticOperand_t operand);
+extern void executeSubs(processorState_t *state, DPImmInstruction_t instruction, arithmeticOperand_t operand);
+
+extern void executeDPImm(processorState_t *state, DPImmInstruction_t instruction);
