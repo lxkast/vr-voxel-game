@@ -281,17 +281,10 @@ uint64_t computeOffset(processorState_t *state, SDTInstruction_t instruction) {
 void executeSDT(processorState_t *state, SDTInstruction_t instruction) {
     if (instruction.rt == STACK_POINTER || instruction.xn == STACK_POINTER)
         LOG_FATAL("SP not supported");
+
     uint64_t offset = computeOffset(state, instruction);
     uint64_t address = offset + read_gpReg64(state, instruction.xn);
-    bool postIndex = false;
-    SDTOffset_u offset_type = { .raw = instruction.offset };
-    if (!instruction.u && (instruction.offset & PRE_POST_INDEX_MASK) == PRE_POST_INDEX_VALUE) {
-        if (offset_type.prePostIndex.i) {
-            write_gpReg64(state, instruction.xn, address);
-        } else {
-            postIndex = true;
-        }
-    }
+
     if (instruction.sf) {
         if (instruction.l) {
             uint64_t data = read_mem64(state, address);
@@ -309,8 +302,13 @@ void executeSDT(processorState_t *state, SDTInstruction_t instruction) {
             write_mem32(state, address, data);
         }
     }
-    if (postIndex) {
-        write_gpReg64(state, instruction.xn, address + offset_type.prePostIndex.simm9);
+    
+    SDTOffset_u offset_type = { .raw = instruction.offset };
+    if (!instruction.u && (instruction.offset & PRE_POST_INDEX_MASK) == PRE_POST_INDEX_VALUE) {
+        if (offset_type.prePostIndex.i) {
+            write_gpReg64(state, instruction.xn, address);
+        } else {
+            write_gpReg64(state, instruction.xn, address + offset_type.prePostIndex.simm9);
+        }
     }
-
 }
