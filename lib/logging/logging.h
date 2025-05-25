@@ -19,6 +19,10 @@ Only does anything on the first call.
 */
 void log_init(FILE *out);
 
+/*
+    Tries to add another output file.
+*/
+void log_addOutput(FILE *out);
 
 /*
 Sets the log level (The minimum level a log needs to be to be output)

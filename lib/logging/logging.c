@@ -3,8 +3,11 @@
 #include <stdarg.h>
 #include "logging.h"
 
+#define MAX_OUTPUT_FILES 8
+
 static log_level_t currentLogLevel = LEVEL_DEBUG;
-static FILE *outputFile;
+static FILE *outputFile[MAX_OUTPUT_FILES];
+static size_t currentFileN = 0;
 
 static const char *levelNames[5] = {
     "DEBUG",
@@ -24,8 +27,16 @@ static const char *colourOpeners[] = {
 
 
 void log_init(FILE *out) {
-    if (!outputFile)
-        outputFile = out;
+    if (!outputFile[0]) {
+        outputFile[0] = out;
+        currentFileN++;
+    }
+}
+
+void log_addOutput(FILE *out) {
+    if (currentFileN < MAX_OUTPUT_FILES) {
+        outputFile[currentFileN++] = out;
+    }
 }
 
 void log_setLevel(log_level_t level) {
@@ -55,14 +66,16 @@ void log_log(
     char timeStr[20];
     strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &currentTimeData);
 
-    fprintf(outputFile, "%s", colourOpeners[level]);
-    fprintf(outputFile, "%s %-5s %s:%d:%s(): ", timeStr, levelNames[level], file, line, func);
+    for (int i = 0; i < currentFileN; i++) {
+        fprintf(outputFile[i], "%s", colourOpeners[level]);
+        fprintf(outputFile[i], "%s %-5s %s:%d:%s(): ", timeStr, levelNames[level], file, line, func);
 
-    va_list args;
-    va_start(args, fmt);
-    vfprintf(outputFile, fmt, args);
-    va_end(args);
+        va_list args;
+        va_start(args, fmt);
+        vfprintf(outputFile[i], fmt, args);
+        va_end(args);
 
-    fprintf(outputFile, "\033[0m\n");
-    fflush(outputFile);
+        fprintf(outputFile[i], "\033[0m\n");
+        fflush(outputFile[i]);
+    }
 }
