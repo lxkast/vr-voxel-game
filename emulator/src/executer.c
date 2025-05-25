@@ -41,6 +41,7 @@ void executeAdds(processorState_t *state, const DPImmInstruction_t instruction, 
         pState.C = result < rn;     // Carry flag
         pState.V = ((rn ^ op2) & ~(op2 ^ result)) >> 63;   // signed overflow/underflow flag
 
+        write_pState(state, pState);
         write_gpReg64(state, instruction.rd, result);
     } else {
         const uint32_t op2 = operand.imm12 << (operand.sh * 12);
@@ -99,6 +100,7 @@ void executeSubs(processorState_t *state, const DPImmInstruction_t instruction, 
         pState.C = rn >= op2;        // Carry flag
         pState.V = ((rn ^ result) & ~(rn ^ op2)) >> 31;   // signed overflow/underflow flag
 
+        write_pState(state, pState);
         write_gpReg32(state, instruction.rd, result);
     }
 }
