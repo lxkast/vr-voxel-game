@@ -6,16 +6,20 @@
 #define OPI_ARITHMETIC 2
 #define OPI_WIDE_MOVE 5
 
+#pragma pack(push, 1)
 typedef struct {
-    uint8_t sh : 1;
-    uint16_t imm12 : 12;
     uint8_t rn : 5;
+    uint16_t imm12 : 12;
+    uint8_t sh : 1;
 } arithmeticOperand_t;
+#pragma pack(pop)
 
+#pragma pack(push, 1)
 typedef struct {
-    uint8_t hw : 2;
     uint16_t imm16 : 16;
+    uint8_t hw : 2;
 } wideMoveOperand_t;
+#pragma pack(pop)
 
 typedef union {
     uint32_t raw;
