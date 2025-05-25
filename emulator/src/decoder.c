@@ -20,8 +20,6 @@
 #define BRANCH_MASK 0x1c000000        // 2^28 + 2^27 + 2^26
 #define BRANCH_VALUE 0x14000000       // 2^28 + 2^26
 
-
-
 /*
     Takes an instruction and determines what type it is, then uses a subsequent
     function to execute the instruction, depending on type. Checks for the HALT
@@ -40,7 +38,7 @@ bool decodeAndExecute(processorState_t *state, const uint32_t rawInstruction) {
     } else if ((rawInstruction & DP_REG_MASK) == DP_REG_VALUE) {
         LOG_FATAL("Unhandled instruction type");
     } else if ((rawInstruction & SDT_MASK) == SDT_VALUE) {
-        LOG_FATAL("Unhandled instruction type");
+        executeSDT(state, instruction.sdt);
     } else if ((rawInstruction & LOAD_LIT_MASK) == LOAD_LIT_VALUE) {
         executeLoadLiteral(state, instruction.load);
     } else if ((rawInstruction & BRANCH_MASK) == BRANCH_VALUE) {
