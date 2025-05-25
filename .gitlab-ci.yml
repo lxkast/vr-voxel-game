@@ -49,9 +49,14 @@ unit-test-job:   # This job runs in the test stage.
     - cp ../emulator/emulate solution/emulate
     - ./install
     - source .venv/bin/activate
-    - ./run -pf
+    - ./run -p
   variables:
     ACCESS_TOKEN: $MY_PAT_SECRET 
+  rules:
+    - changes:
+        paths:
+        - emulator/**
+        - assembler/**
 
 
 
