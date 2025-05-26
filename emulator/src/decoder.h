@@ -125,11 +125,32 @@ typedef union {
 
 #pragma pack(push, 1)
 typedef struct {
+    uint8_t : 1;
+    uint8_t shift : 2;
+    uint8_t : 1;
+} arithmeticOpr_t;
+
+#pragma pack(push, 1)
+typedef struct {
     uint32_t : 6;
     uint32_t xm : 5;
     uint32_t : 1;
 } SDTRegisterOffset_t;
 #pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct {
+    uint8_t N : 1;
+    uint8_t shift : 2;
+    uint8_t : 1;
+} logicalOpr_t;
+#pragma pack(pop)
+
+typedef union {
+    uint8_t raw;
+    arithmeticOpr_t arithmetic;
+    logicalOpr_t logical;
+} DPRegOpr_u;
 
 #pragma pack(push, 1)
 typedef struct {
