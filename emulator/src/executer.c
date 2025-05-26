@@ -259,7 +259,6 @@ void executeDPImm(processorState_t *state, const DPImmInstruction_t instruction)
     }
 }
 
-<<<<<<< emulator/src/executer.c
 uint64_t lsl64(const uint64_t rm, const uint64_t operand) {
     return rm << operand;
 }
@@ -512,8 +511,6 @@ void executeDPReg(processorState_t *state, const DPRegInstruction_t instruction)
     }
 }
 
-=======
->>>>>>> emulator/src/executer.c
 void registerBranch(processorState_t *state, const branchOperand_t operand) {
     if ((operand.branchRegister.xn & 0x1F) == 0x1F) {
         LOG_FATAL("Branch to xzr not supported");
