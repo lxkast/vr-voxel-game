@@ -129,6 +129,7 @@ typedef struct {
     uint8_t shift : 2;
     uint8_t : 1;
 } arithmeticOpr_t;
+#pragma pack(pop)
 
 #pragma pack(push, 1)
 typedef struct {
@@ -151,6 +152,18 @@ typedef union {
     arithmeticOpr_t arithmetic;
     logicalOpr_t logical;
 } DPRegOpr_u;
+
+#pragma pack(push, 1)
+typedef struct {
+    uint8_t ra : 5;
+    uint8_t x : 1;
+} multiplyOperand_t;
+#pragma pack(pop)
+
+typedef union {
+    uint8_t raw;
+    multiplyOperand_t multiply;
+} DPRegOperand_u;
 
 #pragma pack(push, 1)
 typedef struct {

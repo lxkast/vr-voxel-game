@@ -492,6 +492,32 @@ void registerSubs(processorState_t *state, const DPRegInstruction_t instruction,
     }
 }
 
+void executeMultiply(processorState_t *state, DPRegInstruction_t instruction) {
+    const DPRegOperand_u operand = { .raw = instruction.operand };
+
+    if (instruction.sf) {
+        const uint64_t raV = readReg64Z(state, operand.multiply.ra);
+        const uint64_t rmV = readReg64Z(state, instruction.rm);
+        const uint64_t rnV = readReg64Z(state, instruction.rn);
+
+        if (operand.multiply.x == 0) {
+            writeReg64Z(state, instruction.rd, raV + rmV * rnV);
+        } else {
+            writeReg64Z(state, instruction.rd, raV - rmV * rnV);
+        }
+    } else {
+        const uint32_t raV = readReg32Z(state, operand.multiply.ra);
+        const uint32_t rmV = readReg32Z(state, instruction.rm);
+        const uint32_t rnV = readReg32Z(state, instruction.rn);
+
+        if (operand.multiply.x == 0) {
+            writeReg32Z(state, instruction.rd, raV + rmV * rnV);
+        } else {
+            writeReg32Z(state, instruction.rd, raV - rmV * rnV);
+        }
+    }
+}
+
 ArithmeticRegOperation arithmeticRegisterOperations[] = {registerAdd, registerAddS, registerSub, registerSubs};
 
 void executeDPReg(processorState_t *state, const DPRegInstruction_t instruction) {
@@ -505,7 +531,7 @@ void executeDPReg(processorState_t *state, const DPRegInstruction_t instruction)
         const logicalOpr_t opr = DPopr.logical;
         logicalOperations[(instruction.opc << 1) + opr.N](state, instruction, opr);
     } else if (instruction.m && instruction.opr == 0x8) {
-        LOG_FATAL("MULTIPLY NOT IMPLEMENTED");
+        executeMultiply(state, instruction);
     } else {
         LOG_FATAL("Unsupported instruction type for DPReg instruction");
     }
