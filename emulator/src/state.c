@@ -2,6 +2,9 @@
 #include <string.h>
 #include "state.h"
 
+#include "memory.h"
+#define NOT_NULL(ptr) { if (!ptr) LOG_FATAL("NULL pointer"); }
+
 /*
     checks if state is a non-null pointer
     and reg is a valid index into the register file
@@ -10,7 +13,7 @@ static void checkValidStateAndGPRegister(processorState_t *state, const reg_t re
     if (!state) {
         LOG_FATAL("Cannot access null state to access general purpose register");
     }
-    if (reg >= 31 || reg < 0) {
+    if (reg >= 31) {
         LOG_FATAL("Cannot access invalid general purpose register");
     }
 }
@@ -126,6 +129,36 @@ pState_t read_pState(processorState_t *state) {
     return state->spRegisters.PSTATE;
 }
 
+void write_reg64z(processorState_t *state, const reg_t reg, const uint64_t value) {
+    if (reg == 0x1F) {
+        write_ZR(state, value);
+    } else {
+        write_gpReg64(state, reg,  value);
+    }
+}
+void write_reg32z(processorState_t *state, const reg_t reg, const uint32_t value) {
+    if (reg == 0x1F) {
+        write_ZR(state, value);
+    } else {
+        write_gpReg32(state, reg,  value);
+    }
+}
+uint64_t read_reg64z(processorState_t *state, const reg_t reg) {
+    if (reg == 0x1F) {
+        return read_ZR(state);
+    } else {
+        return read_gpReg64(state, reg);
+    }
+}
+uint32_t read_reg32z(processorState_t *state, const reg_t reg) {
+    if (reg == 0x1F) {
+        return read_ZR(state);
+    } else {
+        return read_gpReg32(state, reg);
+    }
+}
+
+
 /*
     write all condition codes in PSTATE
 */
@@ -134,6 +167,159 @@ void write_pState(processorState_t *state, const pState_t value) {
         LOG_FATAL("Cannot access null state to write to PSTATE");
     }
     state->spRegisters.PSTATE = value;
+}
+
+
+uint8_t* getLine(processorState_t *state, uint64_t address) {
+    uint64_t lineIndex = (address & MEMORY_INDEX_MASK) >> MEMORY_OFFSET_BITS;
+    if (!state->memory[lineIndex]) {
+        state->memory[lineIndex] = malloc(MEMORY_LINE_SIZE);
+        memset(state->memory[lineIndex], 0, MEMORY_LINE_SIZE);
+    }
+    return state->memory[lineIndex];
+}
+
+#define VALUE_OF(state, address) (getLine(state, address)[address & MEMORY_OFFSET_MASK])
+
+uint8_t read_mem8(processorState_t* state, uint64_t address) {
+    NOT_NULL(state);
+    if (address >= MEMORY_SIZE) {
+        LOG_FATAL("Attempt to access outside of memory");
+    }
+    return VALUE_OF(state, address);
+}
+
+uint16_t read_mem16Unaligned(processorState_t* state, uint64_t address) {
+    return read_mem8(state, address) + ((uint16_t) read_mem8(state, address + 1) << 8);
+}
+
+uint16_t read_mem16(processorState_t* state, uint64_t address) {
+    NOT_NULL(state);
+    if (address + 1 >= MEMORY_SIZE) {
+        LOG_FATAL("Attempt to access outside of memory");
+    }
+    if (address & 0x1) {
+        return read_mem16Unaligned(state, address);
+    }
+    return *(uint16_t*)&VALUE_OF(state, address);
+}
+
+uint32_t read_mem32Unaligned(processorState_t* state, uint64_t address) {
+    return read_mem16(state, address) + ((uint32_t) read_mem16(state, address + 2) << 16);
+}
+
+uint32_t read_mem32(processorState_t* state, uint64_t address) {
+    NOT_NULL(state);
+    if (address + 3 >= MEMORY_SIZE) {
+        LOG_FATAL("Attempt to access outside of memory");
+    }
+    if (address & 0x3) {
+        return read_mem32Unaligned(state, address);
+    }
+    return *(uint32_t*)&VALUE_OF(state, address);
+}
+
+uint64_t read_mem64Unaligned(processorState_t* state, uint64_t address) {
+    return read_mem32(state, address) + ((uint64_t) read_mem32(state, address + 4) << 32);
+}
+
+uint64_t read_mem64(processorState_t* state, uint64_t address) {
+    NOT_NULL(state);
+    if (address + 7 >= MEMORY_SIZE) {
+        LOG_FATAL("Attempt to cacess outside of memory");
+    }
+    if (address & 0x7) {
+        return read_mem64Unaligned(state, address);
+    }
+    return *(uint64_t*)&VALUE_OF(state, address);
+}
+
+
+void write_mem8(processorState_t* state, uint64_t address, uint8_t value) {
+    NOT_NULL(state);
+    if (address >= MEMORY_SIZE) {
+        LOG_FATAL("Attempt to write outside of memory");
+    }
+    VALUE_OF(state, address) = value;
+}
+
+void write_mem16Unaligned(processorState_t* state, uint64_t address, uint16_t value) {
+    write_mem8(state, address, value & 0xFF);
+    write_mem8(state, address + 1, value >> 8);
+}
+
+void write_mem16(processorState_t* state, uint64_t address, uint16_t value) {
+    NOT_NULL(state);
+    if (address >= MEMORY_SIZE + 1) {
+        LOG_FATAL("Attempt to write outside of memory");
+    }
+    if (address & 0x1) {
+        write_mem16Unaligned(state, address, value);
+    } else {
+        *(uint16_t*)&VALUE_OF(state, address) = value;
+    }
+}
+
+void write_mem32Unaligned(processorState_t* state, uint64_t address, uint32_t value) {
+    write_mem16(state, address, value & 0xFFFF);
+    write_mem16(state, address + 2, value >> 16);
+}
+
+void write_mem32(processorState_t* state, uint64_t address, uint32_t value) {
+    NOT_NULL(state);
+    if (address >= MEMORY_SIZE + 3) {
+        LOG_FATAL("Attempt to write outside of memory");
+    }
+    if (address & 0x3) {
+        write_mem32Unaligned(state, address, value);
+    } else {
+        *(uint32_t*)&VALUE_OF(state, address) = value;
+    }
+}
+
+void write_mem64Unaligned(processorState_t* state, uint64_t address, uint64_t value) {
+    write_mem32(state, address, value & 0xFFFFFFFF);
+    write_mem32(state, address + 4, value >> 32);
+}
+
+void write_mem64(processorState_t* state, uint64_t address, uint64_t value) {
+    NOT_NULL(state);
+    if (address >= MEMORY_SIZE + 7) {
+        LOG_FATAL("Attempt to write outside of memory");
+    }
+    if (address & 0x7) {
+        write_mem64Unaligned(state, address, value);
+    } else {
+        *(uint64_t*)&VALUE_OF(state, address) = value;
+    }
+}
+
+void initialise_memory(processorState_t *state, const uint32_t *programInstructions, const uint32_t numInstructions) {
+    for (uint32_t i = 0; i < numInstructions; i++) {
+        write_mem32(state, i*4, programInstructions[i]);
+    }
+}
+
+void write_memory(processorState_t *state, FILE *file) {
+    for (uint32_t i = 0; i < MEMORY_MAX_INDEX; i++) {
+        if (state->memory[i]) {
+            for (uint32_t j = 0; j < MEMORY_LINE_SIZE; j+=4) {
+                uint32_t value = read_mem32(state, (i << MEMORY_OFFSET_BITS) + j);
+                if (value) {
+                    fprintf(file, "0x%08X : %08x\n", (i << MEMORY_OFFSET_BITS) + j, value);
+                }
+            }
+        }
+    }
+}
+
+void free_memory(processorState_t *state) {
+    for (uint32_t i = 0; i < MEMORY_MAX_INDEX; i++) {
+        if (state->memory[i]) {
+            free(state->memory[i]);
+            state->memory[i] = NULL;
+        }
+    }
 }
 
 void initState(processorState_t *state, const uint32_t *programInstructions, const uint32_t numInstructions) {
@@ -146,7 +332,10 @@ void initState(processorState_t *state, const uint32_t *programInstructions, con
     state->spRegisters.PSTATE.Z = true;
 
     memset(state->gpRegisters.regs, 0, sizeof(state->gpRegisters.regs));
-    memset(state->memory, 0, sizeof(state->memory));
 
-    memcpy(state->memory, programInstructions, numInstructions * sizeof(uint32_t));
+    initialise_memory(state, programInstructions, numInstructions);
+}
+
+void freeState(processorState_t *state) {
+    free_memory(state);
 }
