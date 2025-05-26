@@ -499,7 +499,7 @@ void executeDPReg(processorState_t *state, const DPRegInstruction_t instruction)
         const logicalOpr_t opr = DPopr.logical;
         logicalOperations[(instruction.opc << 1) + opr.N](state, instruction, opr);
     } else if (instruction.m && instruction.opr == 0x8) {
-        LOG_FATAL("MULTIPLY NOT IMPLEMENTED");
+        executeMultiply(state, instruction);
     } else {
         LOG_FATAL("Unsupported instruction type for DPReg instruction");
     }
@@ -556,5 +556,20 @@ void executeLoadLiteral(processorState_t *state, loadLitInstruction_t operation)
     } else {
         uint32_t data = read_mem32(state, address);
         write_gpReg32(state, operation.rt, data);
+    }
+}
+
+void executeMultiply(processorState_t *state, DPRegInstruction_t instruction) {
+    const uint32_t x = instruction.operand & 0b100000;
+    const uint32_t ra = instruction.operand & 0b011111;
+
+    const uint32_t raV = readReg64Z(state, ra);
+    const uint32_t rmV = readReg32Z(state, instruction.rm);
+    const uint32_t rnV = readReg32Z(state, instruction.rn);
+
+    if (x == 0) {
+        writeReg64Z(state, instruction.rd, raV + rmV * rnV);
+    } else {
+        writeReg64Z(state, instruction.rd, raV - rmV * rnV);
     }
 }
