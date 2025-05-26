@@ -486,6 +486,21 @@ void registerSubs(processorState_t *state, const DPRegInstruction_t instruction,
     }
 }
 
+void executeMultiply(processorState_t *state, DPRegInstruction_t instruction) {
+    const uint32_t x = instruction.operand & 0x20;
+    const uint32_t ra = instruction.operand & 0x1F;
+
+    const uint32_t raV = readReg64Z(state, ra);
+    const uint32_t rmV = readReg32Z(state, instruction.rm);
+    const uint32_t rnV = readReg32Z(state, instruction.rn);
+
+    if (x == 0) {
+        writeReg64Z(state, instruction.rd, raV + rmV * rnV);
+    } else {
+        writeReg64Z(state, instruction.rd, raV - rmV * rnV);
+    }
+}
+
 ArithmeticRegOperation arithmeticRegisterOperations[] = {registerAdd, registerAddS, registerSub, registerSubs};
 
 void executeDPReg(processorState_t *state, const DPRegInstruction_t instruction) {
@@ -556,20 +571,5 @@ void executeLoadLiteral(processorState_t *state, loadLitInstruction_t operation)
     } else {
         uint32_t data = read_mem32(state, address);
         write_gpReg32(state, operation.rt, data);
-    }
-}
-
-void executeMultiply(processorState_t *state, DPRegInstruction_t instruction) {
-    const uint32_t x = instruction.operand & 0b100000;
-    const uint32_t ra = instruction.operand & 0b011111;
-
-    const uint32_t raV = readReg64Z(state, ra);
-    const uint32_t rmV = readReg32Z(state, instruction.rm);
-    const uint32_t rnV = readReg32Z(state, instruction.rn);
-
-    if (x == 0) {
-        writeReg64Z(state, instruction.rd, raV + rmV * rnV);
-    } else {
-        writeReg64Z(state, instruction.rd, raV - rmV * rnV);
     }
 }
