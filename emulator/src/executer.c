@@ -34,36 +34,6 @@ typedef void (*BranchOperation)(processorState_t *state, branchOperand_t operand
 typedef uint64_t (*BitWise64Operation)(uint64_t rm, uint64_t operand);
 typedef uint32_t (*BitWise32Operation)(uint32_t rm, uint32_t operand);
 
-void writeReg64Z(processorState_t *state, const register_t reg, const uint64_t value) {
-    if (reg == 0x1F) {
-        write_ZR(state, value);
-    } else {
-        write_gpReg64(state, reg,  value);
-    }
-}
-void writeReg32Z(processorState_t *state, const register_t reg, const uint32_t value) {
-    if (reg == 0x1F) {
-        write_ZR(state, value);
-    } else {
-        write_gpReg32(state, reg,  value);
-    }
-}
-uint64_t readReg64Z(processorState_t *state, const register_t reg) {
-    if (reg == 0x1F) {
-        return read_ZR(state);
-    } else {
-        return read_gpReg64(state, reg);
-    }
-}
-uint32_t readReg32Z(processorState_t *state, const register_t reg) {
-    if (reg == 0x1F) {
-        return read_ZR(state);
-    } else {
-        return read_gpReg32(state, reg);
-    }
-}
-
-
 void add64(processorState_t *state, const register_t dest, const uint64_t op1, const uint64_t op2) {
     const uint64_t result = op1 + op2;
     write_reg64z(state, dest, result);
