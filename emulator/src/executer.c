@@ -23,44 +23,14 @@ _Static_assert(sizeof(loadLitInstruction_t) == 4, "loadLitInstruction_t must be 
 _Static_assert(sizeof(branchInstruction_t) == 4, "branchInstruction_t must be 4 bytes");
 _Static_assert(sizeof(instruction_u) == 4, "instruction_u must be 4 bytes");
 
-void writeReg64Z(processorState_t *state, const register_t reg, const uint64_t value) {
-    if (reg == 0x1F) {
-        write_ZR(state, value);
-    } else {
-        write_gpReg64(state, reg,  value);
-    }
-}
-void writeReg32Z(processorState_t *state, const register_t reg, const uint32_t value) {
-    if (reg == 0x1F) {
-        write_ZR(state, value);
-    } else {
-        write_gpReg32(state, reg,  value);
-    }
-}
-uint64_t readReg64Z(processorState_t *state, const register_t reg) {
-    if (reg == 0x1F) {
-        return read_ZR(state);
-    } else {
-        return read_gpReg64(state, reg);
-    }
-}
-uint32_t readReg32Z(processorState_t *state, const register_t reg) {
-    if (reg == 0x1F) {
-        return read_ZR(state);
-    } else {
-        return read_gpReg32(state, reg);
-    }
-}
-
-
 void add64(processorState_t *state, const register_t dest, const uint64_t op1, const uint64_t op2) {
     const uint64_t result = op1 + op2;
-    writeReg64Z(state, dest, result);
+    write_reg64z(state, dest, result);
 }
 
 void add32(processorState_t *state, const register_t dest, const uint32_t op1, const uint32_t op2) {
     const uint32_t result = op1 + op2;
-    writeReg32Z(state, dest, result);
+    write_reg32z(state, dest, result);
 }
 
 void adds64(processorState_t *state, const register_t dest, const uint64_t op1, const uint64_t op2) {
@@ -74,7 +44,7 @@ void adds64(processorState_t *state, const register_t dest, const uint64_t op1, 
     pState.V = (~((op1 ^ op2)) & (op1 ^ result)) >> 63;   // signed overflow/underflow flag
 
     write_pState(state, pState);
-    writeReg64Z(state, dest, result);
+    write_reg64z(state, dest, result);
 }
 
 void adds32(processorState_t *state, const register_t dest, const uint32_t op1, const uint32_t op2) {
@@ -88,17 +58,17 @@ void adds32(processorState_t *state, const register_t dest, const uint32_t op1, 
     pState.V = (~((op1 ^ op2)) & (op1 ^ result)) >> 31;   // signed overflow/underflow flag
 
     write_pState(state, pState);
-    writeReg32Z(state, dest, result);
+    write_reg32z(state, dest, result);
 }
 
 void sub64(processorState_t *state, const register_t dest, const uint64_t op1, const uint64_t op2) {
     const uint64_t result = op1 - op2;
-    writeReg64Z(state, dest, result);
+    write_reg64z(state, dest, result);
 }
 
 void sub32(processorState_t *state, const register_t dest, const uint32_t op1, const uint32_t op2) {
     const uint32_t result = op1 - op2;
-    writeReg32Z(state, dest, result);
+    write_reg32z(state, dest, result);
 }
 
 void subs64(processorState_t *state, const register_t dest, const uint64_t op1, const uint64_t op2) {
@@ -111,7 +81,7 @@ void subs64(processorState_t *state, const register_t dest, const uint64_t op1, 
     pState.V = (((op1 ^ op2)) & (op1 ^ result)) >> 63;   // signed overflow/underflow flag
 
     write_pState(state, pState);
-    writeReg64Z(state, dest, result);
+    write_reg64z(state, dest, result);
 }
 
 void subs32(processorState_t *state, const register_t dest, const uint32_t op1, const uint32_t op2) {
@@ -125,16 +95,16 @@ void subs32(processorState_t *state, const register_t dest, const uint32_t op1, 
     pState.V = (((op1 ^ op2)) & (op1 ^ result)) >> 31;   // signed overflow/underflow flag
 
     write_pState(state, pState);
-    writeReg32Z(state, dest, result);
+    write_reg32z(state, dest, result);
 }
 
 void executeAdd(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
     const uint64_t op2 = ((uint64_t) operand.imm12) << (operand.sh * 12);
     if (instruction.sf) {
-       add64(state, instruction.rd, readReg64Z(state, operand.rn), op2);
+       add64(state, instruction.rd, read_reg64z(state, operand.rn), op2);
     } else {
         // op2 is guaranteed to be <= 32 bits, so casting it down to uint32_t is fine
-        add32(state, instruction.rd, readReg32Z(state, operand.rn), op2);
+        add32(state, instruction.rd, read_reg32z(state, operand.rn), op2);
     }
 }
 
@@ -142,10 +112,10 @@ void executeAdd(processorState_t *state, const DPImmInstruction_t instruction, c
 void executeAdds(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
     const uint64_t op2 = ((uint64_t) operand.imm12) << (operand.sh * 12);
     if (instruction.sf) {
-        const uint64_t rn = readReg64Z(state, operand.rn);
+        const uint64_t rn = read_reg64z(state, operand.rn);
         adds64(state, instruction.rd, rn, op2);
     } else {
-        const uint32_t rn = readReg32Z(state, operand.rn);
+        const uint32_t rn = read_reg32z(state, operand.rn);
         adds32(state, instruction.rd, rn, op2);
     }
 }
@@ -153,10 +123,10 @@ void executeAdds(processorState_t *state, const DPImmInstruction_t instruction, 
 void executeSub(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
     const uint64_t op2 = ((uint64_t) operand.imm12) << (operand.sh * 12);
     if (instruction.sf) {
-        sub64(state, instruction.rd, readReg64Z(state, operand.rn), op2);
+        sub64(state, instruction.rd, read_reg64z(state, operand.rn), op2);
     } else {
         // op2 is guaranteed to be <= 32 bits, so casting it down to uint32_t is fine
-        sub32(state, instruction.rd, readReg32Z(state, operand.rn), op2);
+        sub32(state, instruction.rd, read_reg32z(state, operand.rn), op2);
     }
 }
 
@@ -164,10 +134,10 @@ void executeSub(processorState_t *state, const DPImmInstruction_t instruction, c
 void executeSubs(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
     const uint64_t op2 = ((uint64_t) operand.imm12) << (operand.sh * 12);
     if (instruction.sf) {
-        const uint64_t rn = readReg64Z(state, operand.rn);
+        const uint64_t rn = read_reg64z(state, operand.rn);
         subs64(state, instruction.rd, rn, op2);
     } else {
-        const uint32_t rn = readReg32Z(state, operand.rn);
+        const uint32_t rn = read_reg32z(state, operand.rn);
         subs32(state, instruction.rd, rn, op2);
     }
 }
@@ -301,74 +271,74 @@ BitWise64Operation bitWise64Operations[] = {
 
 void executeAnd(processorState_t *state, const DPRegInstruction_t instruction, const logicalOpr_t opr) {
     if (instruction.sf) {
-        const uint64_t op2 = bitWise64Operations[opr.shift](readReg64Z(state,instruction.rm),instruction.operand);
-        const uint64_t result = readReg64Z(state,instruction.rn) & op2;
-        writeReg64Z(state, instruction.rd, result);
+        const uint64_t op2 = bitWise64Operations[opr.shift](read_reg64z(state,instruction.rm),instruction.operand);
+        const uint64_t result = read_reg64z(state,instruction.rn) & op2;
+        write_reg64z(state, instruction.rd, result);
     } else {
-        const uint32_t op2 = bitWise32Operations[opr.shift](readReg32Z(state,instruction.rm),instruction.operand);
-        const uint32_t result = readReg32Z(state,instruction.rn) & op2;
-        writeReg32Z(state, instruction.rd, result);
+        const uint32_t op2 = bitWise32Operations[opr.shift](read_reg32z(state,instruction.rm),instruction.operand);
+        const uint32_t result = read_reg32z(state,instruction.rn) & op2;
+        write_reg32z(state, instruction.rd, result);
     }
 }
 void executeBic(processorState_t *state, const DPRegInstruction_t instruction, const logicalOpr_t opr) {
     if (instruction.sf) {
-        const uint64_t op2 = bitWise64Operations[opr.shift](readReg64Z(state,instruction.rm),instruction.operand);
-        const uint64_t result = readReg64Z(state,instruction.rn) & ~op2;
-        writeReg64Z(state, instruction.rd, result);
+        const uint64_t op2 = bitWise64Operations[opr.shift](read_reg64z(state,instruction.rm),instruction.operand);
+        const uint64_t result = read_reg64z(state,instruction.rn) & ~op2;
+        write_reg64z(state, instruction.rd, result);
     } else {
-        const uint32_t op2 = bitWise32Operations[opr.shift](readReg32Z(state,instruction.rm),instruction.operand);
-        const uint32_t result = readReg32Z(state,instruction.rn) & ~op2;
-        writeReg32Z(state, instruction.rd, result);
+        const uint32_t op2 = bitWise32Operations[opr.shift](read_reg32z(state,instruction.rm),instruction.operand);
+        const uint32_t result = read_reg32z(state,instruction.rn) & ~op2;
+        write_reg32z(state, instruction.rd, result);
     }
 }
 void executeOrr(processorState_t *state, const DPRegInstruction_t instruction, const logicalOpr_t opr) {
     if (instruction.sf) {
-        const uint64_t op2 = bitWise64Operations[opr.shift](readReg64Z(state,instruction.rm),instruction.operand);
-        const uint64_t result = readReg64Z(state,instruction.rn) | op2;
-        writeReg64Z(state, instruction.rd, result);
+        const uint64_t op2 = bitWise64Operations[opr.shift](read_reg64z(state,instruction.rm),instruction.operand);
+        const uint64_t result = read_reg64z(state,instruction.rn) | op2;
+        write_reg64z(state, instruction.rd, result);
     } else {
-        const uint32_t op2 = bitWise32Operations[opr.shift](readReg32Z(state,instruction.rm),instruction.operand);
-        const uint32_t result = readReg32Z(state,instruction.rn) | op2;
-        writeReg32Z(state, instruction.rd, result);
+        const uint32_t op2 = bitWise32Operations[opr.shift](read_reg32z(state,instruction.rm),instruction.operand);
+        const uint32_t result = read_reg32z(state,instruction.rn) | op2;
+        write_reg32z(state, instruction.rd, result);
     }
 }
 void executeOrn(processorState_t *state, const DPRegInstruction_t instruction, const logicalOpr_t opr) {
     if (instruction.sf) {
-        const uint64_t op2 = bitWise64Operations[opr.shift](readReg64Z(state,instruction.rm),instruction.operand);
-        const uint64_t result = readReg64Z(state,instruction.rn) | ~op2;
-        writeReg64Z(state, instruction.rd, result);
+        const uint64_t op2 = bitWise64Operations[opr.shift](read_reg64z(state,instruction.rm),instruction.operand);
+        const uint64_t result = read_reg64z(state,instruction.rn) | ~op2;
+        write_reg64z(state, instruction.rd, result);
     } else {
-        const uint32_t op2 = bitWise32Operations[opr.shift](readReg32Z(state,instruction.rm),instruction.operand);
-        const uint32_t result = readReg32Z(state,instruction.rn) | ~op2;
-        writeReg32Z(state, instruction.rd, result);
+        const uint32_t op2 = bitWise32Operations[opr.shift](read_reg32z(state,instruction.rm),instruction.operand);
+        const uint32_t result = read_reg32z(state,instruction.rn) | ~op2;
+        write_reg32z(state, instruction.rd, result);
     }
 }
 void executeEor(processorState_t *state, const DPRegInstruction_t instruction, const logicalOpr_t opr) {
     if (instruction.sf) {
-        const uint64_t op2 = bitWise64Operations[opr.shift](readReg64Z(state,instruction.rm),instruction.operand);
-        const uint64_t result = readReg64Z(state,instruction.rn) ^ op2;
-        writeReg64Z(state, instruction.rd, result);
+        const uint64_t op2 = bitWise64Operations[opr.shift](read_reg64z(state,instruction.rm),instruction.operand);
+        const uint64_t result = read_reg64z(state,instruction.rn) ^ op2;
+        write_reg64z(state, instruction.rd, result);
     } else {
-        const uint32_t op2 = bitWise32Operations[opr.shift](readReg32Z(state,instruction.rm),instruction.operand);
-        const uint32_t result = readReg32Z(state,instruction.rn) ^ op2;
-        writeReg32Z(state, instruction.rd, result);
+        const uint32_t op2 = bitWise32Operations[opr.shift](read_reg32z(state,instruction.rm),instruction.operand);
+        const uint32_t result = read_reg32z(state,instruction.rn) ^ op2;
+        write_reg32z(state, instruction.rd, result);
     }
 }
 void executeEon(processorState_t *state, const DPRegInstruction_t instruction, const logicalOpr_t opr) {
     if (instruction.sf) {
-        const uint64_t op2 = bitWise64Operations[opr.shift](readReg64Z(state,instruction.rm),instruction.operand);
-        const uint64_t result = readReg64Z(state,instruction.rn) ^ ~op2;
-        writeReg64Z(state, instruction.rd, result);
+        const uint64_t op2 = bitWise64Operations[opr.shift](read_reg64z(state,instruction.rm),instruction.operand);
+        const uint64_t result = read_reg64z(state,instruction.rn) ^ ~op2;
+        write_reg64z(state, instruction.rd, result);
     } else {
-        const uint32_t op2 = bitWise32Operations[opr.shift](readReg32Z(state,instruction.rm),instruction.operand);
-        const uint32_t result = readReg32Z(state,instruction.rn) ^ ~op2;
-        writeReg32Z(state, instruction.rd, result);
+        const uint32_t op2 = bitWise32Operations[opr.shift](read_reg32z(state,instruction.rm),instruction.operand);
+        const uint32_t result = read_reg32z(state,instruction.rn) ^ ~op2;
+        write_reg32z(state, instruction.rd, result);
     }
 }
 void executeAnds(processorState_t *state, const DPRegInstruction_t instruction, const logicalOpr_t opr) {
     if (instruction.sf) {
-        const uint64_t op2 = bitWise64Operations[opr.shift](readReg64Z(state,instruction.rm),instruction.operand);
-        const uint64_t result = readReg64Z(state,instruction.rn) & op2;
+        const uint64_t op2 = bitWise64Operations[opr.shift](read_reg64z(state,instruction.rm),instruction.operand);
+        const uint64_t result = read_reg64z(state,instruction.rn) & op2;
 
         pState_t pState;
         pState.N = result >> 63;
@@ -378,10 +348,10 @@ void executeAnds(processorState_t *state, const DPRegInstruction_t instruction, 
 
         write_pState(state, pState);
 
-        writeReg64Z(state, instruction.rd, result);
+        write_reg64z(state, instruction.rd, result);
     } else {
-        const uint32_t op2 = bitWise32Operations[opr.shift](readReg32Z(state,instruction.rm),instruction.operand);
-        const uint32_t result = readReg32Z(state,instruction.rn) & op2;
+        const uint32_t op2 = bitWise32Operations[opr.shift](read_reg32z(state,instruction.rm),instruction.operand);
+        const uint32_t result = read_reg32z(state,instruction.rn) & op2;
 
         pState_t pState;
         pState.N = result >> 31;
@@ -391,13 +361,13 @@ void executeAnds(processorState_t *state, const DPRegInstruction_t instruction, 
 
         write_pState(state, pState);
 
-        writeReg32Z(state, instruction.rd, result);
+        write_reg32z(state, instruction.rd, result);
     }
 }
 void executeBics(processorState_t *state, const DPRegInstruction_t instruction, const logicalOpr_t opr) {
     if (instruction.sf) {
-        const uint64_t op2 = bitWise64Operations[opr.shift](readReg64Z(state,instruction.rm),instruction.operand);
-        const uint64_t result = readReg64Z(state,instruction.rn) & ~op2;
+        const uint64_t op2 = bitWise64Operations[opr.shift](read_reg64z(state,instruction.rm),instruction.operand);
+        const uint64_t result = read_reg64z(state,instruction.rn) & ~op2;
 
         pState_t pState;
         pState.N = result >> 63;
@@ -407,10 +377,10 @@ void executeBics(processorState_t *state, const DPRegInstruction_t instruction, 
 
         write_pState(state, pState);
 
-        writeReg64Z(state, instruction.rd, result);
+        write_reg64z(state, instruction.rd, result);
     } else {
-        const uint32_t op2 = bitWise32Operations[opr.shift](readReg32Z(state,instruction.rm),instruction.operand);
-        const uint32_t result = readReg32Z(state,instruction.rn) & ~op2;
+        const uint32_t op2 = bitWise32Operations[opr.shift](read_reg32z(state,instruction.rm),instruction.operand);
+        const uint32_t result = read_reg32z(state,instruction.rn) & ~op2;
 
         pState_t pState;
         pState.N = result >> 31;
@@ -420,7 +390,7 @@ void executeBics(processorState_t *state, const DPRegInstruction_t instruction, 
 
         write_pState(state, pState);
 
-        writeReg32Z(state, instruction.rd, result);
+        write_reg32z(state, instruction.rd, result);
     }
 }
 
@@ -437,13 +407,13 @@ LogicalOperation logicalOperations[] = {
 
 void registerAdd(processorState_t *state, const DPRegInstruction_t instruction, const arithmeticOpr_t opr) {
     if (instruction.sf) {
-        const uint64_t rn = readReg64Z(state,instruction.rn);
-        const uint64_t rm = readReg64Z(state,instruction.rm);
+        const uint64_t rn = read_reg64z(state,instruction.rn);
+        const uint64_t rm = read_reg64z(state,instruction.rm);
         const uint64_t op2 = bitWise64Operations[opr.shift](rm, instruction.operand);
         add64(state, instruction.rd,  rn, op2);
     } else {
-        const uint64_t rn = readReg32Z(state,instruction.rn);
-        const uint64_t rm = readReg32Z(state,instruction.rm);
+        const uint64_t rn = read_reg32z(state,instruction.rn);
+        const uint64_t rm = read_reg32z(state,instruction.rm);
 
         const uint64_t op2 = bitWise32Operations[opr.shift](rm, instruction.operand);
         add32(state, instruction.rd,  rn, op2);
@@ -451,13 +421,13 @@ void registerAdd(processorState_t *state, const DPRegInstruction_t instruction, 
 }
 void registerAddS(processorState_t *state, const DPRegInstruction_t instruction, const arithmeticOpr_t opr) {
     if (instruction.sf) {
-        const uint64_t rn = readReg64Z(state,instruction.rn);
-        const uint64_t rm = readReg64Z(state,instruction.rm);
+        const uint64_t rn = read_reg64z(state,instruction.rn);
+        const uint64_t rm = read_reg64z(state,instruction.rm);
         const uint64_t op2 = bitWise64Operations[opr.shift](rm, instruction.operand);
         adds64(state, instruction.rd,  rn, op2);
     } else {
-        const uint64_t rn = readReg32Z(state,instruction.rn);
-        const uint64_t rm = readReg32Z(state,instruction.rm);
+        const uint64_t rn = read_reg32z(state,instruction.rn);
+        const uint64_t rm = read_reg32z(state,instruction.rm);
         const uint64_t op2 = bitWise32Operations[opr.shift](rm, instruction.operand);
 
         adds32(state, instruction.rd,  rn, op2);
@@ -465,13 +435,13 @@ void registerAddS(processorState_t *state, const DPRegInstruction_t instruction,
 }
 void registerSub(processorState_t *state, const DPRegInstruction_t instruction, const arithmeticOpr_t opr) {
     if (instruction.sf) {
-        const uint64_t rn = readReg64Z(state,instruction.rn);
-        const uint64_t rm = readReg64Z(state,instruction.rm);
+        const uint64_t rn = read_reg64z(state,instruction.rn);
+        const uint64_t rm = read_reg64z(state,instruction.rm);
         const uint64_t op2 = bitWise64Operations[opr.shift](rm, instruction.operand);
         sub64(state, instruction.rd,  rn, op2);
     } else {
-        const uint64_t rn = readReg32Z(state,instruction.rn);
-        const uint64_t rm = readReg32Z(state,instruction.rm);
+        const uint64_t rn = read_reg32z(state,instruction.rn);
+        const uint64_t rm = read_reg32z(state,instruction.rm);
         const uint64_t op2 = bitWise32Operations[opr.shift](rm, instruction.operand);
 
         sub32(state, instruction.rd,  rn, op2);
@@ -479,13 +449,13 @@ void registerSub(processorState_t *state, const DPRegInstruction_t instruction, 
 }
 void registerSubs(processorState_t *state, const DPRegInstruction_t instruction, const arithmeticOpr_t opr) {
     if (instruction.sf) {
-        const uint64_t rn = readReg64Z(state,instruction.rn);
-        const uint64_t rm = readReg64Z(state,instruction.rm);
+        const uint64_t rn = read_reg64z(state,instruction.rn);
+        const uint64_t rm = read_reg64z(state,instruction.rm);
         const uint64_t op2 = bitWise64Operations[opr.shift](rm, instruction.operand);
         subs64(state, instruction.rd,  rn, op2);
     } else {
-        const uint64_t rn = readReg32Z(state,instruction.rn);
-        const uint64_t rm = readReg32Z(state,instruction.rm);
+        const uint64_t rn = read_reg32z(state,instruction.rn);
+        const uint64_t rm = read_reg32z(state,instruction.rm);
         const uint64_t op2 = bitWise32Operations[opr.shift](rm, instruction.operand);
 
         subs32(state, instruction.rd,  rn, op2);
@@ -496,24 +466,24 @@ void executeMultiply(processorState_t *state, DPRegInstruction_t instruction) {
     const DPRegOperand_u operand = { .raw = instruction.operand };
 
     if (instruction.sf) {
-        const uint64_t raV = readReg64Z(state, operand.multiply.ra);
-        const uint64_t rmV = readReg64Z(state, instruction.rm);
-        const uint64_t rnV = readReg64Z(state, instruction.rn);
+        const uint64_t raV = read_reg64z(state, operand.multiply.ra);
+        const uint64_t rmV = read_reg64z(state, instruction.rm);
+        const uint64_t rnV = read_reg64z(state, instruction.rn);
 
         if (operand.multiply.x == 0) {
-            writeReg64Z(state, instruction.rd, raV + rmV * rnV);
+            write_reg64z(state, instruction.rd, raV + rmV * rnV);
         } else {
-            writeReg64Z(state, instruction.rd, raV - rmV * rnV);
+            write_reg64z(state, instruction.rd, raV - rmV * rnV);
         }
     } else {
-        const uint32_t raV = readReg32Z(state, operand.multiply.ra);
-        const uint32_t rmV = readReg32Z(state, instruction.rm);
-        const uint32_t rnV = readReg32Z(state, instruction.rn);
+        const uint32_t raV = read_reg32z(state, operand.multiply.ra);
+        const uint32_t rmV = read_reg32z(state, instruction.rm);
+        const uint32_t rnV = read_reg32z(state, instruction.rn);
 
         if (operand.multiply.x == 0) {
-            writeReg32Z(state, instruction.rd, raV + rmV * rnV);
+            write_reg32z(state, instruction.rd, raV + rmV * rnV);
         } else {
-            writeReg32Z(state, instruction.rd, raV - rmV * rnV);
+            write_reg32z(state, instruction.rd, raV - rmV * rnV);
         }
     }
 }
