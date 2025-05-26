@@ -143,6 +143,17 @@ typedef union {
     logicalOpr_t logical;
 } DPRegOpr_u;
 
+#pragma pack(push, 1)
+typedef struct {
+    uint8_t ra : 5;
+    uint8_t x : 1;
+} multiplyOperand_t;
+
+typedef union {
+    uint8_t raw;
+    multiplyOperand_t multiply;
+} DPRegOperand_u;
+
 extern void executeDPImm(processorState_t *state, DPImmInstruction_t dpimm);
 
 bool decodeAndExecute(processorState_t *state, uint32_t rawInstruction);

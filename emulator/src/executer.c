@@ -487,14 +487,13 @@ void registerSubs(processorState_t *state, const DPRegInstruction_t instruction,
 }
 
 void executeMultiply(processorState_t *state, DPRegInstruction_t instruction) {
-    const uint32_t x = instruction.operand & 0x20;
-    const uint32_t ra = instruction.operand & 0x1F;
+    const DPRegOperand_u operand = { .raw = instruction.operand };
 
-    const uint32_t raV = readReg64Z(state, ra);
+    const uint32_t raV = readReg64Z(state, operand.multiply.ra);
     const uint32_t rmV = readReg32Z(state, instruction.rm);
     const uint32_t rnV = readReg32Z(state, instruction.rn);
 
-    if (x == 0) {
+    if (operand.multiply.x == 0) {
         writeReg64Z(state, instruction.rd, raV + rmV * rnV);
     } else {
         writeReg64Z(state, instruction.rd, raV - rmV * rnV);
