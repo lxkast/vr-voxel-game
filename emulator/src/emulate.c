@@ -46,12 +46,7 @@ void write(processorState_t *state, FILE *file) {
     }
 
     fprintf(file, "\nNon-zero memory:\n");
-    for (int i = 0; i < MEMORY_SIZE; i+=4) {
-        const uint32_t value = read_mem32(state, i);
-        if (value) {
-            fprintf(file, "0x%08X : %08x\n", i, value);
-        }
-    }
+    write_memory(state, file);
 }
 
 int main(int argc, char **argv) {
@@ -70,6 +65,7 @@ int main(int argc, char **argv) {
 
     processorState_t *state = malloc(sizeof(processorState_t));
     initState(state, programInstructions, numInstructions);
+    free (programInstructions);
 
     mainLoop(state);
 
@@ -82,7 +78,7 @@ int main(int argc, char **argv) {
 
     write(state, outputFile);
 
-    free (programInstructions);
+    freeState(state);
     free(state);
 
     futil_close(fp);
