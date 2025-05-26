@@ -16,12 +16,23 @@
 #define PRE_POST_INDEX_MASK 0x801     // 2^11 + 2^0
 #define PRE_POST_INDEX_VALUE 0x1      // 2^0
 
+#define OPI_ARITHMETIC 2
+#define OPI_WIDE_MOVE 5
+
 _Static_assert(sizeof(DPImmInstruction_t) == 4, "DPImmInstruction_t must be 4 bytes");
 _Static_assert(sizeof(DPRegInstruction_t) == 4, "DPRegInstruction_t must be 4 bytes");
 _Static_assert(sizeof(SDTInstruction_t) == 4, "SDTInstruction_t must be 4 bytes");
 _Static_assert(sizeof(loadLitInstruction_t) == 4, "loadLitInstruction_t must be 4 bytes");
 _Static_assert(sizeof(branchInstruction_t) == 4, "branchInstruction_t must be 4 bytes");
 _Static_assert(sizeof(instruction_u) == 4, "instruction_u must be 4 bytes");
+
+typedef void (*ArithmeticOperation)(processorState_t *state, DPImmInstruction_t instruction, arithmeticOperand_t operand);
+typedef void (*WideMoveOperation)(processorState_t *state, DPImmInstruction_t instruction, wideMoveOperand_t operand);
+typedef void (*LogicalOperation)(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr);
+typedef void (*ArithmeticRegOperation)(processorState_t *state, DPRegInstruction_t instruction, arithmeticOpr_t opr);
+typedef void (*BranchOperation)(processorState_t *state, branchOperand_t operand);
+typedef uint64_t (*BitWise64Operation)(uint64_t rm, uint64_t operand);
+typedef uint32_t (*BitWise32Operation)(uint32_t rm, uint32_t operand);
 
 void add64(processorState_t *state, const register_t dest, const uint64_t op1, const uint64_t op2) {
     const uint64_t result = op1 + op2;
@@ -97,6 +108,47 @@ void subs32(processorState_t *state, const register_t dest, const uint32_t op1, 
     write_pState(state, pState);
     write_reg32z(state, dest, result);
 }
+
+
+uint64_t lsl64(const uint64_t rm, const uint64_t operand) {
+    return rm << operand;
+}
+uint64_t lsr64(const uint64_t rm, const uint64_t operand) {
+    return rm >> operand;
+}
+uint64_t asr64(const uint64_t rm, const uint64_t operand) {
+    return (uint64_t)((int64_t)rm >> operand);
+}
+uint64_t ror64(const uint64_t rm, const uint64_t operand) {
+    return rm >> operand | rm << (64 - operand);
+}
+
+uint32_t lsl32(const uint32_t rm, const uint32_t operand) {
+    return rm << operand;
+}
+uint32_t lsr32(const uint32_t rm, const uint32_t operand) {
+    return rm >> operand;
+}
+uint32_t asr32(const uint32_t rm, const uint32_t operand) {
+    return (uint32_t)((int32_t)rm >> operand);
+}
+uint32_t ror32(const uint32_t rm, const uint32_t operand) {
+    return rm >> operand | rm << (32 - operand);
+}
+
+BitWise32Operation bitWise32Operations[] = {
+    lsl32,
+    lsr32,
+    asr32,
+    ror32,
+};
+
+BitWise64Operation bitWise64Operations[] = {
+    lsl64,
+    lsr64,
+    asr64,
+    ror64,
+};
 
 void executeAdd(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
     const uint64_t op2 = ((uint64_t) operand.imm12) << (operand.sh * 12);
@@ -228,46 +280,6 @@ void executeDPImm(processorState_t *state, const DPImmInstruction_t instruction)
         LOG_FATAL("Unsupported instruction type for DPImm instruction");
     }
 }
-
-uint64_t lsl64(const uint64_t rm, const uint64_t operand) {
-    return rm << operand;
-}
-uint64_t lsr64(const uint64_t rm, const uint64_t operand) {
-    return rm >> operand;
-}
-uint64_t asr64(const uint64_t rm, const uint64_t operand) {
-    return (uint64_t)((int64_t)rm >> operand);
-}
-uint64_t ror64(const uint64_t rm, const uint64_t operand) {
-    return rm >> operand | rm << (64 - operand);
-}
-
-uint32_t lsl32(const uint32_t rm, const uint32_t operand) {
-    return rm << operand;
-}
-uint32_t lsr32(const uint32_t rm, const uint32_t operand) {
-    return rm >> operand;
-}
-uint32_t asr32(const uint32_t rm, const uint32_t operand) {
-    return (uint32_t)((int32_t)rm >> operand);
-}
-uint32_t ror32(const uint32_t rm, const uint32_t operand) {
-    return rm >> operand | rm << (32 - operand);
-}
-
-BitWise32Operation bitWise32Operations[] = {
-    lsl32,
-    lsr32,
-    asr32,
-    ror32,
-};
-
-BitWise64Operation bitWise64Operations[] = {
-    lsl64,
-    lsr64,
-    asr64,
-    ror64,
-};
 
 void executeAnd(processorState_t *state, const DPRegInstruction_t instruction, const logicalOpr_t opr) {
     if (instruction.sf) {
