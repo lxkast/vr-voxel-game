@@ -20,6 +20,7 @@ extern void executeMovz(processorState_t *state, DPImmInstruction_t instruction,
 extern void executeMovk(processorState_t *state, DPImmInstruction_t instruction, wideMoveOperand_t operand);
 
 extern void executeDPImm(processorState_t *state, DPImmInstruction_t instruction);
+extern void executeSDT(processorState_t *state, SDTInstruction_t instruction);
 
 typedef void (*LogicalOperation)(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr);
 
