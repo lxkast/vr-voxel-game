@@ -16,12 +16,23 @@
 #define PRE_POST_INDEX_MASK 0x801     // 2^11 + 2^0
 #define PRE_POST_INDEX_VALUE 0x1      // 2^0
 
+#define OPI_ARITHMETIC 2
+#define OPI_WIDE_MOVE 5
+
 _Static_assert(sizeof(DPImmInstruction_t) == 4, "DPImmInstruction_t must be 4 bytes");
 _Static_assert(sizeof(DPRegInstruction_t) == 4, "DPRegInstruction_t must be 4 bytes");
 _Static_assert(sizeof(SDTInstruction_t) == 4, "SDTInstruction_t must be 4 bytes");
 _Static_assert(sizeof(loadLitInstruction_t) == 4, "loadLitInstruction_t must be 4 bytes");
 _Static_assert(sizeof(branchInstruction_t) == 4, "branchInstruction_t must be 4 bytes");
 _Static_assert(sizeof(instruction_u) == 4, "instruction_u must be 4 bytes");
+
+typedef void (*ArithmeticOperation)(processorState_t *state, DPImmInstruction_t instruction, arithmeticOperand_t operand);
+typedef void (*WideMoveOperation)(processorState_t *state, DPImmInstruction_t instruction, wideMoveOperand_t operand);
+typedef void (*LogicalOperation)(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr);
+typedef void (*ArithmeticRegOperation)(processorState_t *state, DPRegInstruction_t instruction, arithmeticOpr_t opr);
+typedef void (*BranchOperation)(processorState_t *state, branchOperand_t operand);
+typedef uint64_t (*BitWise64Operation)(uint64_t rm, uint64_t operand);
+typedef uint32_t (*BitWise32Operation)(uint32_t rm, uint32_t operand);
 
 void writeReg64Z(processorState_t *state, const register_t reg, const uint64_t value) {
     if (reg == 0x1F) {
