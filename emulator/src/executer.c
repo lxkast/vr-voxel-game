@@ -58,14 +58,13 @@ void add32(processorState_t *state, register_t dest, uint32_t op1, uint32_t op2)
 
 void adds64(processorState_t *state, register_t dest, uint64_t op1, uint64_t op2) {
     const uint64_t result = op1 + op2;
-
     // Setting flags
 
     pState_t pState;
     pState.N = result >> 63;     // Negative flag
     pState.Z = result == 0;      // Zero flag
     pState.C = result < op1;     // Carry flag
-    pState.V = ((op1 ^ op2) & ~(result ^ op2)) >> 63;   // signed overflow/underflow flag
+    pState.V = (~((op1 ^ op2)) & (op1 ^ result)) >> 63;   // signed overflow/underflow flag
 
     write_pState(state, pState);
     writeReg64Z(state, dest, result);
@@ -79,7 +78,7 @@ void adds32(processorState_t *state, register_t dest, uint32_t op1, uint32_t op2
     pState.N = result >> 31;     // Negative flag
     pState.Z = result == 0;      // Zero flag
     pState.C = result < op1;     // Carry flag
-    pState.V = ((op1 ^ op2) & ~(result ^ op2)) >> 31;   // signed overflow/underflow flag
+    pState.V = (~((op1 ^ op2)) & (op1 ^ result)) >> 31;   // signed overflow/underflow flag
 
     write_pState(state, pState);
     writeReg32Z(state, dest, result);
@@ -102,7 +101,7 @@ void subs64(processorState_t *state, register_t dest, uint64_t op1, uint64_t op2
     pState.N = result >> 63;     // Negative flag
     pState.Z = result == 0;      // Zero flag
     pState.C = op1 >= op2;     // Carry flag
-    pState.V = ((op1 ^ op2) & ~(result ^ op2)) >> 63;   // signed overflow/underflow flag
+    pState.V = (((op1 ^ op2)) & (op1 ^ result)) >> 63;   // signed overflow/underflow flag
 
     write_pState(state, pState);
     writeReg64Z(state, dest, result);
@@ -116,7 +115,7 @@ void subs32(processorState_t *state, register_t dest, uint32_t op1, uint32_t op2
     pState.N = result >> 31;     // Negative flag
     pState.Z = result == 0;      // Zero flag
     pState.C = op1 >= op2;        // Carry flag
-    pState.V = ((op1 ^ op2) & ~(result ^ op2)) >> 31;   // signed overflow/underflow flag
+    pState.V = (((op1 ^ op2)) & (op1 ^ result)) >> 31;   // signed overflow/underflow flag
 
     write_pState(state, pState);
     writeReg32Z(state, dest, result);
