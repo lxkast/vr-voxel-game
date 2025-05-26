@@ -139,6 +139,47 @@ void subs32(processorState_t *state, const register_t dest, const uint32_t op1, 
     writeReg32Z(state, dest, result);
 }
 
+
+uint64_t lsl64(const uint64_t rm, const uint64_t operand) {
+    return rm << operand;
+}
+uint64_t lsr64(const uint64_t rm, const uint64_t operand) {
+    return rm >> operand;
+}
+uint64_t asr64(const uint64_t rm, const uint64_t operand) {
+    return (uint64_t)((int64_t)rm >> operand);
+}
+uint64_t ror64(const uint64_t rm, const uint64_t operand) {
+    return rm >> operand | rm << (64 - operand);
+}
+
+uint32_t lsl32(const uint32_t rm, const uint32_t operand) {
+    return rm << operand;
+}
+uint32_t lsr32(const uint32_t rm, const uint32_t operand) {
+    return rm >> operand;
+}
+uint32_t asr32(const uint32_t rm, const uint32_t operand) {
+    return (uint32_t)((int32_t)rm >> operand);
+}
+uint32_t ror32(const uint32_t rm, const uint32_t operand) {
+    return rm >> operand | rm << (32 - operand);
+}
+
+BitWise32Operation bitWise32Operations[] = {
+    lsl32,
+    lsr32,
+    asr32,
+    ror32,
+};
+
+BitWise64Operation bitWise64Operations[] = {
+    lsl64,
+    lsr64,
+    asr64,
+    ror64,
+};
+
 void executeAdd(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
     const uint64_t op2 = ((uint64_t) operand.imm12) << (operand.sh * 12);
     if (instruction.sf) {
@@ -269,46 +310,6 @@ void executeDPImm(processorState_t *state, const DPImmInstruction_t instruction)
         LOG_FATAL("Unsupported instruction type for DPImm instruction");
     }
 }
-
-uint64_t lsl64(const uint64_t rm, const uint64_t operand) {
-    return rm << operand;
-}
-uint64_t lsr64(const uint64_t rm, const uint64_t operand) {
-    return rm >> operand;
-}
-uint64_t asr64(const uint64_t rm, const uint64_t operand) {
-    return (uint64_t)((int64_t)rm >> operand);
-}
-uint64_t ror64(const uint64_t rm, const uint64_t operand) {
-    return rm >> operand | rm << (64 - operand);
-}
-
-uint32_t lsl32(const uint32_t rm, const uint32_t operand) {
-    return rm << operand;
-}
-uint32_t lsr32(const uint32_t rm, const uint32_t operand) {
-    return rm >> operand;
-}
-uint32_t asr32(const uint32_t rm, const uint32_t operand) {
-    return (uint32_t)((int32_t)rm >> operand);
-}
-uint32_t ror32(const uint32_t rm, const uint32_t operand) {
-    return rm >> operand | rm << (32 - operand);
-}
-
-BitWise32Operation bitWise32Operations[] = {
-    lsl32,
-    lsr32,
-    asr32,
-    ror32,
-};
-
-BitWise64Operation bitWise64Operations[] = {
-    lsl64,
-    lsr64,
-    asr64,
-    ror64,
-};
 
 void executeAnd(processorState_t *state, const DPRegInstruction_t instruction, const logicalOpr_t opr) {
     if (instruction.sf) {
