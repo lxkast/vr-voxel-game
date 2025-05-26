@@ -489,14 +489,26 @@ void registerSubs(processorState_t *state, const DPRegInstruction_t instruction,
 void executeMultiply(processorState_t *state, DPRegInstruction_t instruction) {
     const DPRegOperand_u operand = { .raw = instruction.operand };
 
-    const uint32_t raV = readReg64Z(state, operand.multiply.ra);
-    const uint32_t rmV = readReg32Z(state, instruction.rm);
-    const uint32_t rnV = readReg32Z(state, instruction.rn);
+    if (instruction.sf) {
+        const uint32_t raV = readReg32Z(state, operand.multiply.ra);
+        const uint32_t rmV = readReg32Z(state, instruction.rm);
+        const uint32_t rnV = readReg32Z(state, instruction.rn);
 
-    if (operand.multiply.x == 0) {
-        writeReg64Z(state, instruction.rd, raV + rmV * rnV);
+        if (operand.multiply.x == 0) {
+            writeReg32Z(state, instruction.rd, raV + rmV * rnV);
+        } else {
+            writeReg32Z(state, instruction.rd, raV - rmV * rnV);
+        }
     } else {
-        writeReg64Z(state, instruction.rd, raV - rmV * rnV);
+        const uint32_t raV = readReg64Z(state, operand.multiply.ra);
+        const uint32_t rmV = readReg64Z(state, instruction.rm);
+        const uint32_t rnV = readReg64Z(state, instruction.rn);
+
+        if (operand.multiply.x == 0) {
+            writeReg64Z(state, instruction.rd, raV + rmV * rnV);
+        } else {
+            writeReg64Z(state, instruction.rd, raV - rmV * rnV);
+        }
     }
 }
 
