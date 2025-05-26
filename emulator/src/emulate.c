@@ -6,40 +6,40 @@
 #include "memory.h"
 #include "decoder.h"
 
-// TODO think of a better name
-void mainLoop(processorState_t *state) {
+void runProgram(processorState_t *state) {
     uint32_t instruction;
     do {
         // fetch
-        instruction = read_mem32(state, state->spRegisters.PC);
+        instruction = read_mem32(state, read_PC(state));
         LOG_INFO("Executing instruction 0x%x", instruction);
     } while (decodeAndExecute(state, instruction));
 }
 
-void write(processorState_t *state, FILE *file) {
+void writeOutput(processorState_t *state, FILE *file) {
     fprintf(file, "Registers:\n");
     for (int i = 0; i < 31; i++) {
         fprintf(file, "X%02d = %016lx \n", i, read_gpReg64(state, i));
     }
-    fprintf(file, "PC = %016lx\n", state->spRegisters.PC);
+    fprintf(file, "PC = %016lx\n", read_PC(state));
 
     fprintf(file, "PSTATE : ");
-    if (state->spRegisters.PSTATE.N) {
+    pState_t pState = read_pState(state);
+    if (pState.N) {
         fprintf(file, "N");
     } else {
         fprintf(file, "-");
     }
-    if (state->spRegisters.PSTATE.Z) {
+    if (pState.Z) {
         fprintf(file, "Z");
     } else {
         fprintf(file, "-");
     }
-    if (state->spRegisters.PSTATE.C) {
+    if (pState.C) {
         fprintf(file, "C");
     } else {
         fprintf(file, "-");
     }
-    if (state->spRegisters.PSTATE.V) {
+    if (pState.V) {
         fprintf(file, "V");
     } else {
         fprintf(file, "-");
@@ -65,9 +65,9 @@ int main(int argc, char **argv) {
 
     processorState_t *state = malloc(sizeof(processorState_t));
     initState(state, programInstructions, numInstructions);
-    free (programInstructions);
+    free(programInstructions);
 
-    mainLoop(state);
+    runProgram(state);
 
     FILE *outputFile;
     if (argc == 3) {
@@ -76,10 +76,9 @@ int main(int argc, char **argv) {
         outputFile = stdout;
     }
 
-    write(state, outputFile);
+    writeOutput(state, outputFile);
 
     freeState(state);
-    free(state);
 
     futil_close(fp);
     return EXIT_SUCCESS;

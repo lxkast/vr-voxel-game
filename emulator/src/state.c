@@ -338,4 +338,5 @@ void initState(processorState_t *state, const uint32_t *programInstructions, con
 
 void freeState(processorState_t *state) {
     free_memory(state);
+    free(state);
 }
