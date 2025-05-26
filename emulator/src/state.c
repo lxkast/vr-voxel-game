@@ -14,7 +14,7 @@ static void checkValidStateAndGPRegister(processorState_t *state, const reg_t re
         LOG_FATAL("Cannot access null state to access general purpose register");
     }
     if (reg >= 31) {
-        LOG_FATAL("Cannot access invalid general purpose register");
+        LOG_FATAL("Cannot access invalid general purpose register %d", reg);
     }
 }
 

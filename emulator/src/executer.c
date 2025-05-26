@@ -24,12 +24,14 @@ _Static_assert(sizeof(instruction_u) == 4, "instruction_u must be 4 bytes");
 
 typedef void (*ArithmeticOperation)(processorState_t *state, DPImmInstruction_t instruction, arithmeticOperand_t operand);
 typedef void (*WideMoveOperation)(processorState_t *state, DPImmInstruction_t instruction, wideMoveOperand_t operand);
-typedef void (*LogicalOperation)(processorState_t *state, DPRegInstruction_t instruction, logicalOpr_t opr);
+typedef void (*LogicalOperation);
 typedef void (*BranchOperation)(processorState_t *state, branchOperand_t operand);
 typedef void (*RegOp64)(processorState_t *state, const reg_t dest, const uint64_t op1, const uint64_t op2);
 typedef void (*RegOp32)(processorState_t *state, const reg_t dest, const uint32_t op1, const uint32_t op2);
 typedef uint64_t (*BitwiseShift64)(uint64_t rm, uint64_t operand);
 typedef uint32_t (*BitwiseShift32)(uint32_t rm, uint32_t operand);
+typedef uint64_t (*LogicalOp64)(uint64_t op1, uint64_t op2);
+typedef uint32_t (*LogicalOp32)(uint32_t op1, uint32_t op2);
 
 void add64(processorState_t *state, const reg_t dest, const uint64_t op1, const uint64_t op2) {
     const uint64_t result = op1 + op2;
@@ -403,15 +405,42 @@ void executeBics(processorState_t *state, const DPRegInstruction_t instruction, 
     }
 }
 
-LogicalOperation logicalOperations[] = {
-    executeAnd,
-    executeBic,
-    executeOrr,
-    executeOrn,
-    executeEor,
-    executeEon,
-    executeAnds,
-    executeBics,
+uint32_t and32(uint32_t op1, uint32_t op2) {
+    return op1 & op2;
+}
+
+uint32_t orr32(uint32_t op1, uint32_t op2) {
+    return op1 | op2;
+}
+
+uint32_t eor32(uint32_t op1, uint32_t op2) {
+    return op1 ^ op2;
+}
+
+uint64_t and64(uint64_t op1, uint64_t op2) {
+    return op1 & op2;
+}
+
+uint64_t orr64(uint64_t op1, uint64_t op2) {
+    return op1 | op2;
+}
+
+uint64_t eor64(uint64_t op1, uint64_t op2) {
+    return op1 ^ op2;
+}
+
+LogicalOp32 logicalOperations32[] = {
+    and32,
+    orr32,
+    eor32,
+    and32,
+};
+
+LogicalOp64 logicalOperations64[] = {
+    and64,
+    orr64,
+    eor64,
+    and64,
 };
 
 RegOp64 registerOperations64[] = {
@@ -455,9 +484,9 @@ void executeMultiply(processorState_t *state, DPRegInstruction_t instruction) {
 }
 
 void executeDPReg(processorState_t *state, const DPRegInstruction_t instruction) {
+    const DPRegOpr_u DPopr = {.raw = instruction.opr};
     if (instruction.m == 0 && (instruction.opr | 0x6) == 0xE) {
         // arithmetic instruction
-        const DPRegOpr_u DPopr = {.raw = instruction.opr};
         const arithmeticOpr_t opr = DPopr.arithmetic;
         if (instruction.sf) {
             const uint64_t rn = read_reg64z(state,instruction.rn);
@@ -471,9 +500,31 @@ void executeDPReg(processorState_t *state, const DPRegInstruction_t instruction)
             registerOperations32[instruction.opc](state, instruction.rd,  rn, op2);
         }
     } else if (instruction.m == 0 && (instruction.opr | 0x7) == 0x7) {
-        const DPRegOpr_u DPopr = {.raw = instruction.opr};
         const logicalOpr_t opr = DPopr.logical;
-        logicalOperations[(instruction.opc << 1) + opr.N](state, instruction, opr);
+        //logicalOperations[(instruction.opc << 1) + opr.N](state, instruction, opr);
+        if (instruction.sf) {
+            const uint64_t op2 = bitwiseShift64[opr.shift](read_reg64z(state,instruction.rm),instruction.operand);
+            const uint64_t result = logicalOperations64[instruction.opc](read_gpReg64(state,instruction.rn), (opr.N? ~op2 : op2));
+            if (instruction.opc == 3) {
+                pState_t pState = {
+                    .N = result >> 63,
+                    .Z = result == 0,
+                };
+                write_pState(state, pState);
+            }
+            write_reg64z(state, instruction.rd, result);
+        } else {
+            const uint32_t op2 = bitwiseShift32[opr.shift](read_reg32z(state,instruction.rm),instruction.operand);
+            const uint32_t result = logicalOperations32[instruction.opc](read_gpReg32(state,instruction.rn), (opr.N? ~op2 : op2));
+            if (instruction.opc == 3) {
+                pState_t pState = {
+                    .N = result >> 31,
+                    .Z = result == 0,
+                };
+                write_pState(state, pState);
+            }
+            write_reg32z(state, instruction.rd, result);
+        }
     } else if (instruction.m && instruction.opr == 0x8) {
         executeMultiply(state, instruction);
     } else {
