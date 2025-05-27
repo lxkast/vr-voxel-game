@@ -16,6 +16,18 @@ void camera_translate(camera_t *c, vec3 v) {
     glm_vec3_add(c->eye, v, c->eye);
 }
 
+void camera_translateX(camera_t *c, const float dX) {
+    c->eye[0] += dX;
+}
+
+void camera_translateY(camera_t *c, const float dY) {
+    c->eye[1] += dY;
+}
+
+void camera_translateZ(camera_t *c, const float dZ) {
+    c->eye[2] += dZ;
+}
+
 void camera_fromMouse(camera_t *c, vec2 prevMouse, vec2 currMouse) {
     vec3 v_0 = {
         prevMouse[0],
