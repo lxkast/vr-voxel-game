@@ -25,7 +25,7 @@ image: alpine:latest
 build-job:       # This job runs in the build stage, which runs first.
   stage: build
   before_script:
-    - apk add --no-cache cmake make gcc g++ libc-dev
+    - apk add --no-cache cmake make gcc libc-dev
   script:
     - cmake .
     - cmake --build .
@@ -41,6 +41,8 @@ unit-test-job:   # This job runs in the test stage.
   needs: [build-job]
   dependencies:
     - build-job
+  before_script:
+    - apk add --no-cache git
   script:
     - git clone https://oauth2:${ACCESS_TOKEN}@gitlab.doc.ic.ac.uk/teaching-fellows/armv8_testsuite.git
     - cd armv8_testsuite/
