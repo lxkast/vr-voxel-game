@@ -6,6 +6,7 @@
 
 #include "shaderutil.h"
 #include "vertices.h"
+#include "texture.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #define MINOR_VERSION 2
@@ -95,6 +96,10 @@ int main(void) {
         glBindVertexArray(0);
     }
 
+    /*
+        Textures
+    */
+    GLuint texture = loadTextureRGB("../../textures/dirt.jpg", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
 
     /*
         Add basic camera setup
