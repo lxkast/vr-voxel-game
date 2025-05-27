@@ -34,6 +34,11 @@ build-job:       # This job runs in the build stage, which runs first.
       - assembler/assembler
       - emulator/emulate
     expire_in: 1 hour
+  rules:
+    - changes:
+        - emulator/**/*
+        - assembler/**/*
+        - .gitlab-ci.yml
 
 unit-test-job:   # This job runs in the test stage.
   image: python:3.10.12-alpine
