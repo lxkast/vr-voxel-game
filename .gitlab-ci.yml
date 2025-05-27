@@ -38,9 +38,7 @@ build-job:       # This job runs in the build stage, which runs first.
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - changes:
         - lib/**/*
-        - emulator/**/*
-        - assembler/**/*
-        - .gitlab-ci.yml
+        - assembler-emulator/**/*
 
 unit-test-job:   # This job runs in the test stage.
   image: python:3.10.12-alpine
@@ -65,9 +63,7 @@ unit-test-job:   # This job runs in the test stage.
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - changes:
         - lib/**/*
-        - emulator/**/*
-        - assembler/**/*
-        - .gitlab-ci.yml
+        - assembler-emulator/**/*
 
 
 
