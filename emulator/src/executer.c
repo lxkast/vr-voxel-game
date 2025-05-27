@@ -108,7 +108,6 @@ void subs32(processorState_t *state, const reg_t dest, const uint32_t op1, const
     write_reg32z(state, dest, result);
 }
 
-
 uint64_t lsl64(const uint64_t rm, const uint64_t operand) {
     return rm << operand;
 }
@@ -146,6 +145,58 @@ BitwiseShift64 bitwiseShift64[] = {
     lsr64,
     asr64,
     ror64,
+};
+
+uint32_t and32(uint32_t op1, uint32_t op2) {
+    return op1 & op2;
+}
+
+uint32_t orr32(uint32_t op1, uint32_t op2) {
+    return op1 | op2;
+}
+
+uint32_t eor32(uint32_t op1, uint32_t op2) {
+    return op1 ^ op2;
+}
+
+uint64_t and64(uint64_t op1, uint64_t op2) {
+    return op1 & op2;
+}
+
+uint64_t orr64(uint64_t op1, uint64_t op2) {
+    return op1 | op2;
+}
+
+uint64_t eor64(uint64_t op1, uint64_t op2) {
+    return op1 ^ op2;
+}
+
+LogicalOp32 logicalOperations32[] = {
+    and32,
+    orr32,
+    eor32,
+    and32,
+};
+
+LogicalOp64 logicalOperations64[] = {
+    and64,
+    orr64,
+    eor64,
+    and64,
+};
+
+RegOp64 registerOperations64[] = {
+    add64,
+    adds64,
+    sub64,
+    subs64
+};
+
+RegOp32 registerOperations32[] = {
+    add32,
+    adds32,
+    sub32,
+    subs32
 };
 
 /*
@@ -214,39 +265,15 @@ WideMoveOperation wideMoveOperations[] = {
 // executes a DP immediate instruction
 void executeDPImm(processorState_t *state, const DPImmInstruction_t instruction) {
     if (instruction.opi == OPI_ARITHMETIC) {
-        // Execute arithmetic instruction
         const DPImmOperand_u op = { .raw = instruction.operand };
         const arithmeticOperand_t operand = op.arithmeticOperand;
-        //arithmeticOperations[instruction.opc](state, instruction, operand);
-        bool add = !(instruction.opc & 2);
-        bool updateState = instruction.opc & 1;
         const uint64_t op2 = ((uint64_t) operand.imm12) << (operand.sh * 12);
         if (instruction.sf) {
             uint64_t op1 = read_reg64z(state, operand.rn);
-            uint64_t result = add ? (op1 + op2) : (op1 - op2);
-            if (updateState) {
-                pState_t pState = {
-                    .N = result >> 63,
-                    .Z = result == 0,
-                    .C = add ? (result < op1) : (op1 >= op2),
-                    .V = ((add ? (~(op1 ^ op2)) : (op1 ^ op2)) & (op1 ^ result)) >> 63
-                };
-                write_pState(state, pState);
-            }
-            write_reg64z(state, instruction.rd, result);
+            registerOperations64[instruction.opc](state, instruction.rd, op1, op2);
         } else {
-            uint64_t op1 = read_reg32z(state, operand.rn);
-            uint64_t result = add ? (op1 + op2) : (op1 - op2);
-            if (updateState) {
-                pState_t pState = {
-                    .N = result >> 31,
-                    .Z = result == 0,
-                    .C = add ? (result < op1) : (op1 >= op2),
-                    .V = ((add ? (~(op1 ^ op2)) : (op1 ^ op2)) & (op1 ^ result)) >> 31
-                };
-                write_pState(state, pState);
-            }
-            write_reg32z(state, instruction.rd, result);
+            uint32_t op1 = read_reg32z(state, operand.rn);
+            registerOperations32[instruction.opc](state, instruction.rd, op1, op2);
         }
     }else if (instruction.opi == OPI_WIDE_MOVE) {
         const DPImmOperand_u op = { .raw = instruction.operand };
@@ -256,58 +283,6 @@ void executeDPImm(processorState_t *state, const DPImmInstruction_t instruction)
         LOG_FATAL("Unsupported instruction type for DPImm instruction");
     }
 }
-
-uint32_t and32(uint32_t op1, uint32_t op2) {
-    return op1 & op2;
-}
-
-uint32_t orr32(uint32_t op1, uint32_t op2) {
-    return op1 | op2;
-}
-
-uint32_t eor32(uint32_t op1, uint32_t op2) {
-    return op1 ^ op2;
-}
-
-uint64_t and64(uint64_t op1, uint64_t op2) {
-    return op1 & op2;
-}
-
-uint64_t orr64(uint64_t op1, uint64_t op2) {
-    return op1 | op2;
-}
-
-uint64_t eor64(uint64_t op1, uint64_t op2) {
-    return op1 ^ op2;
-}
-
-LogicalOp32 logicalOperations32[] = {
-    and32,
-    orr32,
-    eor32,
-    and32,
-};
-
-LogicalOp64 logicalOperations64[] = {
-    and64,
-    orr64,
-    eor64,
-    and64,
-};
-
-RegOp64 registerOperations64[] = {
-    add64,
-    adds64,
-    sub64,
-    subs64
-};
-
-RegOp32 registerOperations32[] = {
-    add32,
-    adds32,
-    sub32,
-    subs32
-};
 
 void executeMultiply(processorState_t *state, DPRegInstruction_t instruction) {
     const DPRegOperand_u operand = { .raw = instruction.operand };
