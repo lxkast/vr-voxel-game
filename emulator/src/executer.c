@@ -121,7 +121,6 @@ uint64_t asr64(const uint64_t rm, const uint64_t operand) {
 uint64_t ror64(const uint64_t rm, const uint64_t operand) {
     return rm >> operand | rm << (64 - operand);
 }
-
 uint32_t lsl32(const uint32_t rm, const uint32_t operand) {
     return rm << operand;
 }
@@ -148,50 +147,6 @@ BitwiseShift64 bitwiseShift64[] = {
     asr64,
     ror64,
 };
-
-void executeAdd(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
-    const uint64_t op2 = ((uint64_t) operand.imm12) << (operand.sh * 12);
-    if (instruction.sf) {
-       add64(state, instruction.rd, read_reg64z(state, operand.rn), op2);
-    } else {
-        // op2 is guaranteed to be <= 32 bits, so casting it down to uint32_t is fine
-        add32(state, instruction.rd, read_reg32z(state, operand.rn), op2);
-    }
-}
-
-// performs the add operation, storing values in flags
-void executeAdds(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
-    const uint64_t op2 = ((uint64_t) operand.imm12) << (operand.sh * 12);
-    if (instruction.sf) {
-        const uint64_t rn = read_reg64z(state, operand.rn);
-        adds64(state, instruction.rd, rn, op2);
-    } else {
-        const uint32_t rn = read_reg32z(state, operand.rn);
-        adds32(state, instruction.rd, rn, op2);
-    }
-}
-
-void executeSub(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
-    const uint64_t op2 = ((uint64_t) operand.imm12) << (operand.sh * 12);
-    if (instruction.sf) {
-        sub64(state, instruction.rd, read_reg64z(state, operand.rn), op2);
-    } else {
-        // op2 is guaranteed to be <= 32 bits, so casting it down to uint32_t is fine
-        sub32(state, instruction.rd, read_reg32z(state, operand.rn), op2);
-    }
-}
-
-// performs the sub operation, storing values in flags
-void executeSubs(processorState_t *state, const DPImmInstruction_t instruction, const arithmeticOperand_t operand) {
-    const uint64_t op2 = ((uint64_t) operand.imm12) << (operand.sh * 12);
-    if (instruction.sf) {
-        const uint64_t rn = read_reg64z(state, operand.rn);
-        subs64(state, instruction.rd, rn, op2);
-    } else {
-        const uint32_t rn = read_reg32z(state, operand.rn);
-        subs32(state, instruction.rd, rn, op2);
-    }
-}
 
 /*
     Defining the functions for wide move operations.
@@ -249,14 +204,6 @@ void executeNoOp() {
     LOG_FATAL("No op executed");
 }
 
-// Creating arrays of function pointers
-ArithmeticOperation arithmeticOperations[] = {
-    executeAdd,
-    executeAdds,
-    executeSub,
-    executeSubs
-};
-
 WideMoveOperation wideMoveOperations[] = {
     executeMovn,
     executeNoOp,
@@ -270,7 +217,37 @@ void executeDPImm(processorState_t *state, const DPImmInstruction_t instruction)
         // Execute arithmetic instruction
         const DPImmOperand_u op = { .raw = instruction.operand };
         const arithmeticOperand_t operand = op.arithmeticOperand;
-        arithmeticOperations[instruction.opc](state, instruction, operand);
+        //arithmeticOperations[instruction.opc](state, instruction, operand);
+        bool add = !(instruction.opc & 2);
+        bool updateState = instruction.opc & 1;
+        const uint64_t op2 = ((uint64_t) operand.imm12) << (operand.sh * 12);
+        if (instruction.sf) {
+            uint64_t op1 = read_reg64z(state, operand.rn);
+            uint64_t result = add ? (op1 + op2) : (op1 - op2);
+            if (updateState) {
+                pState_t pState = {
+                    .N = result >> 63,
+                    .Z = result == 0,
+                    .C = add ? (result < op1) : (op1 >= op2),
+                    .V = ((add ? (~(op1 ^ op2)) : (op1 ^ op2)) & (op1 ^ result)) >> 63
+                };
+                write_pState(state, pState);
+            }
+            write_reg64z(state, instruction.rd, result);
+        } else {
+            uint64_t op1 = read_reg32z(state, operand.rn);
+            uint64_t result = add ? (op1 + op2) : (op1 - op2);
+            if (updateState) {
+                pState_t pState = {
+                    .N = result >> 31,
+                    .Z = result == 0,
+                    .C = add ? (result < op1) : (op1 >= op2),
+                    .V = ((add ? (~(op1 ^ op2)) : (op1 ^ op2)) & (op1 ^ result)) >> 31
+                };
+                write_pState(state, pState);
+            }
+            write_reg32z(state, instruction.rd, result);
+        }
     }else if (instruction.opi == OPI_WIDE_MOVE) {
         const DPImmOperand_u op = { .raw = instruction.operand };
         const wideMoveOperand_t operand = op.wideMoveOperand;
@@ -361,7 +338,6 @@ void executeMultiply(processorState_t *state, DPRegInstruction_t instruction) {
 void executeDPReg(processorState_t *state, const DPRegInstruction_t instruction) {
     const DPRegOpr_u DPopr = {.raw = instruction.opr};
     if (instruction.m == 0 && (instruction.opr | 0x6) == 0xE) {
-        // arithmetic instruction
         const arithmeticOpr_t opr = DPopr.arithmetic;
         if (instruction.sf) {
             const uint64_t rn = read_reg64z(state,instruction.rn);
@@ -378,7 +354,7 @@ void executeDPReg(processorState_t *state, const DPRegInstruction_t instruction)
         const logicalOpr_t opr = DPopr.logical;
         if (instruction.sf) {
             const uint64_t op2 = bitwiseShift64[opr.shift](read_reg64z(state,instruction.rm),instruction.operand);
-            const uint64_t result = logicalOperations64[instruction.opc](read_reg64z(state,instruction.rn), (opr.N? ~op2 : op2));
+            const uint64_t result = logicalOperations64[instruction.opc](read_reg64z(state,instruction.rn), (opr.N ? ~op2 : op2));
             if (instruction.opc == 3) {
                 pState_t pState = {
                     .N = result >> 63,
@@ -389,7 +365,7 @@ void executeDPReg(processorState_t *state, const DPRegInstruction_t instruction)
             write_reg64z(state, instruction.rd, result);
         } else {
             const uint32_t op2 = bitwiseShift32[opr.shift](read_reg32z(state,instruction.rm),instruction.operand);
-            const uint32_t result = logicalOperations32[instruction.opc](read_reg32z(state,instruction.rn), (opr.N? ~op2 : op2));
+            const uint32_t result = logicalOperations32[instruction.opc](read_reg32z(state,instruction.rn), (opr.N ? ~op2 : op2));
             if (instruction.opc == 3) {
                 pState_t pState = {
                     .N = result >> 31,
