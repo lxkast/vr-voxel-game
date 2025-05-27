@@ -1,5 +1,7 @@
 #pragma once
 
+#include <glad/gl.h>
+
 typedef struct {
     vec3 eye;
     versor ori;
@@ -12,3 +14,5 @@ void camera_createView(camera_t *c, mat4 dest);
 void camera_translate(camera_t *c, vec3 v);
 
 void camera_fromMouse(camera_t *c, vec2 prevMouse, vec2 currMouse);
+
+void camera_setView(camera_t *c, GLuint program);

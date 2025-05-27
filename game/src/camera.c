@@ -39,3 +39,10 @@ void camera_fromMouse(camera_t *c, vec2 prevMouse, vec2 currMouse) {
 
     glm_quat_mul(deltaQ, c->ori, c->ori);
 }
+
+void camera_setView(camera_t *c, GLuint program) {
+    const int viewLocation = glGetUniformLocation(program, "view");
+    mat4 view;
+    camera_createView(c, view);
+    glUniformMatrix4fv(viewLocation, 1, GL_FALSE, view);
+}
