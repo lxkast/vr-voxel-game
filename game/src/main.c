@@ -5,6 +5,7 @@
 #include <cglm/cglm.h>
 
 #include "shaderutil.h"
+#include "vertices.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #define MINOR_VERSION 2
@@ -73,46 +74,6 @@ int main(void) {
 
     GLuint vao;
     {
-        static const float vertices[] = {
-            // Front face
-            -0.5f, -0.5f,  0.5f,
-             0.5f, -0.5f,  0.5f,
-             0.5f,  0.5f,  0.5f,
-            -0.5f,  0.5f,  0.5f,
-
-            // Back face
-            -0.5f, -0.5f, -0.5f,
-             0.5f, -0.5f, -0.5f,
-             0.5f,  0.5f, -0.5f,
-            -0.5f,  0.5f, -0.5f
-        };
-
-        static const GLuint indices[] = {
-            // Front face
-            0, 1, 2,  // First triangle
-            2, 3, 0,  // Second triangle
-
-            // Back face
-            4, 5, 6,
-            6, 7, 4,
-
-            // Left face
-            4, 0, 3,
-            3, 7, 4,
-
-            // Right face
-            1, 5, 6,
-            6, 2, 1,
-
-            // Top face
-            3, 2, 6,
-            6, 7, 3,
-
-            // Bottom face
-            0, 1, 5,
-            5, 4, 0
-        };
-
         GLuint vbo, ebo;
 
         glGenVertexArrays(1, &vao);
@@ -122,10 +83,10 @@ int main(void) {
         glBindVertexArray(vao);
 
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, cubeVerticesSize, cubeVertices, GL_STATIC_DRAW);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, cubeIndicesSize, cubeIndices, GL_STATIC_DRAW);
 
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *) 0);
         glEnableVertexAttribArray(0);
@@ -150,6 +111,8 @@ int main(void) {
 
         glm_perspective_default(640.0f / 480.0f, projection);
 
+        glUseProgram(program);
+
         const int modelLocation = glGetUniformLocation(program, "model");
         const int viewLocation = glGetUniformLocation(program, "view");
         const int projectionLocation = glGetUniformLocation(program, "projection");
@@ -157,6 +120,8 @@ int main(void) {
         glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
         glUniformMatrix4fv(viewLocation, 1, GL_FALSE, view);
         glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projection);
+
+        glUseProgram(0);
     }
 
 
