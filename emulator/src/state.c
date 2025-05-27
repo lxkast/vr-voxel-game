@@ -73,7 +73,7 @@ void write_PC(processorState_t *state, const uint64_t value) {
 /*
     increments PC register by amount
 */
-void increment_PC(processorState_t *state, int64_t amount) {
+void increment_PC(processorState_t *state, const int64_t amount) {
     if (!state) {
         LOG_FATAL("Cannot access null state to increment PC register");
     }
@@ -113,7 +113,7 @@ uint64_t read_ZR(processorState_t *state) {
 /*
     write 64-bit value to ZR register
 */
-void write_ZR(processorState_t *state, uint64_t value) {
+void write_ZR(processorState_t *state, const uint64_t value) {
     if (!state) {
         LOG_FATAL("Cannot access null state to write to ZR register");
     }
@@ -170,8 +170,8 @@ void write_pState(processorState_t *state, const pState_t value) {
 }
 
 
-uint8_t* getLine(processorState_t *state, uint64_t address) {
-    uint64_t lineIndex = (address & MEMORY_INDEX_MASK) >> MEMORY_OFFSET_BITS;
+uint8_t* getLine(processorState_t *state, const uint64_t address) {
+    const uint64_t lineIndex = (address & MEMORY_INDEX_MASK) >> MEMORY_OFFSET_BITS;
     if (!state->memory[lineIndex]) {
         state->memory[lineIndex] = malloc(MEMORY_LINE_SIZE);
         memset(state->memory[lineIndex], 0, MEMORY_LINE_SIZE);
@@ -181,7 +181,7 @@ uint8_t* getLine(processorState_t *state, uint64_t address) {
 
 #define VALUE_OF(state, address) (getLine(state, address)[address & MEMORY_OFFSET_MASK])
 
-uint8_t read_mem8(processorState_t* state, uint64_t address) {
+uint8_t read_mem8(processorState_t* state, const uint64_t address) {
     NOT_NULL(state);
     if (address >= MEMORY_SIZE) {
         LOG_FATAL("Attempt to access outside of memory");
@@ -189,11 +189,11 @@ uint8_t read_mem8(processorState_t* state, uint64_t address) {
     return VALUE_OF(state, address);
 }
 
-uint16_t read_mem16Unaligned(processorState_t* state, uint64_t address) {
+uint16_t read_mem16Unaligned(processorState_t* state, const uint64_t address) {
     return read_mem8(state, address) + ((uint16_t) read_mem8(state, address + 1) << 8);
 }
 
-uint16_t read_mem16(processorState_t* state, uint64_t address) {
+uint16_t read_mem16(processorState_t* state, const uint64_t address) {
     NOT_NULL(state);
     if (address + 1 >= MEMORY_SIZE) {
         LOG_FATAL("Attempt to access outside of memory");
@@ -204,11 +204,11 @@ uint16_t read_mem16(processorState_t* state, uint64_t address) {
     return *(uint16_t*)&VALUE_OF(state, address);
 }
 
-uint32_t read_mem32Unaligned(processorState_t* state, uint64_t address) {
+uint32_t read_mem32Unaligned(processorState_t* state, const uint64_t address) {
     return read_mem16(state, address) + ((uint32_t) read_mem16(state, address + 2) << 16);
 }
 
-uint32_t read_mem32(processorState_t* state, uint64_t address) {
+uint32_t read_mem32(processorState_t* state, const uint64_t address) {
     NOT_NULL(state);
     if (address + 3 >= MEMORY_SIZE) {
         LOG_FATAL("Attempt to access outside of memory");
@@ -219,11 +219,11 @@ uint32_t read_mem32(processorState_t* state, uint64_t address) {
     return *(uint32_t*)&VALUE_OF(state, address);
 }
 
-uint64_t read_mem64Unaligned(processorState_t* state, uint64_t address) {
+uint64_t read_mem64Unaligned(processorState_t* state, const uint64_t address) {
     return read_mem32(state, address) + ((uint64_t) read_mem32(state, address + 4) << 32);
 }
 
-uint64_t read_mem64(processorState_t* state, uint64_t address) {
+uint64_t read_mem64(processorState_t* state, const uint64_t address) {
     NOT_NULL(state);
     if (address + 7 >= MEMORY_SIZE) {
         LOG_FATAL("Attempt to cacess outside of memory");
@@ -235,7 +235,7 @@ uint64_t read_mem64(processorState_t* state, uint64_t address) {
 }
 
 
-void write_mem8(processorState_t* state, uint64_t address, uint8_t value) {
+void write_mem8(processorState_t* state, const uint64_t address, const uint8_t value) {
     NOT_NULL(state);
     if (address >= MEMORY_SIZE) {
         LOG_FATAL("Attempt to write outside of memory");
@@ -243,12 +243,12 @@ void write_mem8(processorState_t* state, uint64_t address, uint8_t value) {
     VALUE_OF(state, address) = value;
 }
 
-void write_mem16Unaligned(processorState_t* state, uint64_t address, uint16_t value) {
+void write_mem16Unaligned(processorState_t* state, const uint64_t address, const uint16_t value) {
     write_mem8(state, address, value & 0xFF);
     write_mem8(state, address + 1, value >> 8);
 }
 
-void write_mem16(processorState_t* state, uint64_t address, uint16_t value) {
+void write_mem16(processorState_t* state, const uint64_t address, const uint16_t value) {
     NOT_NULL(state);
     if (address >= MEMORY_SIZE + 1) {
         LOG_FATAL("Attempt to write outside of memory");
@@ -260,12 +260,12 @@ void write_mem16(processorState_t* state, uint64_t address, uint16_t value) {
     }
 }
 
-void write_mem32Unaligned(processorState_t* state, uint64_t address, uint32_t value) {
+void write_mem32Unaligned(processorState_t* state, const uint64_t address, const uint32_t value) {
     write_mem16(state, address, value & 0xFFFF);
     write_mem16(state, address + 2, value >> 16);
 }
 
-void write_mem32(processorState_t* state, uint64_t address, uint32_t value) {
+void write_mem32(processorState_t* state, const uint64_t address, const uint32_t value) {
     NOT_NULL(state);
     if (address >= MEMORY_SIZE + 3) {
         LOG_FATAL("Attempt to write outside of memory");
@@ -277,12 +277,12 @@ void write_mem32(processorState_t* state, uint64_t address, uint32_t value) {
     }
 }
 
-void write_mem64Unaligned(processorState_t* state, uint64_t address, uint64_t value) {
+void write_mem64Unaligned(processorState_t* state, const uint64_t address, const uint64_t value) {
     write_mem32(state, address, value & 0xFFFFFFFF);
     write_mem32(state, address + 4, value >> 32);
 }
 
-void write_mem64(processorState_t* state, uint64_t address, uint64_t value) {
+void write_mem64(processorState_t* state, const uint64_t address, const uint64_t value) {
     NOT_NULL(state);
     if (address >= MEMORY_SIZE + 7) {
         LOG_FATAL("Attempt to write outside of memory");
@@ -304,7 +304,7 @@ void write_memory(processorState_t *state, FILE *file) {
     for (uint32_t i = 0; i < MEMORY_MAX_INDEX; i++) {
         if (state->memory[i]) {
             for (uint32_t j = 0; j < MEMORY_LINE_SIZE; j+=4) {
-                uint32_t value = read_mem32(state, (i << MEMORY_OFFSET_BITS) + j);
+                const uint32_t value = read_mem32(state, (i << MEMORY_OFFSET_BITS) + j);
                 if (value) {
                     fprintf(file, "0x%08X : %08x\n", (i << MEMORY_OFFSET_BITS) + j, value);
                 }

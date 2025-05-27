@@ -147,27 +147,27 @@ BitwiseShift64 bitwiseShift64[] = {
     ror64,
 };
 
-uint32_t and32(uint32_t op1, uint32_t op2) {
+uint32_t and32(const uint32_t op1, const uint32_t op2) {
     return op1 & op2;
 }
 
-uint32_t orr32(uint32_t op1, uint32_t op2) {
+uint32_t orr32(const uint32_t op1, const uint32_t op2) {
     return op1 | op2;
 }
 
-uint32_t eor32(uint32_t op1, uint32_t op2) {
+uint32_t eor32(const uint32_t op1, const uint32_t op2) {
     return op1 ^ op2;
 }
 
-uint64_t and64(uint64_t op1, uint64_t op2) {
+uint64_t and64(const uint64_t op1, const uint64_t op2) {
     return op1 & op2;
 }
 
-uint64_t orr64(uint64_t op1, uint64_t op2) {
+uint64_t orr64(const uint64_t op1, const uint64_t op2) {
     return op1 | op2;
 }
 
-uint64_t eor64(uint64_t op1, uint64_t op2) {
+uint64_t eor64(const uint64_t op1, const uint64_t op2) {
     return op1 ^ op2;
 }
 
@@ -284,7 +284,7 @@ void executeDPImm(processorState_t *state, const DPImmInstruction_t instruction)
     }
 }
 
-void executeMultiply(processorState_t *state, DPRegInstruction_t instruction) {
+void executeMultiply(processorState_t *state, const DPRegInstruction_t instruction) {
     const DPRegOperand_u operand = { .raw = instruction.operand };
 
     if (instruction.sf) {
@@ -331,7 +331,7 @@ void executeDPReg(processorState_t *state, const DPRegInstruction_t instruction)
             const uint64_t op2 = bitwiseShift64[opr.shift](read_reg64z(state,instruction.rm),instruction.operand);
             const uint64_t result = logicalOperations64[instruction.opc](read_reg64z(state,instruction.rn), (opr.N ? ~op2 : op2));
             if (instruction.opc == 3) {
-                pState_t pState = {
+                const pState_t pState = {
                     .N = result >> 63,
                     .Z = result == 0,
                 };
@@ -342,7 +342,7 @@ void executeDPReg(processorState_t *state, const DPRegInstruction_t instruction)
             const uint32_t op2 = bitwiseShift32[opr.shift](read_reg32z(state,instruction.rm),instruction.operand);
             const uint32_t result = logicalOperations32[instruction.opc](read_reg32z(state,instruction.rn), (opr.N ? ~op2 : op2));
             if (instruction.opc == 3) {
-                pState_t pState = {
+                const pState_t pState = {
                     .N = result >> 31,
                     .Z = result == 0,
                 };
