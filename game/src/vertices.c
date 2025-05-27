@@ -12,8 +12,9 @@ const float cubeVertices[] = {
      0.5f,  0.5f, -0.5f,  // 6
     -0.5f,  0.5f, -0.5f   // 7
 };
+const unsigned int cubeVerticesSize = sizeof(cubeVertices);
 
-const float cubeIndices[] = {
+const unsigned int cubeIndices[] = {
     // Front face
     0, 1, 2,
     2, 3, 0,
@@ -33,3 +34,4 @@ const float cubeIndices[] = {
     4, 5, 1,
     1, 0, 4
 };
+const unsigned int cubeIndicesSize = sizeof(cubeIndices);
