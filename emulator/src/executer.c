@@ -320,9 +320,9 @@ void executeDPReg(processorState_t *state, const DPRegInstruction_t instruction)
             const uint64_t op2 = bitwiseShift64[opr.shift](rm, instruction.operand);
             registerOperations64[instruction.opc](state, instruction.rd,  rn, op2);
         } else {
-            const uint64_t rn = read_reg32z(state,instruction.rn);
-            const uint64_t rm = read_reg32z(state,instruction.rm);
-            const uint64_t op2 = bitwiseShift32[opr.shift](rm, instruction.operand);
+            const uint32_t rn = read_reg32z(state,instruction.rn);
+            const uint32_t rm = read_reg32z(state,instruction.rm);
+            const uint32_t op2 = bitwiseShift32[opr.shift](rm, instruction.operand);
             registerOperations32[instruction.opc](state, instruction.rd,  rn, op2);
         }
     } else if (instruction.m == 0 && (instruction.opr | 0x7) == 0x7) {
@@ -369,7 +369,6 @@ void unconditionalBranch(processorState_t *state, const branchOperand_t operand)
     LOG_DEBUG("uncond branch");
     increment_PC(state, operand.branchUnconditional.offset * 4);
 }
-
 
 bool evalCondition(processorState_t *state, const uint32_t condition) {
     const pState_t flags = read_pState(state);
