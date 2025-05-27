@@ -58,6 +58,7 @@ unit-test-job:   # This job runs in the test stage.
     - changes:
         - emulator/**/*
         - assembler/**/*
+        - .gitlab-ci.yml
 
 
 
