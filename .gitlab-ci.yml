@@ -31,14 +31,15 @@ build-job:       # This job runs in the build stage, which runs first.
     - cmake --build .
   artifacts:
     paths:
-      - assembler/assembler
-      - emulator/emulate
+      - assembler-emulator/assembler/assembler
+      - assembler-emulator/emulator/emulate
     expire_in: 1 hour
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - changes:
         - lib/**/*
         - assembler-emulator/**/*
+        - .gitlab-ci.yml
 
 unit-test-job:   # This job runs in the test stage.
   image: python:3.10.12-alpine
@@ -52,8 +53,8 @@ unit-test-job:   # This job runs in the test stage.
     - git clone --depth=1 https://oauth2:${ACCESS_TOKEN}@gitlab.doc.ic.ac.uk/teaching-fellows/armv8_testsuite.git
     - cd armv8_testsuite/
     - mkdir solution
-    - cp ../assembler/assembler solution/assemble
-    - cp ../emulator/emulate solution/emulate
+    - cp ../assembler-emulator/assembler/assembler solution/assemble
+    - cp ../assembler-emulator/emulator/emulate solution/emulate
     - ./install
     - source .venv/bin/activate
     - ./run -p
@@ -64,6 +65,7 @@ unit-test-job:   # This job runs in the test stage.
     - changes:
         - lib/**/*
         - assembler-emulator/**/*
+        - .gitlab-ci.yml
 
 
 
