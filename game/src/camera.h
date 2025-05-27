@@ -22,7 +22,7 @@ void camera_translateY(camera_t *c, float dY);
 void camera_translateZ(camera_t *c, float dZ);
 
 
-void camera_fromMouse(camera_t *c, vec2 prevMouse, vec2 currMouse);
+void camera_fromMouse(camera_t *c, float dX, float dY);
 
 
 void camera_setView(camera_t *c, GLuint program);
