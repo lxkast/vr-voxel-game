@@ -135,7 +135,13 @@ int main(void) {
     */
 
 
+    glEnable(GL_DEPTH_TEST);
     while (!glfwWindowShouldClose(window)) {
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+
         glUseProgram(program);
 
         glBindVertexArray(vao);
