@@ -20,14 +20,12 @@ stages:          # List of stages for jobs, and their order of execution
   - build
   - test
   
-image: ubuntu:24.04
-
-before_script:
- - apt-get update --yes
- - apt-get install --yes cmake git python3 python3-venv python3-pip
+image: alpine-latest
 
 build-job:       # This job runs in the build stage, which runs first.
   stage: build
+  before_script:
+    - apk add --no-cache cmake
   script:
     - cmake .
     - cmake --build .
@@ -38,6 +36,7 @@ build-job:       # This job runs in the build stage, which runs first.
     expire_in: 1 hour
 
 unit-test-job:   # This job runs in the test stage.
+  image: python:3.10.12-alpine
   stage: test    # It only starts when the job in the build stage completes successfully.
   needs: [build-job]
   dependencies:
