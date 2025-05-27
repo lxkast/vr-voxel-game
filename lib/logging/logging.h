@@ -41,10 +41,10 @@ void log_log(
     ...
 );
 
-
 /*
 Beautiful macro definitons.
 */
+
 #define LOG_DEBUG(...) log_log(LEVEL_DEBUG, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define LOG_INFO(...) log_log(LEVEL_INFO, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define LOG_WARN(...) log_log(LEVEL_WARN, __FILE__, __LINE__, __func__, __VA_ARGS__)

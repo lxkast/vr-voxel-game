@@ -2,6 +2,7 @@
 #include <time.h>
 #include <stdarg.h>
 #include <pthread.h>
+#include <stdint.h>
 #include "logging.h"
 
 #define MAX_OUTPUT_FILES 8
@@ -42,14 +43,14 @@ void log_addOutput(FILE *out) {
     }
 }
 
-void log_setLevel(log_level_t level) {
+void log_setLevel(const log_level_t level) {
     currentLogLevel = level;
 }
 
 void log_log(
-    log_level_t level,
+    const log_level_t level,
     const char *file,
-    int line,
+    const int line,
     const char *func,
     const char *fmt,
     ...
@@ -69,7 +70,7 @@ void log_log(
     char timeStr[20];
     strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &currentTimeData);
 
-    for (int i = 0; i < currentFileN; i++) {
+    for (uint64_t i = 0; i < currentFileN; i++) {
         pthread_mutex_lock(&logMutex);
         fprintf(outputFile[i], " %s %s %-5s %s:%d:%s(): ", colourOpeners[level], timeStr, levelNames[level], file, line, func);
 
