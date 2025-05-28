@@ -1,7 +1,7 @@
 #pragma once
 
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 
 /*
     Example use:
@@ -24,12 +24,10 @@ typedef enum {
     FUTIL_FILE_WRITE
 } futil_fileOpenMode_t;
 
-
 /*
     This function opens a file, returning a pointer to it.
 */
 futil_file_t *futil_open(const char *fileName, futil_fileOpenMode_t mode);
-
 
 /*
     Closes a file

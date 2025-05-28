@@ -1,8 +1,8 @@
+#include <pthread.h>
+#include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <time.h>
-#include <stdarg.h>
-#include <pthread.h>
-#include <stdint.h>
 #include "logging.h"
 
 #define MAX_OUTPUT_FILES 8
@@ -26,9 +26,8 @@ static const char *colourOpeners[] = {
     "",
     "\033[93m",
     "\033[31m",
-    "\033[38;2;255;50;50m"
+    "\033[38;2;255;50;50m",
 };
-
 
 void log_init(FILE *out) {
     if (!outputFile[0]) {
@@ -53,8 +52,7 @@ void log_log(
     const int line,
     const char *func,
     const char *fmt,
-    ...
-) {
+    ...) {
     if (level < currentLogLevel)
         return;
 
