@@ -40,7 +40,7 @@ void log_log(
     ...);
 
 /*
-Beautiful macro definitons.
+Beautiful macro definitions.
 */
 
 #define LOG_DEBUG(...) log_log(LEVEL_DEBUG, __FILE__, __LINE__, __func__, __VA_ARGS__)
