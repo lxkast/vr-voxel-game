@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
 typedef enum {
     LEVEL_DEBUG,
     LEVEL_INFO,
@@ -38,8 +37,7 @@ void log_log(
     int line,
     const char *func,
     const char *fmt,
-    ...
-);
+    ...);
 
 /*
 Beautiful macro definitons.
@@ -49,5 +47,8 @@ Beautiful macro definitons.
 #define LOG_INFO(...) log_log(LEVEL_INFO, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define LOG_WARN(...) log_log(LEVEL_WARN, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define LOG_ERROR(...) log_log(LEVEL_ERROR, __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define LOG_FATAL(...) \
-    do { log_log(LEVEL_FATAL, __FILE__, __LINE__, __func__, __VA_ARGS__); exit(EXIT_FAILURE); } while(0)
+#define LOG_FATAL(...)                                                   \
+    do {                                                                 \
+        log_log(LEVEL_FATAL, __FILE__, __LINE__, __func__, __VA_ARGS__); \
+        exit(EXIT_FAILURE);                                              \
+    } while (0)
