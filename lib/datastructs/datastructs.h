@@ -29,6 +29,7 @@ extern void hashmap_free(hashmap *hashmap);
 extern void hashmap_init(hashmap *hashmap, int capacity);
 
 extern void arraylist_init(resizingArrayList_t *arrList, int capacity);
+extern void arraylist_free(resizingArrayList_t *arrList);
 extern void arraylist_append(resizingArrayList_t *arrList, void* element);
 extern bool arraylist_remove(resizingArrayList_t *arrList, void* element);
 extern void *arraylist_get(resizingArrayList_t *arrList, int index);

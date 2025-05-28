@@ -15,7 +15,7 @@
 #define MINIMUM_SIZE 16
 
 
-long hash_str(const char *str) {
+static unsigned long hash_str(const char *str) {
     long hash = 5381;
     while (*str!='\0') {
         hash = (hash << 5) + str[0] ^ hash;
@@ -58,7 +58,7 @@ static void considerResize(hashmap *map) {
  * Get an element from the hashmap, if the element doesn't exist then this returns NULL
  */
 void* hashmap_getElement(const hashmap *hashmap, const char* name) {
-    long hash = hash_str(name);
+    const unsigned long hash = hash_str(name);
 
     if (hashmap->data[hash % hashmap->capacity] == NULL) {
         return NULL;
@@ -75,7 +75,7 @@ void* hashmap_getElement(const hashmap *hashmap, const char* name) {
 }
 
 bool hashmap_setElement(hashmap *hashmap, const char* name, void* data) {
-    long hash = hash_str(name);
+    const unsigned long hash = hash_str(name);
 
     hashmapElement **current = &hashmap->data[hash % hashmap->capacity];
     while (*current) {
@@ -99,14 +99,14 @@ bool hashmap_setElement(hashmap *hashmap, const char* name, void* data) {
 }
 
 bool hashmap_removeElement(hashmap *hashmap, const char* name) {
-    long hash = hash_str(name);
+    const unsigned long hash = hash_str(name);
     hashmapElement **current = &hashmap->data[hash % hashmap->capacity];
     while (*current) {
         if (strcmp((*current)->name, name) == 0) {
-            *current = (*current)->next;
-
             free((*current)->name);
             free(*current);
+
+            *current = NULL;
             hashmap->size--;
             considerResize(hashmap);
             return true;
@@ -140,6 +140,11 @@ void arraylist_init(resizingArrayList_t *arrList, int capacity) {
     arrList->capacity = capacity;
     arrList->size = 0;
     arrList->data = malloc(sizeof(resizingArrayList_t *) * capacity);
+}
+
+void arraylist_free(resizingArrayList_t *arrList) {
+    free(arrList->data);
+    arrList->capacity = 0;
 }
 
 static void arraylist_resize(resizingArrayList_t *arrayList, int newCapacity) {
