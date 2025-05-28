@@ -3,21 +3,19 @@
 //
 
 #include "datastructs.h"
-
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 
 #define RESIZE_UP_THRESHOLD 0.75
 #define RESIZE_DOWN_THRESHOLD 0.25
 #define RESIZE_AMOUNT 2
 #define MINIMUM_SIZE 16
 
-
 static unsigned long hash_str(const char *str) {
     long hash = 5381;
-    while (*str!='\0') {
+    while (*str != '\0') {
         hash = (hash << 5) + str[0] ^ hash;
         str++;
     }
@@ -27,17 +25,17 @@ static unsigned long hash_str(const char *str) {
 static void resize(hashmap *map, int new_capacity) {
     hashmapElement **old = map->data;
     int old_capacity = map->capacity;
-    map->data = malloc(sizeof(hashmapElement*) * new_capacity);
-    memset(map->data, 0, sizeof(hashmapElement*) * new_capacity);
+    map->data = malloc(sizeof(hashmapElement *) * new_capacity);
+    memset(map->data, 0, sizeof(hashmapElement *) * new_capacity);
     map->capacity = new_capacity;
 
     for (uint32_t i = 0; i < old_capacity; i++) {
-        hashmapElement* current = old[i];
+        hashmapElement *current = old[i];
         while (current) {
             hashmap_setElement(map, current->name, current->data);
-            map->size--;  // keep size constant to avoid downsizing or upsizing when reinserting into the map.
+            map->size--;    // keep size constant to avoid downsizing or upsizing when reinserting into the map.
 
-            hashmapElement* next = current->next;
+            hashmapElement *next = current->next;
             free(current->name);
             free(current);
             current = next;
@@ -47,9 +45,9 @@ static void resize(hashmap *map, int new_capacity) {
 }
 
 static void considerResize(hashmap *map) {
-    if ((double) map->size / map->capacity > RESIZE_UP_THRESHOLD) {
+    if ((double)map->size / map->capacity > RESIZE_UP_THRESHOLD) {
         resize(map, RESIZE_AMOUNT * map->capacity);
-    } else if (map->capacity > MINIMUM_SIZE && (double) map->size / map->capacity < RESIZE_DOWN_THRESHOLD) {
+    } else if (map->capacity > MINIMUM_SIZE && (double)map->size / map->capacity < RESIZE_DOWN_THRESHOLD) {
         resize(map, map->capacity / RESIZE_AMOUNT);
     }
 }
@@ -57,7 +55,7 @@ static void considerResize(hashmap *map) {
 /*
  * Get an element from the hashmap, if the element doesn't exist then this returns NULL
  */
-void* hashmap_getElement(const hashmap *hashmap, const char* name) {
+void *hashmap_getElement(const hashmap *hashmap, const char *name) {
     const unsigned long hash = hash_str(name);
 
     if (hashmap->data[hash % hashmap->capacity] == NULL) {
@@ -74,7 +72,7 @@ void* hashmap_getElement(const hashmap *hashmap, const char* name) {
     return current.data;
 }
 
-bool hashmap_setElement(hashmap *hashmap, const char* name, void* data) {
+bool hashmap_setElement(hashmap *hashmap, const char *name, void *data) {
     const unsigned long hash = hash_str(name);
 
     hashmapElement **current = &hashmap->data[hash % hashmap->capacity];
@@ -88,7 +86,7 @@ bool hashmap_setElement(hashmap *hashmap, const char* name, void* data) {
 
     hashmapElement *newElement = malloc(sizeof(hashmapElement));
     unsigned const long nameLen = strlen(name);
-    newElement->name = (char*)malloc(sizeof(char) * (nameLen + 1));
+    newElement->name = (char *)malloc(sizeof(char) * (nameLen + 1));
     strcpy(newElement->name, name);
     newElement->data = data;
     newElement->next = NULL;
@@ -98,7 +96,7 @@ bool hashmap_setElement(hashmap *hashmap, const char* name, void* data) {
     return false;
 }
 
-bool hashmap_removeElement(hashmap *hashmap, const char* name) {
+bool hashmap_removeElement(hashmap *hashmap, const char *name) {
     const unsigned long hash = hash_str(name);
     hashmapElement **current = &hashmap->data[hash % hashmap->capacity];
     while (*current) {
@@ -152,14 +150,14 @@ static void arraylist_resize(resizingArrayList_t *arrayList, int newCapacity) {
     arrayList->capacity = newCapacity;
 }
 
-void arraylist_append(resizingArrayList_t *arrList, void* element) {
+void arraylist_append(resizingArrayList_t *arrList, void *element) {
     if (arrList->size == arrList->capacity) {
         arraylist_resize(arrList, arrList->capacity * RESIZE_AMOUNT);
     }
     arrList->data[arrList->size++] = element;
 }
 
-bool arraylist_remove(resizingArrayList_t *arrList, void* element) {
+bool arraylist_remove(resizingArrayList_t *arrList, void *element) {
     int i = 0;
     while (i < arrList->size && arrList->data[i] != element) {
         i++;
@@ -167,8 +165,8 @@ bool arraylist_remove(resizingArrayList_t *arrList, void* element) {
     if (i == arrList->size) {
         return false;
     }
-    for (; i < arrList->size-1; i++) {
-        arrList->data[i] = arrList->data[i+1];
+    for (; i < arrList->size - 1; i++) {
+        arrList->data[i] = arrList->data[i + 1];
     }
 
     arrList->size--;
