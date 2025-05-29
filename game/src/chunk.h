@@ -11,6 +11,7 @@ typedef struct {
     int cx, cy, cz;
     block_t blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
     GLuint vbo;
+    GLuint vao;
     bool tainted;
 } chunk_t;
 

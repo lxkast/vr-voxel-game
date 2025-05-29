@@ -24,7 +24,15 @@ static void chunk_createMesh(chunk_t *c) {
 
     glBindBuffer(GL_ARRAY_BUFFER, c->vbo);
     glBufferData(GL_ARRAY_BUFFER, CHUNK_SIZE_CUBED * bytesPerBlock, buf, GL_STATIC_DRAW);
+
+    glBindVertexArray(c->vao);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
 
     free(buf);
 }
@@ -40,6 +48,7 @@ void chunk_create(chunk_t *c, const int cx, const int cy, const int cz, const bl
     }
 
     glGenBuffers(1, &c->vbo);
+    glGenVertexArrays(1, &c->vao);
     chunk_createMesh(c);
 }
 
@@ -50,7 +59,8 @@ void chunk_draw(const chunk_t *c, const int modelLocation) {
     glm_translate_make(model, cPos);
 
     glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
-    glBindBuffer(GL_ARRAY_BUFFER, c->vbo);
+
+    glBindVertexArray(c->vao);
     glDrawArrays(GL_TRIANGLES, 0, CHUNK_SIZE_CUBED * 36);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
 }

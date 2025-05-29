@@ -9,8 +9,6 @@
 typedef struct {
     chunk_t loadedChunks[MAX_CHUNKS];
     size_t chunkN;
-
-    GLuint chunkVAO;
 } world_t;
 
 void world_init(world_t *w);
