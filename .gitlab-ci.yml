@@ -19,44 +19,75 @@
 stages:          # List of stages for jobs, and their order of execution
   - build
   - test
+  - format
   
-image: ubuntu:24.04
-
-before_script:
- - apt-get update --yes
- - apt-get install --yes cmake git python3 python3-venv python3-pip
+image: alpine:latest
 
 build-job:       # This job runs in the build stage, which runs first.
   stage: build
+  before_script:
+    - apk add --no-cache cmake make gcc libc-dev
   script:
     - cmake .
     - cmake --build .
   artifacts:
     paths:
-      - assembler/assembler
-      - emulator/emulate
+      - assembler-emulator/assembler/assembler
+      - assembler-emulator/emulator/emulate
     expire_in: 1 hour
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - changes:
+        - lib/**/*
+        - assembler-emulator/**/*
+        - .gitlab-ci.yml
 
 unit-test-job:   # This job runs in the test stage.
+  image: python:3.10.12-alpine
   stage: test    # It only starts when the job in the build stage completes successfully.
+  needs: [build-job]
   dependencies:
     - build-job
+  before_script:
+    - apk add --no-cache git
   script:
-    - git clone https://oauth2:${ACCESS_TOKEN}@gitlab.doc.ic.ac.uk/teaching-fellows/armv8_testsuite.git
+    - git clone --depth=1 https://oauth2:${ACCESS_TOKEN}@gitlab.doc.ic.ac.uk/teaching-fellows/armv8_testsuite.git
     - cd armv8_testsuite/
     - mkdir solution
-    - cp ../assembler/assembler solution/assemble
-    - cp ../emulator/emulate solution/emulate
+    - cp ../assembler-emulator/assembler/assembler solution/assemble
+    - cp ../assembler-emulator/emulator/emulate solution/emulate
     - ./install
     - source .venv/bin/activate
     - ./run -p
   variables:
     ACCESS_TOKEN: $MY_PAT_SECRET 
   rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - changes:
-        paths:
-        - emulator/**
-        - assembler/**
+        - lib/**/*
+        - assembler-emulator/**/*
+        - .gitlab-ci.yml
+
+clang-format-check:
+  stage: format
+  before_script:
+    - apk add --no-cache clang clang-extra-tools git
+  script:
+    # Run clang-format and check for differences
+    - find . \( -name "*.c" -o -name "*.h" \) | xargs clang-format -i
+    - |
+      if ! git diff --quiet; then
+        echo "Code formatting issues detected"
+        echo "The following files need formatting:"
+        git diff --name-only
+        echo ""
+        echo "Please run 'find . \\( -name \"*.c\" -o -name \"*.h\" \\) | xargs clang-format -i' "
+        exit 1
+      else
+        echo "All code is properly formatted"
+      fi
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 
 

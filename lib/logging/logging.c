@@ -1,10 +1,17 @@
+#include <pthread.h>
+#include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <time.h>
-#include <stdarg.h>
 #include "logging.h"
 
+#define MAX_OUTPUT_FILES 8
+
 static log_level_t currentLogLevel = LEVEL_DEBUG;
-static FILE *outputFile;
+static FILE *outputFile[MAX_OUTPUT_FILES];
+static size_t currentFileN = 0;
+
+static pthread_mutex_t logMutex = PTHREAD_MUTEX_INITIALIZER;
 
 static const char *levelNames[5] = {
     "DEBUG",
@@ -19,27 +26,33 @@ static const char *colourOpeners[] = {
     "",
     "\033[93m",
     "\033[31m",
-    "\033[38;2;255;50;50m"
+    "\033[38;2;255;50;50m",
 };
 
-
 void log_init(FILE *out) {
-    if (!outputFile)
-        outputFile = out;
+    if (!outputFile[0]) {
+        outputFile[0] = out;
+        currentFileN++;
+    }
 }
 
-void log_setLevel(log_level_t level) {
+void log_addOutput(FILE *out) {
+    if (currentFileN < MAX_OUTPUT_FILES) {
+        outputFile[currentFileN++] = out;
+    }
+}
+
+void log_setLevel(const log_level_t level) {
     currentLogLevel = level;
 }
 
 void log_log(
-    log_level_t level,
+    const log_level_t level,
     const char *file,
-    int line,
+    const int line,
     const char *func,
     const char *fmt,
-    ...
-) {
+    ...) {
     if (level < currentLogLevel)
         return;
 
@@ -55,14 +68,17 @@ void log_log(
     char timeStr[20];
     strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &currentTimeData);
 
-    fprintf(outputFile, "%s", colourOpeners[level]);
-    fprintf(outputFile, "%s %-5s %s:%d:%s(): ", timeStr, levelNames[level], file, line, func);
+    for (uint64_t i = 0; i < currentFileN; i++) {
+        pthread_mutex_lock(&logMutex);
+        fprintf(outputFile[i], " %s %s %-5s %s:%d:%s(): ", colourOpeners[level], timeStr, levelNames[level], file, line, func);
 
-    va_list args;
-    va_start(args, fmt);
-    vfprintf(outputFile, fmt, args);
-    va_end(args);
+        va_list args;
+        va_start(args, fmt);
+        vfprintf(outputFile[i], fmt, args);
+        va_end(args);
 
-    fprintf(outputFile, "\033[0m\n");
-    fflush(outputFile);
+        fprintf(outputFile[i], "\033[0m\n");
+        fflush(outputFile[i]);
+        pthread_mutex_unlock(&logMutex);
+    }
 }
