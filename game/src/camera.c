@@ -12,6 +12,10 @@ void camera_createView(camera_t *c, mat4 dest) {
     glm_quat_look(c->eye, c->ori, dest);
 }
 
+void camera_setPos(camera_t *c, vec3 p) {
+    glm_vec3_copy(p, c->eye);
+}
+
 void camera_translate(camera_t *c, vec3 v) {
     glm_vec3_add(c->eye, v, c->eye);
 }

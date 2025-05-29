@@ -14,6 +14,8 @@ void camera_init(camera_t *c);
 void camera_createView(camera_t *c, mat4 dest);
 
 
+void camera_setPos(camera_t *c, vec3 p);
+
 void camera_translate(camera_t *c, vec3 v);
 
 void camera_translateX(camera_t *c, float dX);
