@@ -100,3 +100,16 @@ void updateVelocity(entity_t *entity, vec3 deltaV) {
     entity->velocity[1] = clamp(entity->velocity[1], -MAX_ABS_Y_VELOCITY, MAX_ABS_Y_VELOCITY);
     entity->velocity[2] = clamp(entity->velocity[2], -MAX_ABS_Y_VELOCITY, MAX_ABS_Y_VELOCITY);
 }
+
+/**
+ * @brief calculates the coordinates of the chunk a vector in 3D space is in
+ * @param position The position of the item you want to get the chunk of
+ * @param result The array in which the coordinates should be stored
+ * @return the index of the chunk the item is in
+ */
+int *getChunkCoords(vec3 position, int result[3]) {
+    result[0] = floor(position[0] / 16.f);
+    result[1] = floor(position[1] / 16.f);
+    result[2] = floor(position[2] / 16.f);
+    return result;
+}
