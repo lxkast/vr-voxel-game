@@ -17,8 +17,10 @@ typedef struct {
     vec3 position;
     vec3 velocity;
     vec3 size;
-    entity_type type;
     bool grounded;
+    // stored in radians
+    float pitch;
+    float yaw;
 } entity_t;
 
 typedef struct {
@@ -26,5 +28,5 @@ typedef struct {
     vec3 max;
 } aabb_t;
 
-void updateVelocity(entity_t *entity, vec3 impulse);
-void moveEntity(entity_t *entity, const vec3 moveVec);
+void updateVelocity(entity_t *entity, vec3 deltaV);
+void moveEntity(entity_t *entity, vec3 deltaP);
