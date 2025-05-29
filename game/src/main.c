@@ -94,6 +94,7 @@ int main(void) {
     BUILD_SHADER_PROGRAM(
         &program, {
             glBindAttribLocation(program, 0, "aPos");
+            glBindAttribLocation(program, 1, "aTexCoord");
         }, {
             LOG_ERROR("Couldn't build shader program");
             return -1;
@@ -119,14 +120,12 @@ int main(void) {
         glBindVertexArray(vao);
 
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, cubeVerticesSize, cubeVertices, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, grassVerticesSize, grassVertices, GL_STATIC_DRAW);
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, cubeIndicesSize, cubeIndices, GL_STATIC_DRAW);
-
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *) 0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
         glEnableVertexAttribArray(0);
-
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
+        glEnableVertexAttribArray(1);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
     }
@@ -134,7 +133,7 @@ int main(void) {
     /*
         Textures
     */
-    GLuint texture = loadTextureRGB("../../textures/dirt.jpg", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
+    GLuint texture = loadTextureRGBA("../../textures/textures.png", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
 
     /*
         Add basic camera setup
@@ -164,6 +163,14 @@ int main(void) {
         glUseProgram(0);
     }
 
+    // set texture unit
+    {
+        glUseProgram(program);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glUniform1i(glGetUniformLocation(program, "uTextureAtlas"), 0);
+    }
 
     /*
         Main loop
@@ -185,11 +192,14 @@ int main(void) {
 
 
         glUseProgram(program);
+        glEnable(GL_DEPTH_TEST);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
         camera_setView(&camera, program);
 
         glBindVertexArray(vao);
-        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
 
         glUseProgram(0);
