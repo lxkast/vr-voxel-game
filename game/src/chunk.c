@@ -3,6 +3,10 @@
 #include <string.h>
 #include "vertices.h"
 
+/**
+ * @brief Creates the mesh from a chunk
+ * @param c A pointer to a chunk
+ */
 static void chunk_createMesh(chunk_t *c) {
     static const size_t bytesPerBlock = sizeof(float) * 36 * 5;
 
