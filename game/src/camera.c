@@ -17,19 +17,21 @@ void camera_setPos(camera_t *c, vec3 p) {
 }
 
 void camera_translate(camera_t *c, vec3 v) {
-    glm_vec3_add(c->eye, v, c->eye);
+    vec3 delta;
+    glm_mat3_mulv(c->ruf, v, delta);
+    glm_vec3_add(c->eye, delta, c->eye);
 }
 
 void camera_translateX(camera_t *c, const float dX) {
-    c->eye[0] += dX;
+    glm_vec3_muladds(camera_right(c), dX, c->eye);
 }
 
 void camera_translateY(camera_t *c, const float dY) {
-    c->eye[1] += dY;
+    glm_vec3_muladds(camera_up(c), dY, c->eye);
 }
 
 void camera_translateZ(camera_t *c, const float dZ) {
-    c->eye[2] += dZ;
+    glm_vec3_muladds(camera_front(c), dZ, c->eye);
 }
 
 static void camera_setRuf(camera_t *c) {
