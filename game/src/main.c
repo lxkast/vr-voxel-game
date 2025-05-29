@@ -4,6 +4,7 @@
 #include <logging.h>
 #include <stdio.h>
 #include "camera.h"
+#include "postprocess.h"
 #include "shaderutil.h"
 #include "texture.h"
 #include "world.h"
@@ -70,10 +71,10 @@ int main(void) {
     GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* videoMode = glfwGetVideoMode(primaryMonitor);
 
-    const float screenWidth = (float)videoMode->width;
-    const float screenHeight = (float)videoMode->height;
+    const int screenWidth = 1024;
+    const int screenHeight = 600;
 
-    GLFWwindow *window = glfwCreateWindow((int)(screenWidth/2.0f), (int)(screenHeight/1.5f), "Hello, Window!", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow((int)(screenWidth), (int)(screenHeight), "Hello, Window!", NULL, NULL);
 
     if (window == NULL) {
         LOG_ERROR("Failed to create GLFW window");
@@ -122,13 +123,26 @@ int main(void) {
         "shaders/basic.frag"
     );
 
+    GLuint postProcessProgram;
+    BUILD_SHADER_PROGRAM(
+        &postProcessProgram, {
+            glBindAttribLocation(program, 0, "aPos");
+            glBindAttribLocation(program, 1, "aTexCoord");
+        }, {
+            LOG_ERROR("Couldn't build shader program");
+            return -1;
+        },
+        "shaders/postprocess.vert",
+        "shaders/postprocess.frag"
+    );
+
 
     /*
         Textures
     */
 
 
-    const GLuint texture = loadTextureRGBA("../../textures/textures.png", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
+    const GLuint texture = loadTextureRGBA("textures/textures.png", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
 
 
     /*
@@ -136,7 +150,7 @@ int main(void) {
     */
 
 
-    {
+
         mat4 projection;
         glm_perspective_default((float)screenWidth / (float)screenHeight, projection);
 
@@ -147,7 +161,7 @@ int main(void) {
         glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projection);
 
         glUseProgram(0);
-    }
+
 
     // set texture unit
     {
@@ -186,23 +200,29 @@ int main(void) {
         world_addChunk(&world, chunks[i]);
     }
 
+    postProcess_t postProcess;
+    postProcess_init(&postProcess, postProcessProgram, screenWidth, screenHeight);
+
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
         processCameraInput(window, &camera);
 
+        glBindFramebuffer(GL_FRAMEBUFFER, postProcess.framebuffer);
+        glEnable(GL_DEPTH_TEST);
         glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
-        glClear(GL_DEPTH_BUFFER_BIT);
-        glClear(GL_COLOR_BUFFER_BIT);
-
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(program);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glUniform1i(glGetUniformLocation(program, "uTextureAtlas"), 0);
 
+        glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projection);
         const int modelLocation = glGetUniformLocation(program, "model");
 
         camera_setView(&camera, program);
         world_draw(&world, modelLocation);
-
-        glUseProgram(0);
+        postProcess_draw(&postProcess);
 
         glfwPollEvents();
         glfwSwapBuffers(window);

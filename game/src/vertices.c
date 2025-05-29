@@ -92,3 +92,16 @@ const unsigned int cubeIndices[] = {
     1, 0, 4
 };
 const unsigned int cubeIndicesSize = sizeof(cubeIndices);
+
+const float quadVertices[] = {
+    // positions   // texCoords
+    -1.0f,  1.0f,  0.0f, 1.0f,
+    -1.0f, -1.0f,  0.0f, 0.0f,
+    1.0f, -1.0f,  1.0f, 0.0f,
+
+    -1.0f,  1.0f,  0.0f, 1.0f,
+    1.0f, -1.0f,  1.0f, 0.0f,
+    1.0f,  1.0f,  1.0f, 1.0f
+};
+
+const unsigned int quadVerticesSize = sizeof(quadVertices);
