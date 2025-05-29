@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include "chunk.h"
 
-#define MAX_CHUNKS 16
+#define MAX_CHUNKS 256
 
 /**
  * @brief A struct that holds data about the world.

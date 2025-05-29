@@ -21,16 +21,16 @@ static void processCameraInput(GLFWwindow *window, camera_t *camera) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     }
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        camera_translateZ(camera, -0.01f);
+        camera_translateZ(camera, -0.15f);
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        camera_translateZ(camera, 0.01f);
+        camera_translateZ(camera, 0.15f);
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        camera_translateX(camera, -0.01f);
+        camera_translateX(camera, -0.15f);
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        camera_translateX(camera, 0.01f);
+        camera_translateX(camera, 0.15f);
     }
 
     double currentMouse[2];
@@ -169,18 +169,17 @@ int main(void) {
     world_t world;
     world_init(&world);
 
-    {
-        chunk_t c1;
-        chunk_create(&c1, 0, 0, 0, BL_GRASS);
-
-        world_addChunk(&world, c1);
+    chunk_t chunks[16];
+    for (int i = 0; i < 16; i++) {
+        chunk_create(&chunks[i], i % 4 - 2, 0, i / 4 - 2, BL_GRASS);
+        world_addChunk(&world, chunks[i]);
     }
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
         processCameraInput(window, &camera);
 
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
         glClear(GL_DEPTH_BUFFER_BIT);
         glClear(GL_COLOR_BUFFER_BIT);
 
