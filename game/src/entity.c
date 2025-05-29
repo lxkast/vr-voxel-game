@@ -42,7 +42,9 @@ void handleAxisCollision(entity_t *entity, const aabb_t aabb, const block_t *blo
     if (aabb.min[axisNum] + deltaP[axisNum] < blocks[index].aabb.max[axisNum] && aabb.max[axisNum] + deltaP[axisNum] >= blocks[index].aabb.min[axisNum]) {
         if (deltaP[axisNum] < 0) {
             deltaP[axisNum] = blocks[index].aabb.max[axisNum] - entity->position[axisNum];
-            entity->grounded = true;
+            if (axisNum == 1) {
+                entity->grounded = true;
+            }
         } else {
             deltaP[axisNum] = blocks[index].aabb.min[axisNum] - entity->size[axisNum] - entity->position[axisNum];
         }
@@ -84,7 +86,7 @@ void moveEntity(entity_t *entity, vec3 deltaP) {
         }
     }
 
-    glm_vec3_add(entity->position, entity->size, entity->position);
+    glm_vec3_add(entity->position, deltaP, entity->position);
 }
 
 static float clamp(const float value, const float min, const float max) {
