@@ -5,7 +5,7 @@
 
 void camera_init(camera_t *c) {
     glm_vec3_copy(GLM_VEC3_ZERO, c->eye);
-    glm_quat_for(GLM_XUP, GLM_YUP, c->ori);
+    glm_quat_for(GLM_ZUP, GLM_YUP, c->ori);
 }
 
 void camera_createView(camera_t *c, mat4 dest) {
