@@ -4,6 +4,7 @@
 #include <logging.h>
 #include <cglm/cglm.h>
 
+#include "camera.h"
 #include "shaderutil.h"
 #include "vertices.h"
 #include "texture.h"
@@ -13,6 +14,34 @@
 #else
 #define MINOR_VERSION 1
 #endif
+
+static double previousMouse[2];
+
+void processCameraInput(GLFWwindow *window, camera_t *camera) {
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        camera_translateZ(camera, -0.01f);
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        camera_translateZ(camera, 0.01f);
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        camera_translateX(camera, -0.01f);
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        camera_translateX(camera, 0.01f);
+    }
+
+    double currentMouse[2];
+    glfwGetCursorPos(window, &currentMouse[0], &currentMouse[1]);
+    const float dX = (float)(currentMouse[0] - previousMouse[0]);
+    const float dY = (float)(currentMouse[1] - previousMouse[1]);
+    previousMouse[0] = currentMouse[0];
+    previousMouse[1] = currentMouse[1];
+    camera_fromMouse(camera, -dX, -dY);
+}
 
 int main(void) {
     /*
@@ -45,6 +74,12 @@ int main(void) {
         glfwGetFramebufferSize(window, &width, &height);
         glViewport(0, 0, width, height);
     }
+
+    glEnable(GL_DEPTH_TEST);
+
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwGetCursorPos(window, previousMouse, previousMouse + 1);
+
 
     LOG_INFO("Initialisation complete.");
     LOG_INFO("Using OpenGL %s", glGetString(GL_VERSION));
@@ -134,15 +169,24 @@ int main(void) {
         Main loop
     */
 
+    // Camera setup
+    camera_t camera;
+    camera_init(&camera);
+    vec3 p = { 0.f, 0.f, -5.f };
+    camera_setPos(&camera, p);
 
-    glEnable(GL_DEPTH_TEST);
+
     while (!glfwWindowShouldClose(window)) {
+        processCameraInput(window, &camera);
+
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_DEPTH_BUFFER_BIT);
         glClear(GL_COLOR_BUFFER_BIT);
 
 
         glUseProgram(program);
+
+        camera_setView(&camera, program);
 
         glBindVertexArray(vao);
         glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
