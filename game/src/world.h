@@ -11,7 +11,7 @@
  */
 typedef struct {
     /// The array of loaded chunks.
-    chunk_t loadedChunks[MAX_CHUNKS];
+    chunk_t *loadedChunks[MAX_CHUNKS];
     /// The current number of chunks/next free space in the array.
     size_t chunkN;
 } world_t;
@@ -25,10 +25,10 @@ void world_init(world_t *w);
 /**
  * @brief Adds a chunk to the world (maybe).
  * @param w A pointer to a world
- * @param chunk The chunk to add
+ * @param chunk A pointer to a chunk
  * @return Whether the function was successful
  */
-bool world_addChunk(world_t *w, chunk_t chunk);
+bool world_addChunk(world_t *w, chunk_t *chunk);
 
 /**
  * @brief Draws the world.

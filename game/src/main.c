@@ -169,9 +169,13 @@ int main(void) {
     world_t world;
     world_init(&world);
 
-    chunk_t chunks[16];
-    for (int i = 0; i < 16; i++) {
-        chunk_create(&chunks[i], i % 4 - 2, 0, i / 4 - 2, BL_GRASS);
+#define R_N 8
+#define N R_N * R_N
+
+    chunk_t *chunks[N];
+    for (int i = 0; i < N; i++) {
+        chunks[i] = (chunk_t *)malloc(sizeof(chunk_t));
+        chunk_create(chunks[i], i % R_N - R_N / 2, 0, i / R_N - R_N / 2, BL_GRASS);
         world_addChunk(&world, chunks[i]);
     }
 
@@ -201,6 +205,9 @@ int main(void) {
             LOG_ERROR("OpenGL error: %d", err);
         }
     }
+
+    for (int i = 0; i < N; i++)
+        free(chunks[i]);
 
     return 0;
 }
