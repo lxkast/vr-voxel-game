@@ -3,9 +3,14 @@
 
 #include "camera.h"
 
+static void camera_setRuf(camera_t *c) {
+    glm_quat_mat3(c->ori, c->ruf);
+}
+
 void camera_init(camera_t *c) {
     glm_vec3_copy(GLM_VEC3_ZERO, c->eye);
     glm_quat_for(GLM_ZUP, GLM_YUP, c->ori);
+    camera_setRuf(c);
 }
 
 void camera_createView(camera_t *c, mat4 dest) {
@@ -32,10 +37,6 @@ void camera_translateY(camera_t *c, const float dY) {
 
 void camera_translateZ(camera_t *c, const float dZ) {
     glm_vec3_muladds(camera_front(c), dZ, c->eye);
-}
-
-static void camera_setRuf(camera_t *c) {
-    glm_quat_mat3(c->ori, c->ruf);
 }
 
 void camera_fromMouse(camera_t *c, const float dX, const float dY) {
