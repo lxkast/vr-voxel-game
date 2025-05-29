@@ -17,7 +17,7 @@
 
 static double previousMouse[2];
 
-void processCameraInput(GLFWwindow *window, camera_t *camera) {
+static void processCameraInput(GLFWwindow *window, camera_t *camera) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     }
@@ -41,6 +41,19 @@ void processCameraInput(GLFWwindow *window, camera_t *camera) {
     previousMouse[0] = currentMouse[0];
     previousMouse[1] = currentMouse[1];
     camera_fromMouse(camera, -dX, -dY);
+}
+
+static bool wireframeView = false;
+static bool previousDown = false;
+static void processInput(GLFWwindow *window) {
+    const int key = glfwGetKey(window, GLFW_KEY_P);
+    if (key == GLFW_PRESS && !previousDown) {
+        glPolygonMode(GL_FRONT_AND_BACK, wireframeView ? GL_FILL : GL_LINE);
+        wireframeView = !wireframeView;
+        previousDown = true;
+    } if (key == GLFW_RELEASE) {
+        previousDown = false;
+    }
 }
 
 int main(void) {
@@ -184,6 +197,7 @@ int main(void) {
 
 
     while (!glfwWindowShouldClose(window)) {
+        processInput(window);
         processCameraInput(window, &camera);
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
