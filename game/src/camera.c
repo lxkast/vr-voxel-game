@@ -3,6 +3,10 @@
 
 #include "camera.h"
 
+/**
+ * @brief Calculates and sets the ruf matrix based on the orientation.
+ * @param c A pointer to a camera object
+ */
 static void camera_setRuf(camera_t *c) {
     glm_quat_mat3(c->ori, c->ruf);
 }
