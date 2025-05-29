@@ -67,7 +67,14 @@ int main(void) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, MINOR_VERSION);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    GLFWwindow *window = glfwCreateWindow(640, 480, "Hello, Window!", NULL, NULL);
+    GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* videoMode = glfwGetVideoMode(primaryMonitor);
+
+    const float screenWidth = (float)videoMode->width;
+    const float screenHeight = (float)videoMode->height;
+
+    GLFWwindow *window = glfwCreateWindow((int)(screenWidth/2.0f), (int)(screenHeight/1.5f), "Hello, Window!", NULL, NULL);
+
     if (window == NULL) {
         LOG_ERROR("Failed to create GLFW window");
         glfwTerminate();
@@ -131,7 +138,7 @@ int main(void) {
 
     {
         mat4 projection;
-        glm_perspective_default(640.0f / 480.0f, projection);
+        glm_perspective_default((float)screenWidth / (float)screenHeight, projection);
 
         glUseProgram(program);
 
