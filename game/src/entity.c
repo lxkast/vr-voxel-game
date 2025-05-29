@@ -49,6 +49,7 @@ void moveEntity(entity_t *entity, const vec3 moveVec) {
             if (aabb.min[1] + moveVec[1] < blocks[i].aabb.max[1] && aabb.max[1] + moveVec[1] >= blocks[i].aabb.min[1]) {
                 if (moveVec[1] < 0) {
                     entity->position[1] = blocks[i].aabb.max[1];
+                    entity->grounded = true;
                 } else {
                     entity->position[1] = blocks[i].aabb.min[1] - entity->size[1];
                 }
@@ -82,5 +83,16 @@ void moveEntity(entity_t *entity, const vec3 moveVec) {
             }
         }
     }
+}
 
+static float clamp(const float value, const float min, const float max) {
+    return (value < min) ? min : (value > max) ? max : value;
+}
+
+void updateVelocity(entity_t *entity, vec3 impulse) {
+    glm_vec3_add(entity->velocity, impulse, entity->velocity);
+
+    entity->velocity[0] = clamp(entity->velocity[0], -MAX_ABS_X_VELOCITY, MAX_ABS_X_VELOCITY);
+    entity->velocity[1] = clamp(entity->velocity[1], -MAX_ABS_Y_VELOCITY, MAX_ABS_Y_VELOCITY);
+    entity->velocity[2] = clamp(entity->velocity[2], -MAX_ABS_Y_VELOCITY, MAX_ABS_Y_VELOCITY);
 }
