@@ -5,6 +5,7 @@
 typedef struct {
     vec3 eye;
     versor ori;
+    mat3 ruf;
 } camera_t;
 
 void camera_init(camera_t *c);
@@ -26,3 +27,7 @@ void camera_fromMouse(camera_t *c, float dX, float dY);
 
 
 void camera_setView(camera_t *c, GLuint program);
+
+#define camera_front(c) c->ruf[2]
+#define camera_up(c) c->ruf[1]
+#define camera_right(c) c->ruf[0]

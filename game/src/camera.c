@@ -28,6 +28,10 @@ void camera_translateZ(camera_t *c, const float dZ) {
     c->eye[2] += dZ;
 }
 
+static void camera_setRuf(camera_t *c) {
+    glm_quat_mat3(c->ori, c->ruf);
+}
+
 void camera_fromMouse(camera_t *c, const float dX, const float dY) {
     versor qYaw;
     glm_quat(qYaw, dX * 0.01f, 0.0f, 1.0f, 0.0f);
@@ -42,6 +46,7 @@ void camera_fromMouse(camera_t *c, const float dX, const float dY) {
     glm_quat_mul(qPitch, c->ori, c->ori);
 
     glm_quat_normalize(c->ori);
+    camera_setRuf(c);
 }
 
 void camera_setView(camera_t *c, GLuint program) {
