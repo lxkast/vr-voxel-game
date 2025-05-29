@@ -35,52 +35,52 @@ typedef struct {
     aabb_t aabb;
 } block_t;
 
+// Not yet implemented - will get all adjacent blocks once that is implemented
+extern block_t* getAdjacentBlocks(vec3 position, vec3 size, int *numBlocks);
 
+void handleAxisCollision(entity_t *entity, const aabb_t aabb, const block_t *blocks, vec3 deltaP, const int index, const int axisNum) {
+    if (aabb.min[axisNum] + deltaP[axisNum] < blocks[index].aabb.max[axisNum] && aabb.max[axisNum] + deltaP[axisNum] >= blocks[index].aabb.min[axisNum]) {
+        if (deltaP[axisNum] < 0) {
+            deltaP[axisNum] = blocks[index].aabb.max[axisNum] - entity->position[axisNum];
+            entity->grounded = true;
+        } else {
+            deltaP[axisNum] = blocks[index].aabb.min[axisNum] - entity->size[axisNum] - entity->position[axisNum];
+        }
+        entity->velocity[axisNum] = 0;
+    }
+}
+
+/**
+ * @brief updates the entity's position using deltaP, whilst checking for possible collisions
+ * @param entity the entity whose position you're changing
+ * @param deltaP the amount you want to change it by
+ */
 void moveEntity(entity_t *entity, vec3 deltaP) {
     const aabb_t aabb = makeAABB(entity);
 
-    // Not yet implemented - will get all adjacent blocks once that is implemented
-    const block_t blocks[];
-    // assuming there are 12
+    int numBlocks = 0;
 
-    for (int i = 0; i < 12; i++) {
+    const block_t* blocks = getAdjacentBlocks(entity->position, entity->size, &numBlocks);
+
+    // resolves collisions in Y-axis
+    for (int i = 0; i < numBlocks; i++) {
         if (blocks[i].type == AIR) { continue; }
         if (intersectsX(aabb, blocks[i].aabb) && intersectsZ(aabb, blocks[i].aabb)) {
-            if (aabb.min[1] + deltaP[1] < blocks[i].aabb.max[1] && aabb.max[1] + deltaP[1] >= blocks[i].aabb.min[1]) {
-                if (deltaP[1] < 0) {
-                    deltaP[1] = blocks[i].aabb.max[1] - entity->position[1];
-                    entity->grounded = true;
-                } else {
-                    deltaP[1] = blocks[i].aabb.min[1] - entity->size[1] - entity->position[1];
-                }
-                entity->velocity[1] = 0;
-            }
+            handleAxisCollision(entity, aabb, blocks, deltaP, i, 1);
         }
     }
-    for (int i = 0; i < 12; i++) {
+    // resolves collisions in X-axis
+    for (int i = 0; i < numBlocks; i++) {
         if (blocks[i].type == AIR) { continue; }
         if (intersectsY(aabb, blocks[i].aabb) && intersectsZ(aabb, blocks[i].aabb)) {
-            if (aabb.min[0] + deltaP[0] < blocks[i].aabb.max[0] && aabb.max[0] + deltaP[0] >= blocks[i].aabb.min[0]) {
-                if (deltaP[0] < 0) {
-                    deltaP[0] = blocks[i].aabb.max[0] - entity->position[0];
-                } else {
-                    deltaP[0] = blocks[i].aabb.min[0] - entity->size[0] - entity->position[0];
-                }
-                entity->velocity[0] = 0;
-            }
+            handleAxisCollision(entity, aabb, blocks, deltaP, i, 0);
         }
     }
-    for (int i = 0; i < 12; i++) {
+    // resolves collisions in Z-axis
+    for (int i = 0; i < numBlocks; i++) {
         if (blocks[i].type == AIR) { continue; }
         if (intersectsX(aabb, blocks[i].aabb) && intersectsY(aabb, blocks[i].aabb)) {
-            if (aabb.min[2] + deltaP[2] < blocks[i].aabb.max[2] && aabb.max[2] + deltaP[2] >= blocks[i].aabb.min[2]) {
-                if (deltaP[2] < 0) {
-                    deltaP[2] = blocks[i].aabb.max[2] - entity->position[2];
-                } else {
-                    deltaP[2] = blocks[i].aabb.min[2] - entity->size[2] - entity->position[2];
-                }
-                entity->velocity[2] = 0;
-            }
+            handleAxisCollision(entity, aabb, blocks, deltaP, i, 2);
         }
     }
 
