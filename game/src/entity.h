@@ -17,11 +17,20 @@ typedef struct {
     vec3 position;
     vec3 velocity;
     vec3 size;
+    vec3 acceleration;
     bool grounded;
     // stored in radians
-    float pitch;
-    float yaw;
+    float yaw;   // rename to orientation?
 } entity_t;
+
+typedef struct {
+    entity_t entity;        // for minecraft this is typically 0.6x1.8x0.6
+    float cameraView;       // where the player is looking relative to the horizontal in radians
+    vec3 camera_position;   // if we implement translational headset movement this will change
+                            // default value of 0.3x1.6x0.3  (this isn't official just a guess)
+    // member for inventory
+    // member for hotbar
+} player_t;
 
 typedef struct {
     vec3 min;
