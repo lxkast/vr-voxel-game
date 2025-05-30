@@ -211,6 +211,7 @@ int main(void) {
         glEnable(GL_DEPTH_TEST);
         glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glPolygonMode(GL_FRONT_AND_BACK, wireframeView ? GL_FILL : GL_LINE);
 
         glUseProgram(program);
         glActiveTexture(GL_TEXTURE0);

@@ -41,10 +41,12 @@ void postProcess_init(postProcess_t *postProcess, GLuint shaderProgram, int widt
 }
 
 void postProcess_draw(postProcess_t *postProcess) {
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDisable(GL_DEPTH_TEST);
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glUseProgram(postProcess->program);
     glBindVertexArray(postProcess->vao);
     glActiveTexture(GL_TEXTURE0);
