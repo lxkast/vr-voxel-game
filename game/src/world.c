@@ -5,18 +5,16 @@
 
 static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int cz, bool create, size_t *offset) {
     cluster_t *clusterPtr;
-    LOG_DEBUG("Trying to load %d %d %d", cx, cy, cz);
 
     clusterKey_t k = {
-        cx / (1 << LOG_C_T),
-        cy / (1 << LOG_C_T),
-        cz / (1 << LOG_C_T),
+        cx >> LOG_C_T,
+        cy >> LOG_C_T,
+        cz >> LOG_C_T,
     };
 
     HASH_FIND(hh, w->clusterTable, &k, sizeof(clusterKey_t), clusterPtr);
 
     if (clusterPtr) {
-        LOG_DEBUG("Cluster %d %d %d exists.", k.x, k.y, k.z);
     } else {
         if (!create) return 0;
 
@@ -25,12 +23,11 @@ static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int c
         clusterPtr->key = k;
 
         HASH_ADD(hh, w->clusterTable, key, sizeof(clusterKey_t), clusterPtr);
-        LOG_DEBUG("Cluster %d %d %d has been added.", k.x, k.y, k.z);
     }
     *offset =
-        (cz - k.z * (1 << LOG_C_T)) * C_T * C_T +
-            (cy - k.y * (1 << LOG_C_T)) * C_T +
-                (cx - k.x * (1 << LOG_C_T));
+        (cz - (k.z << LOG_C_T)) * C_T * C_T +
+            (cy - (k.y << LOG_C_T)) * C_T +
+                (cx - (k.x << LOG_C_T));
     return clusterPtr;
 }
 
@@ -98,9 +95,9 @@ void world_doChunkLoading(world_t *w) {
     for (int i = 0; i < MAX_CHUNK_LOADERS; i++) {
         if (!w->chunkLoaders[i].active)
             continue;
-        const int cx = w->chunkLoaders[i].x / CHUNK_SIZE;
-        const int cy = w->chunkLoaders[i].y / CHUNK_SIZE;
-        const int cz = w->chunkLoaders[i].z / CHUNK_SIZE;
+        const int cx = w->chunkLoaders[i].x >> 4;
+        const int cy = w->chunkLoaders[i].y >> 4;
+        const int cz = w->chunkLoaders[i].z >> 4;
 
 #define CHUNK_LOAD_RADIUS 0
         for (int x = -CHUNK_LOAD_RADIUS; x <= CHUNK_LOAD_RADIUS; x++) {
@@ -128,6 +125,7 @@ void world_doChunkLoading(world_t *w) {
                 HASH_DEL(w->clusterTable, cluster);
                 free(cluster->cells);
                 free(cluster);
+                break;
             }
         }
     }

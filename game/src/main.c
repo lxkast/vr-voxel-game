@@ -180,7 +180,7 @@ int main(void) {
     world_genChunkLoader(&world, &spawnLoader);
     world_genChunkLoader(&world, &cameraLoader);
     world_updateChunkLoader(&world, spawnLoader, GLM_VEC3_ZERO);
-    // world_updateChunkLoader(&world, cameraLoader, GLM_VEC3_ZERO);
+    world_updateChunkLoader(&world, cameraLoader, GLM_VEC3_ZERO);
 
 
     while (!glfwWindowShouldClose(window)) {
@@ -188,7 +188,7 @@ int main(void) {
         processCameraInput(window, &camera);
         world_doChunkLoading(&world);
 
-        // world_updateChunkLoader(&world, cameraLoader, camera.eye);
+        world_updateChunkLoader(&world, cameraLoader, camera.eye);
 
         glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
         glClear(GL_DEPTH_BUFFER_BIT);
