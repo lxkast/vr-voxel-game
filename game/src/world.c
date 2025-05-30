@@ -39,14 +39,14 @@ static void loadChunk(world_t *w, const int cx, const int cy, const int cz) {
 
     cluster_t *cluster = clusterGet(w, cx, cy, cz, true, &offset);
 
-    chunkValue_t cv = cluster->cells[offset];
+    chunkValue_t *cv = &cluster->cells[offset];
 
-    if (!cv.chunk) {
-        cv.chunk = (chunk_t *)malloc(sizeof(chunk_t));
-        chunk_create(cv.chunk, cx, cy, cz, BL_GRASS);
+    if (!cv->chunk) {
+        cv->chunk = (chunk_t *)malloc(sizeof(chunk_t));
+        chunk_create(cv->chunk, cx, cy, cz, BL_GRASS);
         cluster->n++;
     }
-    cv.reloaded = true;
+    cv->reloaded = true;
 }
 
 void world_init(world_t *w) {
@@ -57,7 +57,8 @@ void world_draw(const world_t *w, const int modelLocation) {
     cluster_t *cluster, *tmp;
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
         for (int i = 0; i < C_T * C_T * C_T; i++)
-            chunk_draw(cluster->cells[i].chunk, modelLocation);
+            if (cluster->cells[i].chunk)
+                chunk_draw(cluster->cells[i].chunk, modelLocation);
     }
 }
 
@@ -101,7 +102,7 @@ void world_doChunkLoading(world_t *w) {
         const int cy = w->chunkLoaders[i].y / CHUNK_SIZE;
         const int cz = w->chunkLoaders[i].z / CHUNK_SIZE;
 
-#define CHUNK_LOAD_RADIUS 2
+#define CHUNK_LOAD_RADIUS 0
         for (int x = -CHUNK_LOAD_RADIUS; x <= CHUNK_LOAD_RADIUS; x++) {
             for (int y = -CHUNK_LOAD_RADIUS; y <= CHUNK_LOAD_RADIUS; y++) {
                 for (int z = -CHUNK_LOAD_RADIUS; z <= CHUNK_LOAD_RADIUS; z++) {
@@ -116,7 +117,7 @@ void world_doChunkLoading(world_t *w) {
     cluster_t *cluster, *tmp;
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
         for (int i = 0; i < C_T * C_T * C_T; i++) {
-            if (!cluster->cells[i].reloaded) {
+            if (cluster->cells[i].chunk && !cluster->cells[i].reloaded) {
                 free(cluster->cells[i].chunk);
                 cluster->cells[i].chunk = NULL;
                 cluster->n--;
