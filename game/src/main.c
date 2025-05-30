@@ -176,6 +176,7 @@ int main(void) {
     world_t world;
     world_init(&world);
 
+    vec3 temp = { 64.f, 64.f, 64.f };
     unsigned int spawnLoader;
     world_genChunkLoader(&world, &spawnLoader);
     world_updateChunkLoader(&world, spawnLoader, GLM_VEC3_ZERO);
@@ -185,6 +186,7 @@ int main(void) {
         processInput(window);
         processCameraInput(window, &camera);
         world_doChunkLoading(&world);
+        world_updateChunkLoader(&world, spawnLoader, temp);
 
         glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
         glClear(GL_DEPTH_BUFFER_BIT);
