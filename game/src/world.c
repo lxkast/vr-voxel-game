@@ -19,6 +19,12 @@ static bool removeChunk(world_t *w, const size_t i) {
 static bool loadChunk(world_t *w, const int cx, const int cy, const int cz) {
     if (w->chunkN >= MAX_CHUNKS)
         return false;
+    for (int i = 0; i < w->chunkN; i++) {
+        const chunk_t *chunk = w->loadedChunks[i];
+        if (chunk->cx == cx && chunk->cy == cy && chunk->cz == cz) {
+            return false;
+        }
+    }
     chunk_t *chunkPtr = (chunk_t *)malloc(sizeof(chunk_t));
     chunk_create(chunkPtr, cx, cy, cz, BL_GRASS);
     addChunk(w, chunkPtr);
