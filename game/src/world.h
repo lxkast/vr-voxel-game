@@ -58,6 +58,6 @@ void world_updateChunkLoader(world_t *w, unsigned int id, const float pos[3]);
 /**
  * @brief Deletes a chunk loader from an id.
  * @param w A pointer to a world
- * @param loader The id of the chunk loader
+ * @param id The id of the chunk loader
  */
-void world_delChunkLoader(world_t *w, unsigned int loader);
+void world_delChunkLoader(world_t *w, unsigned int id);

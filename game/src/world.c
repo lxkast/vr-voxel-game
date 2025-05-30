@@ -53,3 +53,23 @@ void world_free(world_t *w) {
     }
     w->chunkN = 0;
 }
+
+bool world_genChunkLoader(world_t *w, unsigned int *id) {
+    for (int i = 0; i < MAX_CHUNK_LOADERS; i++) {
+        if (w->chunkLoaders[i].active)
+            continue;
+        *id = i;
+        return w->chunkLoaders[i].active = true;
+    }
+    return false;
+}
+
+void world_updateChunkLoader(world_t *w, const unsigned int id, const float pos[3]) {
+    w->chunkLoaders[id].x = (int)pos[0];
+    w->chunkLoaders[id].y = (int)pos[1];
+    w->chunkLoaders[id].z = (int)pos[2];
+}
+
+void world_delChunkLoader(world_t *w, const unsigned int id) {
+    w->chunkLoaders[id].active = false;
+}
