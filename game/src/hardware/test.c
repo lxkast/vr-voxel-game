@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "icm42688.c"
+#include "icm42688.h"
 
 void main(void) {
     log_init(stdout);
@@ -11,12 +11,7 @@ void main(void) {
     init_imu();
 
     while(1) {
-        LOG_DEBUG("Temp reading %f", readTemp());
-        if (isGyroEnabled()) {
-            LOG_DEBUG("Gyro reading %f", readGyro());
-        } else {
-            LOG_DEBUG("Gyro not enabled");
-        }
-        sleep(1);
-    }
+        readFIFOData();
+        usleep(0);
+    } 
 } 
