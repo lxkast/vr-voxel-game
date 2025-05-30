@@ -25,7 +25,6 @@ typedef struct _s_cluster {
     chunkValue_t *cells;
     size_t n;
 
-    struct _s_cluster *hh_next;
     UT_hash_handle hh;
 } cluster_t;
 

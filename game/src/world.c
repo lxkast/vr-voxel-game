@@ -8,9 +8,9 @@ static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int c
     LOG_DEBUG("Trying to load %d %d %d", cx, cy, cz);
 
     clusterKey_t k = {
-        cx >> LOG_C_T,
-        cy >> LOG_C_T,
-        cz >> LOG_C_T,
+        cx / (1 << LOG_C_T),
+        cy / (1 << LOG_C_T),
+        cz / (1 << LOG_C_T),
     };
 
     HASH_FIND(hh, w->clusterTable, &k, sizeof(clusterKey_t), clusterPtr);
@@ -24,7 +24,7 @@ static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int c
         clusterPtr->cells = calloc(C_T * C_T * C_T, sizeof(chunkValue_t));
         clusterPtr->key = k;
 
-        HASH_ADD(hh, w->clusterTable, key, sizeof(cluster_t), clusterPtr);
+        HASH_ADD(hh, w->clusterTable, key, sizeof(clusterKey_t), clusterPtr);
         LOG_DEBUG("Cluster %d %d %d has been added.", k.x, k.y, k.z);
     }
     *offset =
@@ -54,9 +54,10 @@ void world_init(world_t *w) {
 }
 
 void world_draw(const world_t *w, const int modelLocation) {
-    for (const cluster_t *cl = w->clusterTable; cl != NULL; cl = cl->hh_next) {
+    cluster_t *cluster, *tmp;
+    HASH_ITER(hh, w->clusterTable, cluster, tmp) {
         for (int i = 0; i < C_T * C_T * C_T; i++)
-            chunk_draw(cl->cells[i].chunk, modelLocation);
+            chunk_draw(cluster->cells[i].chunk, modelLocation);
     }
 }
 
