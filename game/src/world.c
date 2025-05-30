@@ -28,9 +28,9 @@ static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int c
         LOG_DEBUG("Cluster %d %d %d has been added.", k.x, k.y, k.z);
     }
     *offset =
-        (cz - (k.z << LOG_C_T)) * C_T * C_T +
-            (cy - (k.y << LOG_C_T)) * C_T +
-                (cx - (k.x << LOG_C_T));
+        (cz - k.z * (1 << LOG_C_T)) * C_T * C_T +
+            (cy - k.y * (1 << LOG_C_T)) * C_T +
+                (cx - k.x * (1 << LOG_C_T));
     return clusterPtr;
 }
 
