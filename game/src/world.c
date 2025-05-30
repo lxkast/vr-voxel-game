@@ -42,9 +42,6 @@ static bool unloadChunk(world_t *w, const int cx, const int cy, const int cz) {
 
 void world_init(world_t *w) {
     w->chunkN = 0;
-
-    for (int i = 0; i < 16; i++)
-        loadChunk(w, i % 4 - 2, 0, i / 4 - 2);
 }
 
 void world_draw(const world_t *w, const int modelLocation) {
@@ -78,4 +75,15 @@ void world_updateChunkLoader(world_t *w, const unsigned int id, const float pos[
 
 void world_delChunkLoader(world_t *w, const unsigned int id) {
     w->chunkLoaders[id].active = false;
+}
+
+void world_doChunkLoading(world_t *w) {
+    for (int i = 0; i < MAX_CHUNK_LOADERS; i++) {
+        if (!w->chunkLoaders[i].active)
+            continue;
+        const int cx = w->chunkLoaders[i].x / 16;
+        const int cy = w->chunkLoaders[i].x / 16;
+        const int cz = w->chunkLoaders[i].x / 16;
+        loadChunk(w, cx, cy, cz);
+    }
 }
