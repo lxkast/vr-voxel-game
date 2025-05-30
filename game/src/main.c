@@ -15,6 +15,12 @@
 #define MINOR_VERSION 1
 #endif
 
+#define EYE_OFFSET 0.25f
+#define SCREEN_WIDTH 1024
+#define SCREEN_HEIGHT 600
+#define FOV_Y 45.0f
+
+
 static double previousMouse[2];
 
 static void processCameraInput(GLFWwindow *window, camera_t *camera) {
@@ -44,14 +50,26 @@ static void processCameraInput(GLFWwindow *window, camera_t *camera) {
 }
 
 static bool wireframeView = false;
-static bool previousDown = false;
+static bool previousDownO = false;
+static bool postProcessingEnabled = true;
+static bool previousDownP = false;
+
 static void processInput(GLFWwindow *window) {
-    const int key = glfwGetKey(window, GLFW_KEY_P);
-    if (key == GLFW_PRESS && !previousDown) {
+    const int oKey = glfwGetKey(window, GLFW_KEY_O);
+    if (oKey == GLFW_PRESS && !previousDownO) {
         wireframeView = !wireframeView;
-        previousDown = true;
-    } if (key == GLFW_RELEASE) {
-        previousDown = false;
+        previousDownO = true;
+    }
+    if (oKey == GLFW_RELEASE) {
+        previousDownO = false;
+    }
+    const int pKey = glfwGetKey(window, GLFW_KEY_P);
+    if (pKey == GLFW_PRESS && !previousDownP) {
+        postProcessingEnabled = !postProcessingEnabled;
+        previousDownP = true;
+    }
+    if (pKey == GLFW_RELEASE) {
+        previousDownP = false;
     }
 }
 
@@ -70,8 +88,8 @@ int main(void) {
     GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* videoMode = glfwGetVideoMode(primaryMonitor);
 
-    const int screenWidth = 1024;
-    const int screenHeight = 600;
+    const int screenWidth = SCREEN_WIDTH;
+    const int screenHeight = SCREEN_HEIGHT;
 
     GLFWwindow *window = glfwCreateWindow((int)(screenWidth), (int)(screenHeight), "Hello, Window!", NULL, NULL);
 
@@ -151,7 +169,7 @@ int main(void) {
 
 
         mat4 projection;
-        glm_perspective_default((float)screenWidth / (float)screenHeight, projection);
+        glm_perspective(FOV_Y, (float)screenWidth / (float)screenHeight, 0.1f, 500.0f, projection);
 
         glUseProgram(program);
 
@@ -182,7 +200,7 @@ int main(void) {
     // Camera setup
     camera_t camera;
     camera_init(&camera);
-    vec3 p = { 0.f, 0.f, -5.f };
+    vec3 p = { 0.f, 18.f, 0.f };
     camera_setPos(&camera, p);
 
     // World setup
@@ -214,21 +232,33 @@ int main(void) {
         glPolygonMode(GL_FRONT_AND_BACK, wireframeView ? GL_LINE : GL_FILL);
         glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projection);
 
-        postProcess_bindBuffer(&postProcess.leftFramebuffer);
+        if (postProcessingEnabled) {
+            postProcess_bindBuffer(&postProcess.leftFramebuffer);
+            camera_translateX(&camera, -EYE_OFFSET);
+        }
         glEnable(GL_DEPTH_TEST);
         glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         camera_setView(&camera, program);
         world_draw(&world, modelLocation);
 
-        postProcess_bindBuffer(&postProcess.rightFramebuffer);
-        glEnable(GL_DEPTH_TEST);
-        glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        if (postProcessingEnabled) {
+            postProcess_bindBuffer(&postProcess.rightFramebuffer);
+            glEnable(GL_DEPTH_TEST);
+            glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            camera_translateX(&camera, 2 * EYE_OFFSET);
+        }
+
         camera_setView(&camera, program);
         world_draw(&world, modelLocation);
 
-        postProcess_draw(&postProcess);
+        if (postProcessingEnabled) {
+            postProcess_draw(&postProcess);
+            camera_translateX(&camera, -EYE_OFFSET);
+        }
+
 
         glfwPollEvents();
         glfwSwapBuffers(window);

@@ -5,7 +5,7 @@ in vec2 TexCoords;
 
 uniform sampler2D leftTexture;
 uniform sampler2D rightTexture;
-float distortionStrength = 0.2f;
+uniform float distortionStrength;
 
 vec2 distortEye(vec2 inTexCoords) {
     vec2 normalizedCoords = inTexCoords * 2.0 - 1.0;
@@ -24,17 +24,6 @@ vec2 distortEye(vec2 inTexCoords) {
 
     vec2 finalTexCoords = (distortedCoords + 1.0) / 2.0;
     return finalTexCoords;
-
-    // if texture coords outside of [0,1], render pixel as black
-//    if (finalTexCoords.x > 1.0 || finalTexCoords.x < 0.0 ||
-//    finalTexCoords.y > 1.0 || finalTexCoords.y < 0.0)
-//    {
-//        FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-//    }
-//    else
-//    {
-//        FragColor = texture(screenTexture, finalTexCoords);
-//    }
 }
 
 void main()

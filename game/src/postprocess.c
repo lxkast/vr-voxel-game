@@ -3,6 +3,8 @@
 #include "shaderutil.h"
 #include "vertices.h"
 
+#define DISTORTION_STRENTH 0.1f
+
 static void postProcess_initVertices(postProcess_t *postProcess) {
     glGenVertexArrays(1, &postProcess->vao);
     glGenBuffers(1, &postProcess->vbo);
@@ -59,6 +61,7 @@ void postProcess_draw(postProcess_t *postProcess) {
     glBindTexture(GL_TEXTURE_2D, postProcess->rightFramebuffer.textureColorbuffer);
     glUniform1i(glGetUniformLocation(postProcess->program, "leftTexture"), 0);
     glUniform1i(glGetUniformLocation(postProcess->program, "rightTexture"), 1);
+    glUniform1f(glGetUniformLocation(postProcess->program, "distortionStrength"), DISTORTION_STRENTH);
     glDrawArrays(GL_TRIANGLES, 0, 12);
 }
 
