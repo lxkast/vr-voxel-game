@@ -48,7 +48,6 @@ static bool previousDown = false;
 static void processInput(GLFWwindow *window) {
     const int key = glfwGetKey(window, GLFW_KEY_P);
     if (key == GLFW_PRESS && !previousDown) {
-        glPolygonMode(GL_FRONT_AND_BACK, wireframeView ? GL_FILL : GL_LINE);
         wireframeView = !wireframeView;
         previousDown = true;
     } if (key == GLFW_RELEASE) {
@@ -207,22 +206,28 @@ int main(void) {
         processInput(window);
         processCameraInput(window, &camera);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, postProcess.framebuffer);
-        glEnable(GL_DEPTH_TEST);
-        glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glPolygonMode(GL_FRONT_AND_BACK, wireframeView ? GL_FILL : GL_LINE);
-
         glUseProgram(program);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
         glUniform1i(glGetUniformLocation(program, "uTextureAtlas"), 0);
-
-        glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projection);
         const int modelLocation = glGetUniformLocation(program, "model");
+        glPolygonMode(GL_FRONT_AND_BACK, wireframeView ? GL_LINE : GL_FILL);
+        glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projection);
 
+        postProcess_bindBuffer(&postProcess.leftFramebuffer);
+        glEnable(GL_DEPTH_TEST);
+        glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         camera_setView(&camera, program);
         world_draw(&world, modelLocation);
+
+        postProcess_bindBuffer(&postProcess.rightFramebuffer);
+        glEnable(GL_DEPTH_TEST);
+        glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        camera_setView(&camera, program);
+        world_draw(&world, modelLocation);
+
         postProcess_draw(&postProcess);
 
         glfwPollEvents();
