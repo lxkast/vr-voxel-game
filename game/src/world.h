@@ -3,20 +3,40 @@
 #include <glad/gl.h>
 #include <stddef.h>
 #include "chunk.h"
+#include "uthash.h"
 
 #define MAX_CHUNKS 256
 #define MAX_CHUNK_LOADERS 8
+#define C_T 8
+#define LOG_C_T 3
+
+typedef struct {
+    int x, y, z;
+} clusterKey_t;
+
+typedef struct {
+    chunk_t *chunk;
+    bool reloaded;
+} chunkValue_t;
+
+typedef struct _s_cluster {
+    clusterKey_t key;
+
+    chunkValue_t *cells;
+    size_t n;
+
+    struct _s_cluster *hh_next;
+    UT_hash_handle hh;
+} cluster_t;
 
 /**
  * @brief A struct that holds data about the world.
  */
 typedef struct {
-    /// The array of loaded chunks.
-    chunk_t *loadedChunks[MAX_CHUNKS];
-    /// The current number of chunks/next free space in the array.
-    size_t chunkN;
     /// The array of chunk loaders present
     struct { bool active; int x, y, z; } chunkLoaders[MAX_CHUNK_LOADERS];
+
+    cluster_t *clusterTable;
 } world_t;
 
 /**

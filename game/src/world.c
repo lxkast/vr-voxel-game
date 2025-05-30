@@ -1,63 +1,75 @@
 #include "world.h"
+#include <logging.h>
 #include <stdlib.h>
 #include "chunk.h"
 
-static bool addChunk(world_t *w, chunk_t *chunk) {
-    if (w->chunkN >= MAX_CHUNKS)
-        return false;
-    w->loadedChunks[w->chunkN++] = chunk;
-    return true;
-}
+static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int cz, bool create, size_t *offset) {
+    cluster_t *clusterPtr;
+    LOG_DEBUG("Trying to load %d %d %d", cx, cy, cz);
 
-static bool removeChunk(world_t *w, const size_t i) {
-    if (w->chunkN <= i)
-        return false;
-    w->loadedChunks[i] = w->loadedChunks[--w->chunkN];
-    return true;
-}
+    clusterKey_t k = {
+        cx >> LOG_C_T,
+        cy >> LOG_C_T,
+        cz >> LOG_C_T,
+    };
 
-static bool loadChunk(world_t *w, const int cx, const int cy, const int cz) {
-    if (w->chunkN >= MAX_CHUNKS)
-        return false;
-    for (int i = 0; i < w->chunkN; i++) {
-        const chunk_t *chunk = w->loadedChunks[i];
-        if (chunk->cx == cx && chunk->cy == cy && chunk->cz == cz) {
-            return false;
-        }
+    HASH_FIND(hh, w->clusterTable, &k, sizeof(clusterKey_t), clusterPtr);
+
+    if (clusterPtr) {
+        LOG_DEBUG("Cluster %d %d %d exists.", k.x, k.y, k.z);
+    } else {
+        if (!create) return 0;
+
+        clusterPtr = (cluster_t *)calloc(1,sizeof(cluster_t));
+        clusterPtr->cells = calloc(C_T * C_T * C_T, sizeof(chunkValue_t));
+        clusterPtr->key = k;
+
+        HASH_ADD(hh, w->clusterTable, key, sizeof(cluster_t), clusterPtr);
+        LOG_DEBUG("Cluster %d %d %d has been added.", k.x, k.y, k.z);
     }
-    chunk_t *chunkPtr = (chunk_t *)malloc(sizeof(chunk_t));
-    chunk_create(chunkPtr, cx, cy, cz, BL_GRASS);
-    addChunk(w, chunkPtr);
-    return true;
+    *offset =
+        (cz - (k.z << LOG_C_T)) * C_T * C_T +
+            (cy - (k.y << LOG_C_T)) * C_T +
+                (cx - (k.x << LOG_C_T));
+    return clusterPtr;
 }
 
-static bool unloadChunk(world_t *w, const int cx, const int cy, const int cz) {
-    for (int i = 0; i < w->chunkN; i++) {
-        chunk_t *chunk = w->loadedChunks[i];
-        if (chunk->cx == cx && chunk->cy == cy && chunk->cz == cz) {
-            removeChunk(w, i);
-            free(chunk);
-            return true;
-        }
+static void loadChunk(world_t *w, const int cx, const int cy, const int cz) {
+    size_t offset;
+
+    cluster_t *cluster = clusterGet(w, cx, cy, cz, true, &offset);
+
+    chunkValue_t cv = cluster->cells[offset];
+
+    if (!cv.chunk) {
+        cv.chunk = (chunk_t *)malloc(sizeof(chunk_t));
+        chunk_create(cv.chunk, cx, cy, cz, BL_GRASS);
+        cluster->n++;
     }
-    return false;
+    cv.reloaded = true;
 }
 
 void world_init(world_t *w) {
-    w->chunkN = 0;
+    w->clusterTable = NULL;
 }
 
 void world_draw(const world_t *w, const int modelLocation) {
-    for (int i = 0; i < w->chunkN; i++) {
-        chunk_draw(w->loadedChunks[i], modelLocation);
+    for (const cluster_t *cl = w->clusterTable; cl != NULL; cl = cl->hh_next) {
+        for (int i = 0; i < C_T * C_T * C_T; i++)
+            chunk_draw(cl->cells[i].chunk, modelLocation);
     }
 }
 
 void world_free(world_t *w) {
-    for (int i = 0; i < w->chunkN; i++) {
-        free(w->loadedChunks[i]);
+    cluster_t *cluster, *tmp;
+
+    HASH_ITER(hh, w->clusterTable, cluster, tmp) {
+        HASH_DEL(w->clusterTable, cluster);
+        for (int i = 0; i < C_T * C_T * C_T; i++)
+            free(cluster->cells[i].chunk);
+        free(cluster->cells);
+        free(cluster);
     }
-    w->chunkN = 0;
 }
 
 bool world_genChunkLoader(world_t *w, unsigned int *id) {
@@ -81,15 +93,12 @@ void world_delChunkLoader(world_t *w, const unsigned int id) {
 }
 
 void world_doChunkLoading(world_t *w) {
-    struct { int x, y, z; } loaded[MAX_CHUNKS];
-    size_t next = 0;
-
     for (int i = 0; i < MAX_CHUNK_LOADERS; i++) {
         if (!w->chunkLoaders[i].active)
             continue;
-        const int cx = w->chunkLoaders[i].x / 16;
-        const int cy = w->chunkLoaders[i].y / 16;
-        const int cz = w->chunkLoaders[i].z / 16;
+        const int cx = w->chunkLoaders[i].x / CHUNK_SIZE;
+        const int cy = w->chunkLoaders[i].y / CHUNK_SIZE;
+        const int cz = w->chunkLoaders[i].z / CHUNK_SIZE;
 
 #define CHUNK_LOAD_RADIUS 2
         for (int x = -CHUNK_LOAD_RADIUS; x <= CHUNK_LOAD_RADIUS; x++) {
@@ -97,28 +106,25 @@ void world_doChunkLoading(world_t *w) {
                 for (int z = -CHUNK_LOAD_RADIUS; z <= CHUNK_LOAD_RADIUS; z++) {
                     if (x*x + y*y + z*z <= CHUNK_LOAD_RADIUS * CHUNK_LOAD_RADIUS) {
                         loadChunk(w, cx + x, cy + y, cz + z);
-                        loaded[next].x = cx + x;
-                        loaded[next].y = cy + y;
-                        loaded[next].z = cz + z;
-                        next++;
                     }
                 }
             }
         }
     }
 
-    for (int i = 0; i < w->chunkN; i++) {
-        bool delete = true;
-        for (int j = 0; j < next; j++) {
-            if (w->loadedChunks[i]->cx == loaded[j].x &&
-                w->loadedChunks[i]->cy == loaded[j].y &&
-                w->loadedChunks[i]->cz == loaded[j].z) {
-                delete = false;
-                break;
+    cluster_t *cluster, *tmp;
+    HASH_ITER(hh, w->clusterTable, cluster, tmp) {
+        for (int i = 0; i < C_T * C_T * C_T; i++) {
+            if (!cluster->cells[i].reloaded) {
+                free(cluster->cells[i].chunk);
+                cluster->cells[i].chunk = NULL;
+                cluster->n--;
             }
-        }
-        if (delete) {
-            unloadChunk(w, w->loadedChunks[i]->cx, w->loadedChunks[i]->cy, w->loadedChunks[i]->cz);
+            if (cluster->n <= 0) {
+                HASH_DEL(w->clusterTable, cluster);
+                free(cluster->cells);
+                free(cluster);
+            }
         }
     }
 }
