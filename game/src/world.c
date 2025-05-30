@@ -101,7 +101,6 @@ void world_doChunkLoading(world_t *w) {
             loaded[next].z = cz + arr[i][1];
             next++;
         }
-        next++;
     }
 
     for (int i = 0; i < w->chunkN; i++) {
