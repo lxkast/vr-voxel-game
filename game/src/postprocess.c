@@ -5,6 +5,9 @@
 
 #define DISTORTION_STRENTH 0.1f
 
+/*
+    sets up the quad VAO and VBO
+*/
 static void postProcess_initVertices(postProcess_t *postProcess) {
     glGenVertexArrays(1, &postProcess->vao);
     glGenBuffers(1, &postProcess->vbo);
@@ -18,7 +21,10 @@ static void postProcess_initVertices(postProcess_t *postProcess) {
     glBindVertexArray(0);
 }
 
-static void postProcess_initFramebuffer(postProcess_Renderbuffer_t *renderbuffer, int width, int height) {
+/*
+    creates a frame buffer object, binding a texture colour buffer and a render buffer to it
+*/
+static void postProcess_initFramebuffer(postProcess_buffer_t *renderbuffer, int width, int height) {
     glGenFramebuffers(1, &renderbuffer->framebuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, renderbuffer->framebuffer);
 
@@ -39,6 +45,9 @@ static void postProcess_initFramebuffer(postProcess_Renderbuffer_t *renderbuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+/*
+    Initialises everything needed to enable post-processing (shader, frame buffer etc.)
+*/
 void postProcess_init(postProcess_t *postProcess, GLuint shaderProgram, int width, int height) {
     postProcess->program = shaderProgram;
     postProcess_initFramebuffer(&postProcess->leftFramebuffer, width / 2, height / 2);
@@ -47,6 +56,9 @@ void postProcess_init(postProcess_t *postProcess, GLuint shaderProgram, int widt
     postProcess_initVertices(postProcess);
 }
 
+/*
+   Uses the two frame buffers to apply the post-processing shader to them
+*/
 void postProcess_draw(postProcess_t *postProcess) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDisable(GL_DEPTH_TEST);
@@ -65,6 +77,11 @@ void postProcess_draw(postProcess_t *postProcess) {
     glDrawArrays(GL_TRIANGLES, 0, 12);
 }
 
-void postProcess_bindBuffer(postProcess_Renderbuffer_t *renderbuffer) {
-    glBindFramebuffer(GL_FRAMEBUFFER, renderbuffer->framebuffer);
+/*
+    All future draw calls will draw to the specified buffer
+
+    Can be undone using glBindFramebuffer(GL_FRAMEBUFFER, 0)
+*/
+void postProcess_bindBuffer(postProcess_buffer_t *buffer) {
+    glBindFramebuffer(GL_FRAMEBUFFER, buffer->framebuffer);
 }
