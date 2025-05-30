@@ -88,8 +88,8 @@ void world_doChunkLoading(world_t *w) {
         if (!w->chunkLoaders[i].active)
             continue;
         const int cx = w->chunkLoaders[i].x / 16;
-        const int cy = w->chunkLoaders[i].x / 16;
-        const int cz = w->chunkLoaders[i].x / 16;
+        const int cy = w->chunkLoaders[i].y / 16;
+        const int cz = w->chunkLoaders[i].z / 16;
 
         static const size_t arr[4][2] = {
             {1, 0}, {0, 1}, {-1, 0}, {0, -1}
