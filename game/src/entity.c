@@ -1,4 +1,5 @@
 #include "entity.h"
+#include "string.h"
 
 bool intersectsX(const aabb_t box1, const aabb_t box2) {
     return box1.min[0] < box2.max[0] && box1.max[0] >= box2.min[0];
@@ -134,4 +135,46 @@ int *getChunkCoords(vec3 position, int result[3]) {
     result[1] = floor(position[1] / 16.f);
     result[2] = floor(position[2] / 16.f);
     return result;
+}
+
+// assuming -Z is 'forward'
+void getViewDirection(const player_t *player, vec3 out) {
+    const float XZscaling = cosf(player->cameraView);
+    out[0] = -sinf(player->entity.yaw) * XZscaling;
+    out[1] = sinf(player->cameraView);
+    out[2] = -cosf(player->entity.yaw) * XZscaling;
+}
+
+#define MAX_RAYCAST_DISTANCE 6.f
+#define RAYCAST_STEP_MAGNITUDE 0.1f
+#define vec3_SIZE 12
+// TODO: Will implement when chunks implemented
+extern block_type_e getBlockType(const vec3 position);
+
+extern block_t getBlock(const vec3 position);
+
+typedef struct {
+    vec3 blockPosition;
+    bool found;
+} raycast_t;
+
+// will rewrite in DDA later
+raycast_t raycast(const vec3 eyePosition, const vec3 viewDirection) {
+    for (int i = 0; i < MAX_RAYCAST_DISTANCE; i += RAYCAST_STEP_MAGNITUDE) {
+        const vec3 newPos = {eyePosition[0] + i * viewDirection[0],
+                       eyePosition[1] + i * viewDirection[1],
+                       eyePosition[2] + i * viewDirection[2],
+        };
+
+        const vec3 flooredPos = { floorf(newPos[0]), floorf(newPos[1]), floorf(newPos[2]) };
+
+        const block_type_e block_type = getBlockType(flooredPos);
+        if (block_type != AIR) {
+            return (raycast_t){
+                .blockPosition = {flooredPos[0], flooredPos[1], flooredPos[2]},
+                .found = true};
+        }
+    }
+
+    return (raycast_t){{0,0,0}, false};
 }
