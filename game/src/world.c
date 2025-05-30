@@ -91,15 +91,19 @@ void world_doChunkLoading(world_t *w) {
         const int cy = w->chunkLoaders[i].y / 16;
         const int cz = w->chunkLoaders[i].z / 16;
 
-        static const size_t arr[4][2] = {
-            {1, 0}, {0, 1}, {-1, 0}, {0, -1}
-        };
-        for (int i = 0; i < 4; i++) {
-            loadChunk(w, cx + arr[i][0], cy, cz + arr[i][1]);
-            loaded[next].x = cx + arr[i][0];
-            loaded[next].y = cy;
-            loaded[next].z = cz + arr[i][1];
-            next++;
+#define CHUNK_LOAD_RADIUS 2
+        for (int x = -CHUNK_LOAD_RADIUS; x <= CHUNK_LOAD_RADIUS; x++) {
+            for (int y = -CHUNK_LOAD_RADIUS; y <= CHUNK_LOAD_RADIUS; y++) {
+                for (int z = -CHUNK_LOAD_RADIUS; z <= CHUNK_LOAD_RADIUS; z++) {
+                    if (x*x + y*y + z*z <= CHUNK_LOAD_RADIUS * CHUNK_LOAD_RADIUS) {
+                        loadChunk(w, cx + x, cy + y, cz + z);
+                        loaded[next].x = cx + x;
+                        loaded[next].y = cy + y;
+                        loaded[next].z = cz + z;
+                        next++;
+                    }
+                }
+            }
         }
     }
 
