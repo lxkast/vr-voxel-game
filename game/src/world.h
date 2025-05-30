@@ -10,23 +10,6 @@
 #define C_T 8
 #define LOG_C_T 3
 
-typedef struct {
-    int x, y, z;
-} clusterKey_t;
-
-typedef struct {
-    chunk_t *chunk;
-    bool reloaded;
-} chunkValue_t;
-
-typedef struct _s_cluster {
-    clusterKey_t key;
-
-    chunkValue_t *cells;
-    size_t n;
-
-    UT_hash_handle hh;
-} cluster_t;
 
 /**
  * @brief A struct that holds data about the world.
@@ -34,8 +17,8 @@ typedef struct _s_cluster {
 typedef struct {
     /// The array of chunk loaders present
     struct { bool active; int x, y, z; } chunkLoaders[MAX_CHUNK_LOADERS];
-
-    cluster_t *clusterTable;
+    /// The hash table used keeping track of chunks
+    struct _s_cluster *clusterTable;
 } world_t;
 
 /**

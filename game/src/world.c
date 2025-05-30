@@ -3,6 +3,24 @@
 #include <stdlib.h>
 #include "chunk.h"
 
+typedef struct {
+    int x, y, z;
+} clusterKey_t;
+
+typedef struct {
+    chunk_t *chunk;
+    bool reloaded;
+} chunkValue_t;
+
+typedef struct _s_cluster {
+    clusterKey_t key;
+
+    chunkValue_t *cells;
+    size_t n;
+
+    UT_hash_handle hh;
+} cluster_t;
+
 static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int cz, bool create, size_t *offset) {
     cluster_t *clusterPtr;
 
