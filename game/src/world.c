@@ -99,7 +99,7 @@ void world_doChunkLoading(world_t *w) {
         const int cy = w->chunkLoaders[i].y >> 4;
         const int cz = w->chunkLoaders[i].z >> 4;
 
-#define CHUNK_LOAD_RADIUS 0
+#define CHUNK_LOAD_RADIUS 1
         for (int x = -CHUNK_LOAD_RADIUS; x <= CHUNK_LOAD_RADIUS; x++) {
             for (int y = -CHUNK_LOAD_RADIUS; y <= CHUNK_LOAD_RADIUS; y++) {
                 for (int z = -CHUNK_LOAD_RADIUS; z <= CHUNK_LOAD_RADIUS; z++) {
