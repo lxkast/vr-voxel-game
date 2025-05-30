@@ -176,15 +176,6 @@ int main(void) {
     world_t world;
     world_init(&world);
 
-#define R_N 8
-#define N R_N * R_N
-
-    chunk_t *chunks[N];
-    for (int i = 0; i < N; i++) {
-        chunks[i] = (chunk_t *)malloc(sizeof(chunk_t));
-        chunk_create(chunks[i], i % R_N - R_N / 2, 0, i / R_N - R_N / 2, BL_GRASS);
-        world_addChunk(&world, chunks[i]);
-    }
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
@@ -213,8 +204,7 @@ int main(void) {
         }
     }
 
-    for (int i = 0; i < N; i++)
-        free(chunks[i]);
+    world_free(&world);
 
     return 0;
 }

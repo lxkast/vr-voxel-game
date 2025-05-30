@@ -23,16 +23,14 @@ typedef struct {
 void world_init(world_t *w);
 
 /**
- * @brief Adds a chunk to the world (maybe).
- * @param w A pointer to a world
- * @param chunk A pointer to a chunk
- * @return Whether the function was successful
- */
-bool world_addChunk(world_t *w, chunk_t *chunk);
-
-/**
  * @brief Draws the world.
  * @param w A pointer to a world
  * @param modelLocation The model matrix location in the shader program
  */
 void world_draw(const world_t *w, int modelLocation);
+
+/**
+ * @brief Frees the world.
+ * @param w A pointer to a world
+ */
+void world_free(world_t *w);
