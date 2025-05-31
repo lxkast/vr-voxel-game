@@ -201,7 +201,18 @@ bool world_getBlock(world_t *w, vec3 pos, block_data_t *bd) {
     const int cy = y >> 4;
     const int cz = z >> 4;
 
+    size_t offset;
+    cluster_t *cluster = clusterGet(w, cx, cy, cz, false, &offset);
+    if (!cluster) return false;
 
-    clusterGet(w, cx, cy, cz, false, )
+    const chunkValue_t cv = cluster->cells[offset];
+    if (!cv.chunk) return false;
+
+    bd->type = cv.chunk->blocks[x - (cx << 2)][y - (cy << 2)][z - (cz << 2)];
+    bd->x = x;
+    bd->y = y;
+    bd->z = z;
+
+    return true;
 }
 
