@@ -17,6 +17,23 @@
 
 static double previousMouse[2];
 
+static void processPlayerInput(GLFWwindow *window, player_t *player) {
+    vec3 acceleration = { 0.f, -0.2f, 0.f };
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        acceleration[0] += 0.1f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        acceleration[0] -= 0.1f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        acceleration[2] += 0.1f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        acceleration[2] -= 0.1f;
+    }
+    glm_vec3_copy(acceleration, player->entity.acceleration);
+}
+
 static void processCameraInput(GLFWwindow *window, camera_t *camera) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
@@ -183,7 +200,7 @@ int main(void) {
     world_updateChunkLoader(&world, spawnLoader, GLM_VEC3_ZERO);
     world_updateChunkLoader(&world, cameraLoader, GLM_VEC3_ZERO);
 
-    player_t player {
+    player_t player = {
         .entity = {
             .position = {0.f, 0.f, 0.f},
             .velocity = {0.f, 0.f, 0.f},
@@ -198,6 +215,7 @@ int main(void) {
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
+        processPlayerInput(window, &player);
         processCameraInput(window, &camera);
         world_doChunkLoading(&world);
 
