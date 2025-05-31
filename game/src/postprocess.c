@@ -3,9 +3,10 @@
 #include "shaderutil.h"
 #include "vertices.h"
 
-#define DISTORTION_STRENTH 0.1f
+#define DISTORTION_STRENTH 0.03f
 #define CENTER_X 0.4f // where 1 is the middle of the screen, and 0 is the side
 #define CENTER_Y 0.0f // where
+#define SCALE 1.0f
 
 /*
     sets up the quad VAO and VBO
@@ -52,8 +53,8 @@ static void postProcess_initFramebuffer(postProcess_buffer_t *renderbuffer, int 
 */
 void postProcess_init(postProcess_t *postProcess, GLuint shaderProgram, int width, int height) {
     postProcess->program = shaderProgram;
-    postProcess_initFramebuffer(&postProcess->leftFramebuffer, width / 2, height / 2);
-    postProcess_initFramebuffer(&postProcess->rightFramebuffer, width / 2, height / 2);
+    postProcess_initFramebuffer(&postProcess->leftFramebuffer, width / 2, height);
+    postProcess_initFramebuffer(&postProcess->rightFramebuffer, width / 2, height);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     postProcess_initVertices(postProcess);
 }
@@ -78,6 +79,7 @@ void postProcess_draw(postProcess_t *postProcess) {
     glUniform1f(glGetUniformLocation(postProcess->program, "distortionStrength"), DISTORTION_STRENTH);
     glUniform1f(glGetUniformLocation(postProcess->program, "centerX"), CENTER_X);
     glUniform1f(glGetUniformLocation(postProcess->program, "centerY"), CENTER_Y);
+    glUniform1f(glGetUniformLocation(postProcess->program, "scale"), SCALE);
 
     glDrawArrays(GL_TRIANGLES, 0, 12);
 }

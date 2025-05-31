@@ -91,7 +91,7 @@ int main(void) {
     const int screenWidth = SCREEN_WIDTH;
     const int screenHeight = SCREEN_HEIGHT;
 
-    GLFWwindow *window = glfwCreateWindow((int)(screenWidth), (int)(screenHeight), "Hello, Window!", primaryMonitor, NULL);
+    GLFWwindow *window = glfwCreateWindow((int)(screenWidth), (int)(screenHeight), "Hello, Window!", NULL, NULL);
 
     if (window == NULL) {
         LOG_ERROR("Failed to create GLFW window");
