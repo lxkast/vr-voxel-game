@@ -6,7 +6,10 @@
  * this file would be thousands of lines long.
  * NOTE TO FUTURE ME: This is incomplete and likely has some mistakes, verify before using macros
  * for anything else.
+ * This header file is deliberately designed to be standalone, so defines PI
  */
+#define PI 3.14159
+#define G 9.81
 
 #define REG_WHO_AM_I (uint8_t) 0x75
 #define WHO_AM_I_RES (uint8_t) 0x47
@@ -54,9 +57,9 @@
 #define REG_TMST_CONFIG (uint8_t) 0x54
 #define TMST_FSYNC_EN (uint8_t) 0x02
 #define TMSP_SCALE_FACTOR ((32.0 / 30000000) * CLOCK_CORRECT_FACTOR)
-#define TMSP_PER_RESET (65536 * TMSP_SCALE_FACTOR) 
-#define GYRO_SCALE_FACTOR (1 / 131)
-#define ACCEL_SCALE_FACTOR (1 / 8192)
+#define TMSP_PER_RESET (65536.0 * TMSP_SCALE_FACTOR) 
+#define GYRO_SCALE_FACTOR (((1.0 / 131) / 180) * PI)
+#define ACCEL_SCALE_FACTOR ((1.0 / 8192) * G)
 
 
 // ALL settings below this point are hardware specific

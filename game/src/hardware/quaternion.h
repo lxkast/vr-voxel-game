@@ -2,4 +2,6 @@
 typedef double quaternion[4];
 
 
-void fromAngles(double x, double y, double z, quaternion res);
+void fromEulers(double *rv, double dt, quaternion res);
+
+void multiplyQuat(quaternion r, quaternion q, quaternion res);

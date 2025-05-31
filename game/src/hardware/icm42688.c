@@ -168,9 +168,9 @@ bool readVec3(uint8_t *data, double scale, double *dest) {
         return false;
     }
 
-    dest[0] = (double) comp1 * scale;
-    dest[1] = (double) comp2 * scale;
-    dest[2] = (double) comp3 * scale;
+    dest[0] = ((double) comp1) * scale;
+    dest[1] = ((double) comp2) * scale;
+    dest[2] = ((double) comp3) * scale;
     return true;
 }
 
@@ -225,4 +225,5 @@ void init_imu(void) {
     configureFIFO();
     enableGyro();
     enableAccel();
+    usleep(1000); // No register access allowed for at least 300us.
 }
