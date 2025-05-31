@@ -50,24 +50,31 @@ typedef struct _s_cluster {
 static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int cz, bool create, size_t *offset) {
     cluster_t *clusterPtr;
 
+    // Transforming the chunk coordinates to cluster coordinates by
+    // removing the 2 LSBs
     clusterKey_t k = {
         cx >> LOG_C_T,
         cy >> LOG_C_T,
         cz >> LOG_C_T,
     };
 
+    // Puts the result of the hash find inside clusterPtr
     HASH_FIND(hh, w->clusterTable, &k, sizeof(clusterKey_t), clusterPtr);
 
+    // Creates the cluster if it doesn't exist, and create is set
     if (clusterPtr) {
     } else {
         if (!create) return 0;
 
+        // Allocate space for the cluster
         clusterPtr = (cluster_t *)calloc(1,sizeof(cluster_t));
+        // Allocate space for the cells array inside the cluster
         clusterPtr->cells = calloc(C_T * C_T * C_T, sizeof(chunkValue_t));
         clusterPtr->key = k;
 
         HASH_ADD(hh, w->clusterTable, key, sizeof(clusterKey_t), clusterPtr);
     }
+    // The direct access index of the chunk into the cluster
     *offset =
         (cz - (k.z << LOG_C_T)) * C_T * C_T +
             (cy - (k.y << LOG_C_T)) * C_T +
@@ -143,6 +150,7 @@ void world_delChunkLoader(world_t *w, const unsigned int id) {
 }
 
 void world_doChunkLoading(world_t *w) {
+    // Iterate through chunk loaders, loading any chunk in their radius
     for (int i = 0; i < MAX_CHUNK_LOADERS; i++) {
         if (!w->chunkLoaders[i].active)
             continue;
@@ -162,6 +170,7 @@ void world_doChunkLoading(world_t *w) {
         }
     }
 
+    // Iterating through every loaded chunk, if the reloaded flag is false they will be deleted
     cluster_t *cluster, *tmp;
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
         for (int i = 0; i < C_T * C_T * C_T; i++) {
