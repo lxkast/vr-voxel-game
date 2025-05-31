@@ -139,3 +139,8 @@ void chunk_draw(const chunk_t *c, const int modelLocation) {
     glDrawArrays(GL_TRIANGLES, 0, c->meshVertices);
     glBindVertexArray(0);
 }
+
+void chunk_free(const chunk_t *c) {
+    glDeleteVertexArrays(1, &c->vbo);
+    glDeleteBuffers(1, &c->vao);
+}
