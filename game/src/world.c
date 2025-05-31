@@ -3,24 +3,50 @@
 #include <stdlib.h>
 #include "chunk.h"
 
+/**
+ * @brief Key for hash table
+ */
 typedef struct {
     int x, y, z;
 } clusterKey_t;
 
+/**
+ * @brief Value stored in hashmap entry array
+ */
 typedef struct {
+    /// The pointer to a heap allocated chunk
     chunk_t *chunk;
+    /// Whether the chunk will be reloaded this iteration
     bool reloaded;
 } chunkValue_t;
 
+/**
+ * @brief A cluster and also hashmap
+ * @note A cluster is essentially a group of adjacent chunks
+*/
 typedef struct _s_cluster {
+    /// The key to the hashmap entry
     clusterKey_t key;
 
+    /// The heap-allocated array of chunk values in the cluster
     chunkValue_t *cells;
+    /// The number of chunks loaded in the clusters
     size_t n;
 
+    /// Hash table marker
     UT_hash_handle hh;
 } cluster_t;
 
+/**
+ * @brief Maybe gets and maybe creates a cluster and offset from chunk coordinates.
+ * @param w A pointer to a world
+ * @param cx Chunk x coordinate
+ * @param cy Chunk y coordinate
+ * @param cz Chunk z coordinate
+ * @param create Flag for whether to create the cluster if it doesn't exist
+ * @param offset An out parameter for the offset of the given chunk into the cluster
+ * @return A pointer to the cluster or null
+ */
 static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int cz, bool create, size_t *offset) {
     cluster_t *clusterPtr;
 
@@ -49,6 +75,13 @@ static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int c
     return clusterPtr;
 }
 
+/**
+ * @brief Loads a chunk.
+ * @param w A pointer to a world
+ * @param cx Chunk x coordinate
+ * @param cy Chunk y coordinate
+ * @param cz Chunk z coordinate
+ */
 static void loadChunk(world_t *w, const int cx, const int cy, const int cz) {
     size_t offset;
 
@@ -117,7 +150,7 @@ void world_doChunkLoading(world_t *w) {
         const int cy = w->chunkLoaders[i].y >> 4;
         const int cz = w->chunkLoaders[i].z >> 4;
 
-#define CHUNK_LOAD_RADIUS 1
+#define CHUNK_LOAD_RADIUS 2
         for (int x = -CHUNK_LOAD_RADIUS; x <= CHUNK_LOAD_RADIUS; x++) {
             for (int y = -CHUNK_LOAD_RADIUS; y <= CHUNK_LOAD_RADIUS; y++) {
                 for (int z = -CHUNK_LOAD_RADIUS; z <= CHUNK_LOAD_RADIUS; z++) {
