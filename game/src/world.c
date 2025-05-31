@@ -236,3 +236,34 @@ void world_getAdjacentBlocks(world_t *w, vec3 position, block_data_t *buf) {
     }
 }
 
+static void glm_vec3_ceil(vec3 v, vec3 dest) {
+    dest[0] = ceilf(v[0]);
+    dest[1] = ceilf(v[1]);
+    dest[2] = ceilf(v[2]);
+}
+
+void world_getBlocksInRange(world_t *w, vec3 bottomLeft, vec3 topRight, int *numBlocks ,block_data_t *buf) {
+    int index = 0;
+
+    vec3 flooredBottomLeft;
+    vec3 ceiledTopRight;
+
+    glm_vec3_floor(bottomLeft, flooredBottomLeft);
+    glm_vec3_ceil(topRight, ceiledTopRight);
+
+    for (int dx = 0; dx <= (int)(ceiledTopRight[0] - flooredBottomLeft[0]); dx++) {
+        for (int dy = 0; dy <= (int)(ceiledTopRight[1] - flooredBottomLeft[1]); dy++) {
+            for (int dz = 0; dz <= (int)(ceiledTopRight[2] - flooredBottomLeft[2]); dz++) {
+                vec3 delta = { (float)dx, (float)dy, (float)dz};
+                vec3 newBlockPosition;
+                glm_vec3_add(flooredBottomLeft, delta, newBlockPosition);
+
+                world_getBlock(w, newBlockPosition, &buf[index]);
+
+                index++;
+            }
+        }
+    }
+
+    *numBlocks = index;
+}
