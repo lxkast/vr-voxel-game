@@ -104,11 +104,23 @@ void chunk_generate(chunk_t *c, int cx, int cy, int cz) {
     c->cy = cy;
     c->cz = cz;
 
-    const block_t b = cy > 0 ? BL_AIR : BL_GRASS;
+    int (*ptr)[CHUNK_SIZE][CHUNK_SIZE] = (int (*)[CHUNK_SIZE][CHUNK_SIZE]) c->blocks;
+    for (int x = 0; x < CHUNK_SIZE; x++) {
+        for (int z = 0; z < CHUNK_SIZE; z++) {
+            float xf = (c->cx * CHUNK_SIZE + x) * 0.005f;
+            float zf = (c->cz * CHUNK_SIZE + z) * 0.005f;
 
-    int *ptr = c->blocks;
-    for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE; i++) {
-        ptr[i] = b;
+            float n = smoothValueNoise(xf, zf);
+            float height = n * 20.f;
+
+            for (int y = 0; y < CHUNK_SIZE; y++) {
+                if (cy * CHUNK_SIZE + y < height) {
+                    ptr[x][y][z] = BL_GRASS;
+                } else {
+                    ptr[x][y][z] = BL_AIR;
+                }
+            }
+        }
     }
 
     glGenBuffers(1, &c->vbo);
