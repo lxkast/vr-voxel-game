@@ -112,9 +112,9 @@ static float clamp(const float value, const float min, const float max) {
 }
 
 /**
- * @brief Updates an entity's velocity
+ * @brief Updates an entity's velocity based on world coordinates
  * @param entity The entity whose velocity we are updating
- * @param deltaV The amount we want to update that velocity by
+ * @param deltaV The amount we want to update that velocity by in x,y,z
  */
 void updateVelocity(entity_t *entity, vec3 deltaV) {
     glm_vec3_add(entity->velocity, deltaV, entity->velocity);
@@ -122,6 +122,19 @@ void updateVelocity(entity_t *entity, vec3 deltaV) {
     entity->velocity[0] = clamp(entity->velocity[0], -MAX_ABS_X_VELOCITY, MAX_ABS_X_VELOCITY);
     entity->velocity[1] = clamp(entity->velocity[1], -MAX_ABS_Y_VELOCITY, MAX_ABS_Y_VELOCITY);
     entity->velocity[2] = clamp(entity->velocity[2], -MAX_ABS_Y_VELOCITY, MAX_ABS_Y_VELOCITY);
+}
+
+/**
+ * @brief Updates an entity's velocity based on where it is looking.
+ *        Assumes yaw = 0 implies -Z, yaw = pi/2 implies X and so on.
+ * @param entity The entity whose velocity we are updating
+ * @param deltaV The amount we want to update that velocity by relative to direction
+ *               deltaV = {forward, up, right}
+ */
+void updateVelocityViewRel(entity_t *entity, vec3 deltaV) {
+    entity->velocity[0] = clamp(entity->velocity[0] + deltaV[0] * sinf(entity->yaw) + deltaV[2] * cosf(entity->yaw), -MAX_ABS_X_VELOCITY, MAX_ABS_X_VELOCITY);
+    entity->velocity[1] = clamp(entity->velocity[1] + deltaV[1], -MAX_ABS_Y_VELOCITY, MAX_ABS_Y_VELOCITY);
+    entity->velocity[2] = clamp(entity->velocity[2] + deltaV[0] * -cosf(entity->yaw) + deltaV[2] * sinf(entity->yaw), -MAX_ABS_Z_VELOCITY, MAX_ABS_Z_VELOCITY);
 }
 
 /**
@@ -137,7 +150,7 @@ int *getChunkCoords(vec3 position, int result[3]) {
     return result;
 }
 
-// assuming -Z is 'forward'
+// Assumes yaw = 0 implies -Z, yaw = pi/2 implies X and so on.
 void getViewDirection(const player_t *player, vec3 out) {
     const float XZscaling = cosf(player->cameraView);
     out[0] = -sinf(player->entity.yaw) * XZscaling;
