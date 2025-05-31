@@ -5,3 +5,14 @@ extern const unsigned int cubeVerticesSize;
 
 extern const unsigned int cubeIndices[];
 extern const unsigned int cubeIndicesSize;
+
+extern const float grassVertices[];
+extern const unsigned int grassVerticesSize;
+
+extern const float quadVertices[];
+
+extern const unsigned int quadVerticesSize;
+
+extern const unsigned int quadIndices[];
+
+extern const unsigned int quadIndicesSize;

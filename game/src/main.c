@@ -1,18 +1,77 @@
-#include <stdio.h>
+#include <cglm/cglm.h>
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <logging.h>
-#include <cglm/cglm.h>
-
+#include <stdio.h>
+#include "camera.h"
+#include "postprocess.h"
 #include "shaderutil.h"
-#include "vertices.h"
 #include "texture.h"
+#include "world.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #define MINOR_VERSION 2
 #else
 #define MINOR_VERSION 1
 #endif
+
+#define EYE_OFFSET 0.032f
+#define SCREEN_WIDTH 1024
+#define SCREEN_HEIGHT 600
+#define FOV_Y 45.0f
+#define USING_RASPBERRY_PI false
+
+static double previousMouse[2];
+
+static void processCameraInput(GLFWwindow *window, camera_t *camera) {
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        camera_translateZ(camera, -0.15f);
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        camera_translateZ(camera, 0.15f);
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        camera_translateX(camera, -0.15f);
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        camera_translateX(camera, 0.15f);
+    }
+
+    double currentMouse[2];
+    glfwGetCursorPos(window, &currentMouse[0], &currentMouse[1]);
+    const float dX = (float)(currentMouse[0] - previousMouse[0]);
+    const float dY = (float)(currentMouse[1] - previousMouse[1]);
+    previousMouse[0] = currentMouse[0];
+    previousMouse[1] = currentMouse[1];
+    camera_fromMouse(camera, -dX, -dY);
+}
+
+static bool wireframeView = false;
+static bool previousDownO = false;
+static bool postProcessingEnabled = true;
+static bool previousDownP = false;
+
+static void processInput(GLFWwindow *window) {
+    const int oKey = glfwGetKey(window, GLFW_KEY_O);
+    if (oKey == GLFW_PRESS && !previousDownO) {
+        wireframeView = !wireframeView;
+        previousDownO = true;
+    }
+    if (oKey == GLFW_RELEASE) {
+        previousDownO = false;
+    }
+    const int pKey = glfwGetKey(window, GLFW_KEY_P);
+    if (pKey == GLFW_PRESS && !previousDownP) {
+        postProcessingEnabled = !postProcessingEnabled;
+        previousDownP = true;
+    }
+    if (pKey == GLFW_RELEASE) {
+        previousDownP = false;
+    }
+}
 
 int main(void) {
     /*
@@ -26,7 +85,14 @@ int main(void) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, MINOR_VERSION);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    GLFWwindow *window = glfwCreateWindow(640, 480, "Hello, Window!", NULL, NULL);
+    GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
+    //const GLFWvidmode* videoMode = glfwGetVideoMode(primaryMonitor);
+
+    const int screenWidth = SCREEN_WIDTH;
+    const int screenHeight = SCREEN_HEIGHT;
+
+    GLFWwindow *window = glfwCreateWindow((int)(screenWidth), (int)(screenHeight), "Hello, Window!", USING_RASPBERRY_PI ? primaryMonitor : NULL, NULL);
+
     if (window == NULL) {
         LOG_ERROR("Failed to create GLFW window");
         glfwTerminate();
@@ -46,6 +112,12 @@ int main(void) {
         glViewport(0, 0, width, height);
     }
 
+    glEnable(GL_DEPTH_TEST);
+
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwGetCursorPos(window, previousMouse, previousMouse + 1);
+
+
     LOG_INFO("Initialisation complete.");
     LOG_INFO("Using OpenGL %s", glGetString(GL_VERSION));
 
@@ -59,6 +131,7 @@ int main(void) {
     BUILD_SHADER_PROGRAM(
         &program, {
             glBindAttribLocation(program, 0, "aPos");
+            glBindAttribLocation(program, 1, "aTexCoord");
         }, {
             LOG_ERROR("Couldn't build shader program");
             return -1;
@@ -67,64 +140,53 @@ int main(void) {
         "shaders/basic.frag"
     );
 
+    GLuint postProcessProgram;
+    BUILD_SHADER_PROGRAM(
+        &postProcessProgram, {
+            glBindAttribLocation(program, 0, "aPos");
+            glBindAttribLocation(program, 1, "aTexCoord");
+        }, {
+            LOG_ERROR("Couldn't build shader program");
+            return -1;
+        },
+        "shaders/postprocess.vert",
+        "shaders/postprocess.frag"
+    );
 
-    /*
-        Cube
-    */
-
-
-    GLuint vao;
-    {
-        GLuint vbo, ebo;
-
-        glGenVertexArrays(1, &vao);
-        glGenBuffers(1, &vbo);
-        glGenBuffers(1, &ebo);
-
-        glBindVertexArray(vao);
-
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, cubeVerticesSize, cubeVertices, GL_STATIC_DRAW);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, cubeIndicesSize, cubeIndices, GL_STATIC_DRAW);
-
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *) 0);
-        glEnableVertexAttribArray(0);
-
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
-    }
 
     /*
         Textures
     */
-    GLuint texture = loadTextureRGB("../../textures/dirt.jpg", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
+
+
+    const GLuint texture = loadTextureRGBA("textures/textures.png", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
+
 
     /*
-        Add basic camera setup
+        Set up projection matrix
     */
 
 
-    {
-        mat4 model, view, projection;
 
-        glm_mat4_copy(GLM_MAT4_IDENTITY, model);
-
-        vec3 eye = { 2.5f, 2.0f, 2.5f };
-        glm_lookat(eye, GLM_VEC3_ZERO, GLM_YUP, view);
-
-        glm_perspective_default(640.0f / 480.0f, projection);
+        mat4 projection;
+        glm_perspective(FOV_Y, (float)screenWidth / (float)screenHeight, 0.1f, 500.0f, projection);
 
         glUseProgram(program);
 
-        const int modelLocation = glGetUniformLocation(program, "model");
-        const int viewLocation = glGetUniformLocation(program, "view");
         const int projectionLocation = glGetUniformLocation(program, "projection");
 
-        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
-        glUniformMatrix4fv(viewLocation, 1, GL_FALSE, view);
         glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projection);
+
+        glUseProgram(0);
+
+
+    // set texture unit
+    {
+        glUseProgram(program);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glUniform1i(glGetUniformLocation(program, "uTextureAtlas"), 0);
 
         glUseProgram(0);
     }
@@ -135,14 +197,68 @@ int main(void) {
     */
 
 
+    // Camera setup
+    camera_t camera;
+    camera_init(&camera);
+    vec3 p = { 0.f, 18.f, 0.f };
+    camera_setPos(&camera, p);
+
+    // World setup
+    world_t world;
+    world_init(&world);
+
+    unsigned int spawnLoader, cameraLoader;
+    world_genChunkLoader(&world, &spawnLoader);
+    world_genChunkLoader(&world, &cameraLoader);
+    world_updateChunkLoader(&world, spawnLoader, GLM_VEC3_ZERO);
+    world_updateChunkLoader(&world, cameraLoader, GLM_VEC3_ZERO);
+
+
+    postProcess_t postProcess;
+    postProcess_init(&postProcess, postProcessProgram, screenWidth, screenHeight);
+
     while (!glfwWindowShouldClose(window)) {
+        processInput(window);
+        processCameraInput(window, &camera);
+        world_doChunkLoading(&world);
+
+        world_updateChunkLoader(&world, cameraLoader, camera.eye);
+
         glUseProgram(program);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glUniform1i(glGetUniformLocation(program, "uTextureAtlas"), 0);
+        const int modelLocation = glGetUniformLocation(program, "model");
+        glPolygonMode(GL_FRONT_AND_BACK, wireframeView ? GL_LINE : GL_FILL);
+        glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projection);
 
-        glBindVertexArray(vao);
-        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
+        if (postProcessingEnabled) {
+            postProcess_bindBuffer(&postProcess.leftFramebuffer);
+            camera_translateX(&camera, -EYE_OFFSET);
+        }
+        glEnable(GL_DEPTH_TEST);
+        glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glUseProgram(0);
+        camera_setView(&camera, program);
+        world_draw(&world, modelLocation);
+
+        if (postProcessingEnabled) {
+            postProcess_bindBuffer(&postProcess.rightFramebuffer);
+            glEnable(GL_DEPTH_TEST);
+            glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            camera_translateX(&camera, 2 * EYE_OFFSET);
+        }
+
+        camera_setView(&camera, program);
+        world_draw(&world, modelLocation);
+
+        if (postProcessingEnabled) {
+            postProcess_draw(&postProcess);
+            camera_translateX(&camera, -EYE_OFFSET);
+        }
+
 
         glfwPollEvents();
         glfwSwapBuffers(window);
@@ -152,6 +268,8 @@ int main(void) {
             LOG_ERROR("OpenGL error: %d", err);
         }
     }
+
+    world_free(&world);
 
     return 0;
 }
