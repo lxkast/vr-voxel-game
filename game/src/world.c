@@ -178,14 +178,14 @@ void world_doChunkLoading(world_t *w) {
                 free(cluster->cells[i].chunk);
                 cluster->cells[i].chunk = NULL;
                 cluster->n--;
+                if (cluster->n <= 0) {
+                    HASH_DEL(w->clusterTable, cluster);
+                    free(cluster->cells);
+                    free(cluster);
+                    break;
+                }
             } else {
                 cluster->cells[i].reloaded = false;
-            }
-            if (cluster->n <= 0) {
-                HASH_DEL(w->clusterTable, cluster);
-                free(cluster->cells);
-                free(cluster);
-                break;
             }
         }
     }
