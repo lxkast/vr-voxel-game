@@ -29,18 +29,6 @@ aabb_t makeAABB(const entity_t *entity) {
     return box;
 }
 
-// this is TEMPORARY, will be updated when merging onto main branch
-typedef enum {
-    AIR,
-    DIRT,
-    STONE,
-} block_type_e;
-typedef struct {
-    vec3 position;
-    block_type_e type;
-    aabb_t aabb;
-} block_t;
-
 // Not yet implemented - will get all adjacent blocks once that is implemented
 extern block_t* getAdjacentBlocks(vec3 position, vec3 size, int *numBlocks);
 
@@ -152,9 +140,9 @@ int *getChunkCoords(vec3 position, int result[3]) {
 
 // Assumes yaw = 0 implies -Z, yaw = pi/2 implies X and so on.
 void getViewDirection(const player_t *player, vec3 out) {
-    const float XZscaling = cosf(player->cameraView);
+    const float XZscaling = cosf(player->cameraPitch);
     out[0] = -sinf(player->entity.yaw) * XZscaling;
-    out[1] = sinf(player->cameraView);
+    out[1] = sinf(player->cameraPitch);
     out[2] = -cosf(player->entity.yaw) * XZscaling;
 }
 
@@ -165,11 +153,6 @@ void getViewDirection(const player_t *player, vec3 out) {
 extern block_type_e getBlockType(const vec3 position);
 
 extern block_t getBlock(const vec3 position);
-
-typedef struct {
-    vec3 blockPosition;
-    bool found;
-} raycast_t;
 
 // will rewrite in DDA later
 raycast_t raycast(const vec3 eyePosition, const vec3 viewDirection) {
