@@ -92,6 +92,16 @@ bool world_getBlock(world_t *w, vec3 pos, block_data_t *bd);
  * @brief Gets all adjacent blocks to a block at a specific position
  * @param w a pointer to the world
  * @param position the position of the block
- * @param buf the array in which to store the blocks
+ * @param buf the array where the blocks are stored
  */
 void world_getAdjacentBlocks(world_t *w, vec3 position, block_data_t *buf);
+
+/**
+ * @brief gets all blocks within a cuboid defined by two opposite corners
+ * @param w a pointer to the world
+ * @param bottomLeft bottom left corner of the cuboid
+ * @param topRight top right corner of the cuboid
+ * @param numBlocks the variable where the number of blocks is stored
+ * @param buf the array where the blocks are stored
+ */
+void world_getBlocksInRange(world_t *w, vec3 bottomLeft, vec3 topRight, int *numBlocks ,block_data_t *buf);
