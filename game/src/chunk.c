@@ -12,22 +12,25 @@ static void chunk_createMesh(chunk_t *c) {
 
     float *buf = (float *)malloc(CHUNK_SIZE_CUBED * bytesPerBlock);
 
+    float *nextPtr = buf;
     for (int i = 0; i < CHUNK_SIZE; i++) {
         for (int j = 0; j < CHUNK_SIZE; j++) {
             for (int k = 0; k < CHUNK_SIZE; k++) {
-                float *blockPtr = buf + bytesPerBlock / sizeof(float) * (16 * 16 * i + 16 * j + k);
-                memcpy(blockPtr, grassVertices, bytesPerBlock);
+                memcpy(nextPtr, grassVertices, bytesPerBlock);
                 for (int l = 0; l < 36; l++) {
-                    blockPtr[5 * l] += 0.5f + i;
-                    blockPtr[5 * l + 1] += 0.5f + j;
-                    blockPtr[5 * l + 2] += 0.5f + k;
+                    nextPtr[5 * l] += 0.5f + i;
+                    nextPtr[5 * l + 1] += 0.5f + j;
+                    nextPtr[5 * l + 2] += 0.5f + k;
                 }
+                nextPtr += bytesPerBlock / sizeof(float);
             }
         }
     }
 
+    const GLsizeiptr sizeToWrite = sizeof(float) * (nextPtr - buf);
+
     glBindBuffer(GL_ARRAY_BUFFER, c->vbo);
-    glBufferData(GL_ARRAY_BUFFER, CHUNK_SIZE_CUBED * bytesPerBlock, buf, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeToWrite, buf, GL_STATIC_DRAW);
 
     glBindVertexArray(c->vao);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
