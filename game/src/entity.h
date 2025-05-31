@@ -1,6 +1,8 @@
 #pragma once
+
 #include <stdbool.h>
 #include <cglm/cglm.h>
+#include "world.h"
 
 #define ABS(x,y) ((x>y) ? (x) : (y))
 
@@ -50,12 +52,11 @@ typedef enum {
 } block_type_e;
 
 typedef struct {
-    vec3 position;
-    block_type_e type;
+    block_data_t data;
     aabb_t aabb;
-} block_t;
+} block_bounding_t;
 
 void updateVelocity(entity_t *entity, vec3 deltaV);
 void updateVelocityViewRel(entity_t *entity, vec3 deltaV);
-void moveEntity(entity_t *entity, vec3 deltaP);
-extern raycast_t raycast(const vec3 eyePosition, const vec3 viewDirection);
+void moveEntity(world_t *w, entity_t *entity, vec3 deltaP);
+extern raycast_t raycast(world_t *w, const vec3 eyePosition, const vec3 viewDirection);

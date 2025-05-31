@@ -1,5 +1,4 @@
 #include "entity.h"
-#include "string.h"
 
 bool intersectsX(const aabb_t box1, const aabb_t box2) {
     return box1.min[0] < box2.max[0] && box1.max[0] >= box2.min[0];
@@ -31,7 +30,7 @@ aabb_t makeAABB(vec3 position, vec3 size) {
 }
 
 // Not yet implemented - will get all adjacent blocks once that is implemented
-extern block_t* getAdjacentBlocks(vec3 position, vec3 size, int *numBlocks);
+extern block_bounding_t* getAdjacentBlocks(vec3 position, vec3 size, int *numBlocks);
 
 /**
  * @brief Handles a collision of an entity and a block along a specific axis. Tries to
@@ -42,7 +41,7 @@ extern block_t* getAdjacentBlocks(vec3 position, vec3 size, int *numBlocks);
  * @param deltaP The amount we were originally planning on moving the entity by
  * @param axisNum The axis we are resolving on
  */
-void handleAxisCollision(entity_t *entity, const aabb_t aabb, const block_t block, vec3 deltaP, const int axisNum) {
+void handleAxisCollision(entity_t *entity, const aabb_t aabb, const block_bounding_t block, vec3 deltaP, const int axisNum) {
     if (aabb.min[axisNum] + deltaP[axisNum] < block.aabb.max[axisNum] && aabb.max[axisNum] + deltaP[axisNum] >= block.aabb.min[axisNum]) {
         if (deltaP[axisNum] < 0) {
             deltaP[axisNum] = block.aabb.max[axisNum] - entity->position[axisNum];
@@ -61,30 +60,30 @@ void handleAxisCollision(entity_t *entity, const aabb_t aabb, const block_t bloc
  * @param entity the entity whose position you're changing
  * @param deltaP the amount you want to change it by
  */
-void moveEntity(entity_t *entity, vec3 deltaP) {
+void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
     const aabb_t aabb = makeAABB(entity->position, entity->size);
 
     int numBlocks = 0;
 
-    const block_t* blocks = getAdjacentBlocks(entity->position, entity->size, &numBlocks);
+    const block_bounding_t* blocks = getAdjacentBlocks(entity->position, entity->size, &numBlocks);
 
     // resolves collisions in Y-axis
     for (int i = 0; i < numBlocks; i++) {
-        if (blocks[i].type == AIR) { continue; }
+        if (blocks[i].data.type == AIR) { continue; }
         if (intersectsX(aabb, blocks[i].aabb) && intersectsZ(aabb, blocks[i].aabb)) {
             handleAxisCollision(entity, aabb, blocks[i], deltaP, 1);
         }
     }
     // resolves collisions in X-axis
     for (int i = 0; i < numBlocks; i++) {
-        if (blocks[i].type == AIR) { continue; }
+        if (blocks[i].data.type == AIR) { continue; }
         if (intersectsY(aabb, blocks[i].aabb) && intersectsZ(aabb, blocks[i].aabb)) {
             handleAxisCollision(entity, aabb, blocks[i], deltaP, 0);
         }
     }
     // resolves collisions in Z-axis
     for (int i = 0; i < numBlocks; i++) {
-        if (blocks[i].type == AIR) { continue; }
+        if (blocks[i].data.type == AIR) { continue; }
         if (intersectsX(aabb, blocks[i].aabb) && intersectsY(aabb, blocks[i].aabb)) {
             handleAxisCollision(entity, aabb, blocks[i], deltaP, 2);
         }
@@ -139,12 +138,21 @@ void getViewDirection(const player_t *player, vec3 out) {
 #define RAYCAST_STEP_MAGNITUDE 0.1f
 #define vec3_SIZE 12
 // TODO: Will implement when chunks implemented
-extern block_type_e getBlockType(const vec3 position);
+extern block_type_e getBlockType(world_t *w, vec3 position) {
+    block_data_t bd;
+    world_getBlock(w, position, &bd);
+    return bd.type;
+}
 
-extern block_t getBlock(const vec3 position);
+extern block_bounding_t getBlockBounding(world_t *w, vec3 position) {
+    block_data_t bd;
+    world_getBlock(w, position, &bd);
+    const aabb_t aabb = makeAABB((vec3){bd.x, bd.y, bd.z}, (vec3){1.f, 1.f , 1.f});
+    return {bd, aabb};
+}
 
 // will rewrite in DDA later
-raycast_t raycast(const vec3 eyePosition, const vec3 viewDirection) {
+raycast_t raycast(world_t *w, const vec3 eyePosition, const vec3 viewDirection) {
     for (int i = 0; i < MAX_RAYCAST_DISTANCE; i += RAYCAST_STEP_MAGNITUDE) {
         const vec3 newPos = {eyePosition[0] + i * viewDirection[0],
                        eyePosition[1] + i * viewDirection[1],
@@ -153,7 +161,7 @@ raycast_t raycast(const vec3 eyePosition, const vec3 viewDirection) {
 
         const vec3 flooredPos = { floorf(newPos[0]), floorf(newPos[1]), floorf(newPos[2]) };
 
-        const block_type_e block_type = getBlockType(flooredPos);
+        const block_type_e block_type = getBlockType(w, flooredPos);
         if (block_type != AIR) {
             return (raycast_t){
                 .blockPosition = {flooredPos[0], flooredPos[1], flooredPos[2]},
@@ -170,7 +178,7 @@ void floorVec3(const vec3 vector, vec3 result) {
     result[2] = floorf(vector[2]);
 }
 
-raycast_t raycastDDA(vec3 eyePosition, vec3 viewDirection) {
+raycast_t raycastDDA(world_t *w, vec3 eyePosition, vec3 viewDirection) {
     vec3 viewNormalised;
     glm_vec3_copy(viewDirection, viewNormalised);
     glm_normalize(viewNormalised);
@@ -201,7 +209,7 @@ raycast_t raycastDDA(vec3 eyePosition, vec3 viewDirection) {
     float totalDistance = 0;
 
     while (totalDistance < MAX_RAYCAST_DISTANCE) {
-        if (getBlockType(currentBlock) != AIR) {
+        if (getBlockType(w, currentBlock) != AIR) {
             return (raycast_t){
                 .blockPosition = {currentBlock[0], currentBlock[1], currentBlock[2]},
                 .found = true};
@@ -211,4 +219,8 @@ raycast_t raycastDDA(vec3 eyePosition, vec3 viewDirection) {
         // TODO: Finish later
     }
 
+    // This is here so CLion will typecheck correctly
+    return (raycast_t){
+        .blockPosition = {0, 0, 0},
+        .found = false};
 }
