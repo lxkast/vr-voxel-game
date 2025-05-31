@@ -55,7 +55,7 @@ void main()
         }
         else
         {
-            FragColor = texture(leftTexture, outTexCoords);
+            FragColor = texture(leftTexture, outTexCoords);    
         }
     }
 }

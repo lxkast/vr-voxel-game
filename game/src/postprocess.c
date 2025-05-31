@@ -4,8 +4,8 @@
 #include "vertices.h"
 
 #define DISTORTION_STRENTH 0.03f
-#define CENTER_X 0.4f // where 1 is the middle of the screen, and 0 is the side
-#define CENTER_Y 0.0f // where
+#define CENTER_X 0.52f // where 1 is the middle of the screen, and 0 is the side
+#define CENTER_Y 0.5f // where
 #define SCALE 1.0f
 
 /*
