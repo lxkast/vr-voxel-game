@@ -5,11 +5,14 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "logging.h"
 #include "datastructs.h"
+#include "logging.h"
 
-#define ASSERT(predicate, msg) if (!(predicate)) { LOG_FATAL("Error: %s\n", msg); exit(1); }
+#define ASSERT(predicate, msg)         \
+    if (!(predicate)) {                \
+        LOG_FATAL("Error: %s\n", msg); \
+        exit(1);                       \
+    }
 
 void testInsertion() {
     hashmap data;
@@ -73,20 +76,19 @@ void stressTest() {
     for (uint64_t i = 1; i < 1000; i++) {
         sprintf(string, "%ld", i);
         string[9] = '\0';
-        hashmap_setElement(&map, string, (void*) i);
+        hashmap_setElement(&map, string, (void *)i);
         ASSERT(map.size <= i, "Size mismatch");
     }
     srand(0);
     for (uint64_t i = 1; i < 1000; i++) {
         sprintf(string, "%ld", i);
         string[9] = '\0';
-        uint64_t got = (uint64_t) hashmap_getElement(&map, string);
+        uint64_t got = (uint64_t)hashmap_getElement(&map, string);
         ASSERT(got == i, "Stress test failed");
     }
     LOG_INFO("Hashmap Stress Test completed");
     hashmap_free(&map);
 }
-
 
 void arrListTestInsert() {
     resizingArrayList_t arrList;
@@ -119,7 +121,6 @@ void arrListTestDelete() {
     arraylist_free(&arrList);
     LOG_INFO("Test arraylist deletion completed");
 }
-
 
 int main(void) {
     log_init(stdout);
