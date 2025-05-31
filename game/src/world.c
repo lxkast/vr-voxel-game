@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "chunk.h"
 #include <cglm/cglm.h>
+#include "entity.h"
 
 /**
  * @brief Key for hash table
@@ -234,12 +235,6 @@ void world_getAdjacentBlocks(world_t *w, vec3 position, block_data_t *buf) {
             }
         }
     }
-}
-
-static void glm_vec3_ceil(vec3 v, vec3 dest) {
-    dest[0] = ceilf(v[0]);
-    dest[1] = ceilf(v[1]);
-    dest[2] = ceilf(v[2]);
 }
 
 void world_getBlocksInRange(world_t *w, vec3 bottomLeft, vec3 topRight, block_data_t *buf) {

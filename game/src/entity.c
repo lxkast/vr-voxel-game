@@ -1,5 +1,7 @@
 #include "entity.h"
 
+#include "logging.h"
+
 bool intersectsX(const aabb_t box1, const aabb_t box2) {
     return box1.min[0] < box2.max[0] && box1.max[0] >= box2.min[0];
 }
@@ -64,6 +66,12 @@ void blockDataToBlockBounding(const block_data_t *buf, const unsigned int numBlo
     }
 }
 
+void glm_vec3_ceil(vec3 v, vec3 dest) {
+    dest[0] = ceilf(v[0]);
+    dest[1] = ceilf(v[1]);
+    dest[2] = ceilf(v[2]);
+}
+
 /**
  * @brief updates the entity's position using deltaP, whilst checking for possible collisions
  * @param entity the entity whose position you're changing
@@ -76,10 +84,16 @@ void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
     vec3 shiftBy1 = {1.f, 1.f, 1.f};
 
     glm_vec3_sub(entity->position, shiftBy1, minPoint);
+    glm_vec3_floor(minPoint,minPoint);
     glm_vec3_add(entity->position, entity->size, maxPoint);
     glm_vec3_add(entity->position, shiftBy1, maxPoint);
+    glm_vec3_ceil(maxPoint, maxPoint);
 
-    const int numBlocks = (int)((maxPoint[0] - minPoint[0]) * (maxPoint[1] - minPoint[1]) * (maxPoint[2] - minPoint[2]));
+    const int numBlocks = (int)(maxPoint[0] - minPoint[0] + 1) *
+                          (int)(maxPoint[1] - minPoint[1] + 1) *
+                          (int)(maxPoint[2] - minPoint[2] + 1);
+
+    //LOG_DEBUG("Num Blocks: %i",numBlocks);
 
     block_data_t buf[numBlocks];
 
@@ -89,6 +103,8 @@ void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
 
     blockDataToBlockBounding(buf,numBlocks,blocks);
 
+    //LOG_DEBUG("Beginning to Resolve Collisions");
+
     // resolves collisions in Y-axis
     for (int i = 0; i < numBlocks; i++) {
         if (blocks[i].data.type == AIR) { continue; }
@@ -96,6 +112,9 @@ void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
             handleAxisCollision(entity, aabb, blocks[i], deltaP, 1);
         }
     }
+
+    //LOG_DEBUG("Resolved Y-axis");
+
     // resolves collisions in X-axis
     for (int i = 0; i < numBlocks; i++) {
         if (blocks[i].data.type == AIR) { continue; }
@@ -103,6 +122,9 @@ void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
             handleAxisCollision(entity, aabb, blocks[i], deltaP, 0);
         }
     }
+
+    //LOG_DEBUG("Resolved X-axis");
+
     // resolves collisions in Z-axis
     for (int i = 0; i < numBlocks; i++) {
         if (blocks[i].data.type == AIR) { continue; }
@@ -111,7 +133,11 @@ void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
         }
     }
 
+    //LOG_DEBUG("Resolved Z-axis");
+
     glm_vec3_add(entity->position, deltaP, entity->position);
+
+    //LOG_DEBUG("Moving Done");
 }
 
 /**
@@ -260,11 +286,16 @@ raycast_t raycastDDA(world_t *w, vec3 eyePosition, vec3 viewDirection) {
 }
 
 void processEntity(world_t *w, entity_t *entity, const float dt) {
+    //LOG_DEBUG("Starting Process");
     vec3 deltaV;
     glm_vec3_scale(entity->acceleration, dt, deltaV);
     updateVelocity(entity, deltaV);
 
+    //LOG_DEBUG("Finished Updating Velocity");
+
     vec3 deltaP;
     glm_vec3_scale(entity->velocity, dt, deltaP);
     moveEntity(w, entity, deltaP);
+
+    //LOG_DEBUG("Finished Updating Position");
 }

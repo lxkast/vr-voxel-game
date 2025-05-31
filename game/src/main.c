@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 #include <logging.h>
 #include <stdio.h>
+#include <time.h>
 #include "camera.h"
 #include "shaderutil.h"
 #include "texture.h"
@@ -18,7 +19,7 @@
 static double previousMouse[2];
 
 static void processPlayerInput(GLFWwindow *window, player_t *player) {
-    vec3 acceleration = { 0.f, -0.2f, 0.f };
+    vec3 acceleration = { 0.f, -10.f, 0.f };
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
         acceleration[0] += 0.1f;
     }
@@ -32,7 +33,9 @@ static void processPlayerInput(GLFWwindow *window, player_t *player) {
         acceleration[2] -= 0.1f;
     }
 
+    LOG_DEBUG("Acceleration (Pre-Change): %f %f %f", acceleration[0], acceleration[1], acceleration[2]);
     changeRUFtoXYZ(acceleration, player->entity.yaw);
+    LOG_DEBUG("Acceleration (Post-Change):%f %f %f", acceleration[0], acceleration[1], acceleration[2]);
 
     glm_vec3_copy(acceleration, player->entity.acceleration);
 }
@@ -61,6 +64,10 @@ static void processCameraInput(GLFWwindow *window, camera_t *camera) {
     previousMouse[0] = currentMouse[0];
     previousMouse[1] = currentMouse[1];
     camera_fromMouse(camera, -dX, -dY);
+}
+
+float getTimeSeconds() {
+    return (float)clock() / CLOCKS_PER_SEC;
 }
 
 static bool wireframeView = false;
@@ -216,6 +223,8 @@ int main(void) {
         .cameraOffset = {0.f, 0.f, 0.f}
     };
 
+    float prevTime = getTimeSeconds();
+
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
         processPlayerInput(window, &player);
@@ -224,9 +233,15 @@ int main(void) {
 
         world_updateChunkLoader(&world, cameraLoader, camera.eye);
 
+        const float currentTime = getTimeSeconds();
+        const float dt = currentTime - prevTime;
+        prevTime = currentTime;
+
+        processEntity(&world, &player.entity, dt);
+
         {
             vec3 camPos;
-            glm_vec3_add(player.entity.position, player.entity.velocity, camPos);
+            glm_vec3_add(player.entity.position, player.cameraOffset, camPos);
             camera_setPos(&camera, camPos);
 
             mat4 rot;

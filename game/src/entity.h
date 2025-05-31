@@ -62,3 +62,5 @@ void moveEntity(world_t *w, entity_t *entity, vec3 deltaP);
 void updateEntity(world_t *w);
 void changeRUFtoXYZ(vec3 directionVector, float yaw);
 raycast_t raycast(world_t *w, const vec3 eyePosition, const vec3 viewDirection);
+void processEntity(world_t *w, entity_t *entity, float dt);
+void glm_vec3_ceil(vec3 v, vec3 dest);
