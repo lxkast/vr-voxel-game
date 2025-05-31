@@ -183,6 +183,18 @@ int main(void) {
     world_updateChunkLoader(&world, spawnLoader, GLM_VEC3_ZERO);
     world_updateChunkLoader(&world, cameraLoader, GLM_VEC3_ZERO);
 
+    player_t player {
+        .entity = {
+            .position = {0.f, 0.f, 0.f},
+            .velocity = {0.f, 0.f, 0.f},
+            .size = {0.6f, 1.8f, 0.6f},
+            .acceleration = {0.f, 0.f, 0.f},
+            .grounded = false,
+            .yaw = 0,
+        },
+        .cameraPitch = 0.f,
+        .cameraOffset = {0.f, 0.f, 0.f}
+    };
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
