@@ -3,7 +3,7 @@
 #include "stb_image.h"
 #include "texture.h"
 
-GLuint loadTextureRGBA(const char* path, GLint wrapS, GLint wrapT, GLint minFilter, GLint magFilter) {
+GLuint loadTextureRGBA(const char *path, GLint wrapS, GLint wrapT, GLint minFilter, GLint magFilter) {
     int width, height, nrChannels;
     stbi_set_flip_vertically_on_load(1);
     unsigned char* data = stbi_load(path, &width, &height, &nrChannels, 0);
