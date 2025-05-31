@@ -7,6 +7,12 @@ uniform sampler2D leftTexture;
 uniform sampler2D rightTexture;
 uniform float distortionStrength;
 
+
+// will be between 0 and 1, representing the center of the image produced.
+uniform float centerX;
+uniform float centerY;
+
+
 vec2 distortEye(vec2 inTexCoords) {
     vec2 normalizedCoords = inTexCoords * 2.0 - 1.0;
 
@@ -29,7 +35,7 @@ vec2 distortEye(vec2 inTexCoords) {
 void main()
 {
     if (TexCoords.x >= 0.5) {
-        vec2 outTexCoords = distortEye(vec2(2 * (TexCoords.x - 0.5), TexCoords.y));
+        vec2 outTexCoords = distortEye(vec2(2 * (TexCoords.x + (centerX - 0.5) - 0.5), TexCoords.y + centerY - 0.5));
         if (outTexCoords.x > 1.0 || outTexCoords.x < 0.0 ||
         outTexCoords.y > 1.0 || outTexCoords.y < 0.0)
             {
@@ -40,7 +46,7 @@ void main()
                 FragColor = texture(rightTexture, outTexCoords);
             }
     } else {
-        vec2 outTexCoords = distortEye(vec2(2 * (TexCoords.x), TexCoords.y));
+        vec2 outTexCoords = distortEye(vec2(2 * (TexCoords.x - (centerX-0.5)), TexCoords.y + centerY - 0.5));
         if (outTexCoords.x > 1.0 || outTexCoords.x < 0.0 ||
         outTexCoords.y > 1.0 || outTexCoords.y < 0.0)
         {

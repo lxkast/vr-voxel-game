@@ -4,6 +4,8 @@
 #include "vertices.h"
 
 #define DISTORTION_STRENTH 0.1f
+#define CENTER_X 0.4f // where 1 is the middle of the screen, and 0 is the side
+#define CENTER_Y 0.0f // where
 
 /*
     sets up the quad VAO and VBO
@@ -74,6 +76,9 @@ void postProcess_draw(postProcess_t *postProcess) {
     glUniform1i(glGetUniformLocation(postProcess->program, "leftTexture"), 0);
     glUniform1i(glGetUniformLocation(postProcess->program, "rightTexture"), 1);
     glUniform1f(glGetUniformLocation(postProcess->program, "distortionStrength"), DISTORTION_STRENTH);
+    glUniform1f(glGetUniformLocation(postProcess->program, "centerX"), CENTER_X);
+    glUniform1f(glGetUniformLocation(postProcess->program, "centerY"), CENTER_Y);
+
     glDrawArrays(GL_TRIANGLES, 0, 12);
 }
 
