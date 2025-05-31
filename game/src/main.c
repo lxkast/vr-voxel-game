@@ -15,10 +15,10 @@
 #define MINOR_VERSION 1
 #endif
 
-#define EYE_OFFSET 0.25f
+#define EYE_OFFSET 0.032f
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
-#define FOV_Y 45.0f
+#define FOV_Y 90.0f
 
 
 static double previousMouse[2];
@@ -91,7 +91,7 @@ int main(void) {
     const int screenWidth = SCREEN_WIDTH;
     const int screenHeight = SCREEN_HEIGHT;
 
-    GLFWwindow *window = glfwCreateWindow((int)(screenWidth), (int)(screenHeight), "Hello, Window!", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow((int)(screenWidth), (int)(screenHeight), "Hello, Window!", primaryMonitor, NULL);
 
     if (window == NULL) {
         LOG_ERROR("Failed to create GLFW window");
@@ -207,7 +207,7 @@ int main(void) {
     world_t world;
     world_init(&world);
 
-#define R_N 8
+#define R_N 1
 #define N R_N * R_N
 
     chunk_t *chunks[N];
