@@ -29,10 +29,6 @@ aabb_t makeAABB(vec3 position, vec3 size) {
     return box;
 }
 
-// Not yet implemented - will get all adjacent blocks once that is implemented
-block_bounding_t* getAdjacentBlocks(vec3 position, vec3 size, int *numBlocks) {
-    return NULL;
-}
 
 /**
  * @brief Handles a collision of an entity and a block along a specific axis. Tries to
@@ -57,6 +53,17 @@ void handleAxisCollision(entity_t *entity, const aabb_t aabb, const block_boundi
     }
 }
 
+void blockDataToBlockBounding(const block_data_t *buf, const unsigned int numBlocks, block_bounding_t *result) {
+    vec3 blockSize = {1.f, 1.f, 1.f};
+    for (int i = 0; i < numBlocks; i++) {
+        const block_data_t block = buf[i];
+
+        vec3 position = {(float)block.x, (float)block.y, (float)block.z};
+
+        result[i] = (block_bounding_t){.data = buf[0], .aabb = makeAABB(position, blockSize)};
+    }
+}
+
 /**
  * @brief updates the entity's position using deltaP, whilst checking for possible collisions
  * @param entity the entity whose position you're changing
@@ -65,9 +72,22 @@ void handleAxisCollision(entity_t *entity, const aabb_t aabb, const block_boundi
 void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
     const aabb_t aabb = makeAABB(entity->position, entity->size);
 
-    int numBlocks = 0;
+    vec3 minPoint, maxPoint;
+    vec3 shiftBy1 = {1.f, 1.f, 1.f};
 
-    const block_bounding_t* blocks = getAdjacentBlocks(entity->position, entity->size, &numBlocks);
+    glm_vec3_sub(entity->position, shiftBy1, minPoint);
+    glm_vec3_add(entity->position, entity->size, maxPoint);
+    glm_vec3_add(entity->position, shiftBy1, maxPoint);
+
+    const int numBlocks = (int)((maxPoint[0] - minPoint[0]) * (maxPoint[1] - minPoint[1]) * (maxPoint[2] - minPoint[2]));
+
+    block_data_t buf[numBlocks];
+
+    world_getBlocksInRange(w,minPoint, maxPoint, buf);
+
+    block_bounding_t blocks[numBlocks];
+
+    blockDataToBlockBounding(buf,numBlocks,blocks);
 
     // resolves collisions in Y-axis
     for (int i = 0; i < numBlocks; i++) {

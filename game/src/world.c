@@ -242,7 +242,7 @@ static void glm_vec3_ceil(vec3 v, vec3 dest) {
     dest[2] = ceilf(v[2]);
 }
 
-void world_getBlocksInRange(world_t *w, vec3 bottomLeft, vec3 topRight, int *numBlocks ,block_data_t *buf) {
+void world_getBlocksInRange(world_t *w, vec3 bottomLeft, vec3 topRight, block_data_t *buf) {
     int index = 0;
 
     vec3 flooredBottomLeft;
@@ -264,6 +264,4 @@ void world_getBlocksInRange(world_t *w, vec3 bottomLeft, vec3 topRight, int *num
             }
         }
     }
-
-    *numBlocks = index;
 }

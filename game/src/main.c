@@ -205,7 +205,7 @@ int main(void) {
 
     player_t player = {
         .entity = {
-            .position = {0.f, 0.f, 0.f},
+            .position = {0.f, 50.f, 0.f},
             .velocity = {0.f, 0.f, 0.f},
             .size = {0.6f, 1.8f, 0.6f},
             .acceleration = {0.f, 0.f, 0.f},

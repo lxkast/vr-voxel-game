@@ -101,7 +101,6 @@ void world_getAdjacentBlocks(world_t *w, vec3 position, block_data_t *buf);
  * @param w a pointer to the world
  * @param bottomLeft bottom left corner of the cuboid
  * @param topRight top right corner of the cuboid
- * @param numBlocks the variable where the number of blocks is stored
  * @param buf the array where the blocks are stored
  */
-void world_getBlocksInRange(world_t *w, vec3 bottomLeft, vec3 topRight, int *numBlocks ,block_data_t *buf);
+void world_getBlocksInRange(world_t *w, vec3 bottomLeft, vec3 topRight, block_data_t *buf);
