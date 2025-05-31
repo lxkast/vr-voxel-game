@@ -19,13 +19,14 @@ bool intersects(const aabb_t box1, const aabb_t box2) {
 
 /**
  * @brief Calculates and returns a bounding box for an entity
- * @param entity The entity whose bounding box we want
+ * @param position The position of the object whose bounding box we want
+ * @param size The size of the object we want to get the bounding box of
  * @return The entity's bounding box
  */
-aabb_t makeAABB(const entity_t *entity) {
+aabb_t makeAABB(vec3 position, vec3 size) {
     aabb_t box;
-    glm_vec3_sub(entity->position, entity->size, box.min);
-    glm_vec3_add(entity->position, entity->size, box.max);
+    glm_vec3_copy(position, box.min);
+    glm_vec3_add(position, size, box.max);
     return box;
 }
 
