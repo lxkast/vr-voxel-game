@@ -2,7 +2,36 @@
 #include <cglm/cglm.h>
 #include <logging.h>
 #include <string.h>
+#include <math.h>
 #include "vertices.h"
+
+static float valueNoise(const int x, const int y) {
+    int n = x + y * 57;
+    n = (n << 13) ^ n;
+    const int nn = (n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff;
+    return 1.0f - ((float)nn / 1073741824.0f);
+}
+
+static float ease(const float t) {
+    return t * t * t * (t * (t * 6 - 15) + 10);
+}
+
+float smoothValueNoise(const float x, const float y) {
+    const int x_int = (int)floorf(x);
+    const int y_int = (int)floorf(y);
+    const float x_frac = ease(x - (float)x_int);
+    float y_frac = ease(y - (float)y_int);
+
+
+    const float v00 = valueNoise(x_int,     y_int);
+    const float v10 = valueNoise(x_int + 1, y_int);
+    const float v01 = valueNoise(x_int,     y_int + 1);
+    const float v11 = valueNoise(x_int + 1, y_int + 1);
+
+    const float i1 = glm_lerp(v00, v10, x_frac);
+    const float i2 = glm_lerp(v01, v11, x_frac);
+    return glm_lerp(i1, i2, y_frac);
+}
 
 /**
  * @brief Creates the mesh from a chunk
