@@ -191,3 +191,52 @@ raycast_t raycast(const vec3 eyePosition, const vec3 viewDirection) {
 
     return (raycast_t){{0,0,0}, false};
 }
+
+void floorVec3(const vec3 vector, vec3 result) {
+    result[0] = floorf(vector[0]);
+    result[1] = floorf(vector[1]);
+    result[2] = floorf(vector[2]);
+}
+
+raycast_t raycastDDA(vec3 eyePosition, vec3 viewDirection) {
+    vec3 viewNormalised;
+    glm_vec3_copy(viewDirection, viewNormalised);
+    glm_normalize(viewNormalised);
+
+    vec3 currentBlock;
+    glm_vec3_floor(eyePosition,currentBlock);
+
+    // stores the amount we must move along the ray to get to the next edge
+    // in each direction
+    vec3 oneBlockMoveDist;
+
+    // ignoring divide by 0 error for the moment
+    oneBlockMoveDist[0] = 1 / viewNormalised[0];
+    oneBlockMoveDist[1] = 1 / viewNormalised[1];
+    oneBlockMoveDist[2] = 1 / viewNormalised[2];
+
+    // Calculating initial distances to next block
+    vec3 nextBlockDists;
+
+    nextBlockDists[0] = viewNormalised[0] < 0 ? eyePosition[0] - currentBlock[0] : currentBlock[0] + 1 - eyePosition[0];
+    nextBlockDists[1] = viewNormalised[1] < 0 ? eyePosition[1] - currentBlock[1] : currentBlock[1] + 1 - eyePosition[1];
+    nextBlockDists[2] = viewNormalised[2] < 0 ? eyePosition[2] - currentBlock[2] : currentBlock[2] + 1 - eyePosition[2];
+
+    nextBlockDists[0] *= oneBlockMoveDist[0];
+    nextBlockDists[1] *= oneBlockMoveDist[1];
+    nextBlockDists[2] *= oneBlockMoveDist[2];
+
+    float totalDistance = 0;
+
+    while (totalDistance < MAX_RAYCAST_DISTANCE) {
+        if (getBlockType(currentBlock) != AIR) {
+            return (raycast_t){
+                .blockPosition = {currentBlock[0], currentBlock[1], currentBlock[2]},
+                .found = true};
+        }
+
+        // Moving to the nearest new block
+        // TODO: Finish later
+    }
+
+}
