@@ -2,6 +2,7 @@
 #include <logging.h>
 #include <stdlib.h>
 #include "chunk.h"
+#include <cglm/cglm.h>
 
 /**
  * @brief Key for hash table
@@ -190,3 +191,17 @@ void world_doChunkLoading(world_t *w) {
         }
     }
 }
+
+bool world_getBlock(world_t *w, vec3 pos, block_data_t *bd) {
+    const int x = (int)floorf(pos[0]);
+    const int y = (int)floorf(pos[1]);
+    const int z = (int)floorf(pos[2]);
+
+    const int cx = x >> 4;
+    const int cy = y >> 4;
+    const int cz = z >> 4;
+
+
+    clusterGet(w, cx, cy, cz, false, )
+}
+
