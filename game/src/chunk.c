@@ -107,8 +107,8 @@ void chunk_generate(chunk_t *c, int cx, int cy, int cz) {
     int (*ptr)[CHUNK_SIZE][CHUNK_SIZE] = (int (*)[CHUNK_SIZE][CHUNK_SIZE]) c->blocks;
     for (int x = 0; x < CHUNK_SIZE; x++) {
         for (int z = 0; z < CHUNK_SIZE; z++) {
-            float xf = (c->cx * CHUNK_SIZE + x) * 0.005f;
-            float zf = (c->cz * CHUNK_SIZE + z) * 0.005f;
+            float xf = (c->cx * CHUNK_SIZE + x) * 0.015f;
+            float zf = (c->cz * CHUNK_SIZE + z) * 0.015f;
 
             float n = smoothValueNoise(xf, zf);
             float height = n * 20.f;
