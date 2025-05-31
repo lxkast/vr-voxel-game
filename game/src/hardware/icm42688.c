@@ -203,17 +203,14 @@ void readPacket(uint8_t *data, uint16_t *read_amount, fifodata_t *res) {
     }
 }
 
-void readFIFOData() {
+void readFIFOData(fifodata_t *res) {
     uint16_t bytes = readFIFOLength();
     if (bytes > 0) {
         uint8_t *data = malloc(bytes);
         read_nbytes(REG_FIFO_DATA, bytes, data);
         
-        uint16_t length = 0;
-        fifodata_t res;
-        readPacket(data, &length, &res);
-        LOG_DEBUG("Read %f time", res.timestamp);
-        LOG_DEBUG("Read %d bytes", bytes); 
+        uint16_t length = 0;  // for now assume only one packet
+        readPacket(data, &length, res); 
     }
 }
 

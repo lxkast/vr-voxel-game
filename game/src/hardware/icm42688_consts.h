@@ -53,8 +53,14 @@
 
 #define REG_TMST_CONFIG (uint8_t) 0x54
 #define TMST_FSYNC_EN (uint8_t) 0x02
-
-#define TMSP_SCALE_FACTOR (32.0 / 30000000)
+#define TMSP_SCALE_FACTOR ((32.0 / 30000000) * CLOCK_CORRECT_FACTOR)
 #define TMSP_PER_RESET (65536 * TMSP_SCALE_FACTOR) 
 #define GYRO_SCALE_FACTOR (1 / 131)
 #define ACCEL_SCALE_FACTOR (1 / 8192)
+
+
+// ALL settings below this point are hardware specific
+// These values are obtained experimentally and are only valid for the exact
+// IMU which we have got, different IMU's of the same type will have slightly
+// different result
+#define CLOCK_CORRECT_FACTOR 0.991 // WARNING: this is calculated experimentally for this exact chip, it is hardware specific, so won't be common across multiple chips
