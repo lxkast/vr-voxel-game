@@ -56,6 +56,22 @@ void chunk_create(chunk_t *c, const int cx, const int cy, const int cz, const bl
     chunk_createMesh(c);
 }
 
+void chunk_generate(chunk_t *c, int cx, int cy, int cz) {
+    c->cx = cx;
+    c->cy = cy;
+    c->cz = cz;
+
+    const block_t b = cy > 0 ? BL_AIR : BL_GRASS;
+
+    int *ptr = c->blocks;
+    for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE; i++) {
+        ptr[i] = b;
+    }
+
+    glGenBuffers(1, &c->vbo);
+    glGenVertexArrays(1, &c->vao);
+    chunk_createMesh(c);
+}
 
 void chunk_draw(const chunk_t *c, const int modelLocation) {
     mat4 model;
