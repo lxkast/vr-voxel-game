@@ -19,6 +19,8 @@ typedef struct {
     GLuint vbo;
     /// The VAO that is used for drawing.
     GLuint vao;
+    /// Number of vertices in the current mesh
+    int meshVertices;
     /// Holds whether the mesh needs to be regenerated.
     bool tainted;
 } chunk_t;

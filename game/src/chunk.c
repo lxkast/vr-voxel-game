@@ -1,5 +1,6 @@
 #include "chunk.h"
 #include <cglm/cglm.h>
+#include <logging.h>
 #include <string.h>
 #include "vertices.h"
 
@@ -16,7 +17,16 @@ static void chunk_createMesh(chunk_t *c) {
     for (int i = 0; i < CHUNK_SIZE; i++) {
         for (int j = 0; j < CHUNK_SIZE; j++) {
             for (int k = 0; k < CHUNK_SIZE; k++) {
-                memcpy(nextPtr, grassVertices, bytesPerBlock);
+                switch (c->blocks[i][j][k]) {
+                    case BL_AIR:
+                        continue;;
+                    case BL_GRASS:
+                        memcpy(nextPtr, grassVertices, bytesPerBlock);
+                        break;
+                    default:
+                        LOG_WARN("Undefined block type, treating as air");
+                        continue;
+                }
                 for (int l = 0; l < 36; l++) {
                     nextPtr[5 * l] += 0.5f + i;
                     nextPtr[5 * l + 1] += 0.5f + j;
@@ -28,6 +38,7 @@ static void chunk_createMesh(chunk_t *c) {
     }
 
     const GLsizeiptr sizeToWrite = sizeof(float) * (nextPtr - buf);
+    c->meshVertices = sizeToWrite / (sizeof(float) * 5);
 
     glBindBuffer(GL_ARRAY_BUFFER, c->vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeToWrite, buf, GL_STATIC_DRAW);
@@ -84,6 +95,6 @@ void chunk_draw(const chunk_t *c, const int modelLocation) {
     glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
 
     glBindVertexArray(c->vao);
-    glDrawArrays(GL_TRIANGLES, 0, CHUNK_SIZE_CUBED * 36);
+    glDrawArrays(GL_TRIANGLES, 0, c->meshVertices);
     glBindVertexArray(0);
 }
