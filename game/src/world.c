@@ -123,6 +123,7 @@ void world_free(world_t *w) {
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
         HASH_DEL(w->clusterTable, cluster);
         for (int i = 0; i < C_T * C_T * C_T; i++) {
+            if (!cluster->cells[i].chunk) continue;
             chunk_free(cluster->cells[i].chunk);
             free(cluster->cells[i].chunk);
         }
