@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include "chunk.h"
 #include "uthash.h"
+#include <cglm/cglm.h>
 
 #define MAX_CHUNKS 256
 #define MAX_CHUNK_LOADERS 8
@@ -20,6 +21,14 @@ typedef struct {
     /// The hash table used keeping track of chunks
     struct _s_cluster *clusterTable;
 } world_t;
+
+/**
+ * @brief Struct that holds data about a single block.
+ */
+typedef struct {
+    int x, y, z;
+    block_t type;
+} block_data_t;
 
 /**
  * @brief Initialises a world struct.
@@ -69,3 +78,12 @@ void world_delChunkLoader(world_t *w, unsigned int id);
  * @param w A pointer to a world
  */
 void world_doChunkLoading(world_t *w);
+
+/**
+ * @brief Gets a block (if possible) at a position.
+ * @param w A pointer to a world
+ * @param pos The position you want to check for a block at
+ * @param bd A block data struct to allocate to
+ * @return Whether the operation was successful
+ */
+bool world_getBlock(world_t *w, vec3 pos, block_data_t *bd);
