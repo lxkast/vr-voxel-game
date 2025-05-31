@@ -87,3 +87,11 @@ void world_doChunkLoading(world_t *w);
  * @return Whether the operation was successful
  */
 bool world_getBlock(world_t *w, vec3 pos, block_data_t *bd);
+
+/**
+ * @brief Gets all adjacent blocks to a block at a specific position
+ * @param w a pointer to the world
+ * @param position the position of the block
+ * @param buf the array in which to store the blocks
+ */
+void world_getAdjacentBlocks(world_t *w, vec3 position, block_data_t *buf);

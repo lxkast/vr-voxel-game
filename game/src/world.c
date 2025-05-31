@@ -216,3 +216,23 @@ bool world_getBlock(world_t *w, vec3 pos, block_data_t *bd) {
     return true;
 }
 
+void world_getAdjacentBlocks(world_t *w, vec3 position, block_data_t *buf) {
+    int index = 0;
+    for (int dx = -1; dx <= 1; dx++) {
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                if (dx == 0 && dy == 0 && dz == 0) {
+                    continue;
+                }
+                vec3 delta = { (float)dx, (float)dy, (float)dz};
+                vec3 newBlockPosition;
+                glm_vec3_add(position, delta, newBlockPosition);
+
+                world_getBlock(w, newBlockPosition, &buf[index]);
+
+                index++;
+            }
+        }
+    }
+}
+
