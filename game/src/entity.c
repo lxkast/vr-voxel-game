@@ -30,7 +30,9 @@ aabb_t makeAABB(vec3 position, vec3 size) {
 }
 
 // Not yet implemented - will get all adjacent blocks once that is implemented
-extern block_bounding_t* getAdjacentBlocks(vec3 position, vec3 size, int *numBlocks);
+block_bounding_t* getAdjacentBlocks(vec3 position, vec3 size, int *numBlocks) {
+    return NULL;
+}
 
 /**
  * @brief Handles a collision of an entity and a block along a specific axis. Tries to
@@ -138,22 +140,22 @@ void getViewDirection(const player_t *player, vec3 out) {
 #define RAYCAST_STEP_MAGNITUDE 0.1f
 #define vec3_SIZE 12
 // TODO: Will implement when chunks implemented
-extern block_type_e getBlockType(world_t *w, vec3 position) {
+block_type_e getBlockType(world_t *w, vec3 position) {
     block_data_t bd;
     world_getBlock(w, position, &bd);
     return bd.type;
 }
 
-extern block_bounding_t getBlockBounding(world_t *w, vec3 position) {
+block_bounding_t getBlockBounding(world_t *w, vec3 position) {
     block_data_t bd;
     world_getBlock(w, position, &bd);
-    const aabb_t aabb = makeAABB((vec3){bd.x, bd.y, bd.z}, (vec3){1.f, 1.f , 1.f});
-    return {bd, aabb};
+    const aabb_t aabb = makeAABB((vec3){(float)bd.x, (float)bd.y, (float)bd.z}, (vec3){1.f, 1.f , 1.f});
+    return (block_bounding_t){bd, aabb};
 }
 
 // will rewrite in DDA later
 raycast_t raycast(world_t *w, const vec3 eyePosition, const vec3 viewDirection) {
-    for (int i = 0; i < MAX_RAYCAST_DISTANCE; i += RAYCAST_STEP_MAGNITUDE) {
+    for (float i = 0; i < MAX_RAYCAST_DISTANCE; i += RAYCAST_STEP_MAGNITUDE) {
         const vec3 newPos = {eyePosition[0] + i * viewDirection[0],
                        eyePosition[1] + i * viewDirection[1],
                        eyePosition[2] + i * viewDirection[2],
