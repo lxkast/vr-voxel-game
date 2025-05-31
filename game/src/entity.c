@@ -127,6 +127,18 @@ void updateVelocityViewRel(entity_t *entity, vec3 deltaV) {
     entity->velocity[2] = clamp(entity->velocity[2] + deltaV[0] * -cosf(entity->yaw) + deltaV[2] * sinf(entity->yaw), -MAX_ABS_Z_VELOCITY, MAX_ABS_Z_VELOCITY);
 }
 
+/**
+ * @brief Transforms a vector from right, upwards, forwards to x,y,z
+ * @param directionVector The direction vector to change
+ * @param yaw The yaw of the object
+ */
+void changeRUFtoXYZ(vec3 directionVector, const float yaw) {
+    const float right = directionVector[0];
+    const float forward = directionVector[2];
+
+    directionVector[0] = right * sinf(yaw) + forward * cosf(yaw);   // X
+    directionVector[2] = forward * -cosf(yaw) + right * sinf(yaw);  // Z
+}
 
 // Assumes yaw = 0 implies -Z, yaw = pi/2 implies X and so on.
 void getViewDirection(const player_t *player, vec3 out) {
@@ -225,4 +237,14 @@ raycast_t raycastDDA(world_t *w, vec3 eyePosition, vec3 viewDirection) {
     return (raycast_t){
         .blockPosition = {0, 0, 0},
         .found = false};
+}
+
+void processEntity(world_t *w, entity_t *entity, const float dt) {
+    vec3 deltaV;
+    glm_vec3_scale(entity->acceleration, dt, deltaV);
+    updateVelocity(entity, deltaV);
+
+    vec3 deltaP;
+    glm_vec3_scale(entity->velocity, dt, deltaP);
+    moveEntity(w, entity, deltaP);
 }

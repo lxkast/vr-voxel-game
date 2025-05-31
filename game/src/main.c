@@ -31,6 +31,9 @@ static void processPlayerInput(GLFWwindow *window, player_t *player) {
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
         acceleration[2] -= 0.1f;
     }
+
+    changeRUFtoXYZ(acceleration, player->entity.yaw);
+
     glm_vec3_copy(acceleration, player->entity.acceleration);
 }
 
@@ -38,18 +41,18 @@ static void processCameraInput(GLFWwindow *window, camera_t *camera) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     }
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        camera_translateZ(camera, -0.15f);
-    }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        camera_translateZ(camera, 0.15f);
-    }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        camera_translateX(camera, -0.15f);
-    }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        camera_translateX(camera, 0.15f);
-    }
+    // if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+    //     camera_translateZ(camera, -0.15f);
+    // }
+    // if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+    //     camera_translateZ(camera, 0.15f);
+    // }
+    // if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+    //     camera_translateX(camera, -0.15f);
+    // }
+    // if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+    //     camera_translateX(camera, 0.15f);
+    // }
 
     double currentMouse[2];
     glfwGetCursorPos(window, &currentMouse[0], &currentMouse[1]);
@@ -220,6 +223,20 @@ int main(void) {
         world_doChunkLoading(&world);
 
         world_updateChunkLoader(&world, cameraLoader, camera.eye);
+
+        {
+            vec3 camPos;
+            glm_vec3_add(player.entity.position, player.entity.velocity, camPos);
+            camera_setPos(&camera, camPos);
+
+            mat4 rot;
+            vec3 euler;
+
+            glm_quat_mat4(camera.ori, rot);
+
+            glm_euler_angles(rot, euler);
+            player.entity.yaw = euler[1];
+        }
 
         glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
         glClear(GL_DEPTH_BUFFER_BIT);
