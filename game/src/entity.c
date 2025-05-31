@@ -62,7 +62,7 @@ void handleAxisCollision(entity_t *entity, const aabb_t aabb, const block_t bloc
  * @param deltaP the amount you want to change it by
  */
 void moveEntity(entity_t *entity, vec3 deltaP) {
-    const aabb_t aabb = makeAABB(entity);
+    const aabb_t aabb = makeAABB(entity->position, entity->size);
 
     int numBlocks = 0;
 
@@ -126,18 +126,6 @@ void updateVelocityViewRel(entity_t *entity, vec3 deltaV) {
     entity->velocity[2] = clamp(entity->velocity[2] + deltaV[0] * -cosf(entity->yaw) + deltaV[2] * sinf(entity->yaw), -MAX_ABS_Z_VELOCITY, MAX_ABS_Z_VELOCITY);
 }
 
-/**
- * @brief calculates the coordinates of the chunk a vector in 3D space is in
- * @param position The position of the item you want to get the chunk of
- * @param result The array in which the coordinates should be stored
- * @return the index of the chunk the item is in
- */
-int *getChunkCoords(vec3 position, int result[3]) {
-    result[0] = floor(position[0] / 16.f);
-    result[1] = floor(position[1] / 16.f);
-    result[2] = floor(position[2] / 16.f);
-    return result;
-}
 
 // Assumes yaw = 0 implies -Z, yaw = pi/2 implies X and so on.
 void getViewDirection(const player_t *player, vec3 out) {
