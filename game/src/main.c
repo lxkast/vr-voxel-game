@@ -19,7 +19,7 @@
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
 #define FOV_Y 45.0f
-
+#define USING_RASPBERRY_PI false
 
 static double previousMouse[2];
 
@@ -86,12 +86,12 @@ int main(void) {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
     GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
-    const GLFWvidmode* videoMode = glfwGetVideoMode(primaryMonitor);
+    //const GLFWvidmode* videoMode = glfwGetVideoMode(primaryMonitor);
 
     const int screenWidth = SCREEN_WIDTH;
     const int screenHeight = SCREEN_HEIGHT;
 
-    GLFWwindow *window = glfwCreateWindow((int)(screenWidth), (int)(screenHeight), "Hello, Window!", primaryMonitor, NULL);
+    GLFWwindow *window = glfwCreateWindow((int)(screenWidth), (int)(screenHeight), "Hello, Window!", USING_RASPBERRY_PI ? primaryMonitor : NULL, NULL);
 
     if (window == NULL) {
         LOG_ERROR("Failed to create GLFW window");
