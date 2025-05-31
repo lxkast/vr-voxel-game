@@ -1,13 +1,12 @@
-#include <stdio.h>
+#include <cglm/cglm.h>
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <logging.h>
-#include <cglm/cglm.h>
-
+#include <stdio.h>
 #include "camera.h"
 #include "shaderutil.h"
-#include "vertices.h"
 #include "texture.h"
+#include "world.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #define MINOR_VERSION 2
@@ -17,21 +16,21 @@
 
 static double previousMouse[2];
 
-void processCameraInput(GLFWwindow *window, camera_t *camera) {
+static void processCameraInput(GLFWwindow *window, camera_t *camera) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     }
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        camera_translateZ(camera, -0.01f);
+        camera_translateZ(camera, -0.15f);
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        camera_translateZ(camera, 0.01f);
+        camera_translateZ(camera, 0.15f);
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        camera_translateX(camera, -0.01f);
+        camera_translateX(camera, -0.15f);
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        camera_translateX(camera, 0.01f);
+        camera_translateX(camera, 0.15f);
     }
 
     double currentMouse[2];
@@ -41,6 +40,19 @@ void processCameraInput(GLFWwindow *window, camera_t *camera) {
     previousMouse[0] = currentMouse[0];
     previousMouse[1] = currentMouse[1];
     camera_fromMouse(camera, -dX, -dY);
+}
+
+static bool wireframeView = false;
+static bool previousDown = false;
+static void processInput(GLFWwindow *window) {
+    const int key = glfwGetKey(window, GLFW_KEY_P);
+    if (key == GLFW_PRESS && !previousDown) {
+        glPolygonMode(GL_FRONT_AND_BACK, wireframeView ? GL_FILL : GL_LINE);
+        wireframeView = !wireframeView;
+        previousDown = true;
+    } if (key == GLFW_RELEASE) {
+        previousDown = false;
+    }
 }
 
 int main(void) {
@@ -55,7 +67,14 @@ int main(void) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, MINOR_VERSION);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    GLFWwindow *window = glfwCreateWindow(640, 480, "Hello, Window!", NULL, NULL);
+    GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* videoMode = glfwGetVideoMode(primaryMonitor);
+
+    const float screenWidth = (float)videoMode->width;
+    const float screenHeight = (float)videoMode->height;
+
+    GLFWwindow *window = glfwCreateWindow((int)(screenWidth/2.0f), (int)(screenHeight/1.5f), "Hello, Window!", NULL, NULL);
+
     if (window == NULL) {
         LOG_ERROR("Failed to create GLFW window");
         glfwTerminate();
@@ -105,59 +124,26 @@ int main(void) {
 
 
     /*
-        Cube
-    */
-
-
-    GLuint vao;
-    {
-        GLuint vbo, ebo;
-
-        glGenVertexArrays(1, &vao);
-        glGenBuffers(1, &vbo);
-        glGenBuffers(1, &ebo);
-
-        glBindVertexArray(vao);
-
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, grassVerticesSize, grassVertices, GL_STATIC_DRAW);
-
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
-    }
-
-    /*
         Textures
     */
-    GLuint texture = loadTextureRGBA("../../textures/textures.png", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
+
+
+    const GLuint texture = loadTextureRGBA("../../textures/textures.png", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
+
 
     /*
-        Add basic camera setup
+        Set up projection matrix
     */
 
 
     {
-        mat4 model, view, projection;
-
-        glm_mat4_copy(GLM_MAT4_IDENTITY, model);
-
-        vec3 eye = { 2.5f, 2.0f, 2.5f };
-        glm_lookat(eye, GLM_VEC3_ZERO, GLM_YUP, view);
-
-        glm_perspective_default(640.0f / 480.0f, projection);
+        mat4 projection;
+        glm_perspective_default((float)screenWidth / (float)screenHeight, projection);
 
         glUseProgram(program);
 
-        const int modelLocation = glGetUniformLocation(program, "model");
-        const int viewLocation = glGetUniformLocation(program, "view");
         const int projectionLocation = glGetUniformLocation(program, "projection");
 
-        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
-        glUniformMatrix4fv(viewLocation, 1, GL_FALSE, view);
         glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projection);
 
         glUseProgram(0);
@@ -170,11 +156,15 @@ int main(void) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
         glUniform1i(glGetUniformLocation(program, "uTextureAtlas"), 0);
+
+        glUseProgram(0);
     }
+
 
     /*
         Main loop
     */
+
 
     // Camera setup
     camera_t camera;
@@ -182,25 +172,35 @@ int main(void) {
     vec3 p = { 0.f, 0.f, -5.f };
     camera_setPos(&camera, p);
 
+    // World setup
+    world_t world;
+    world_init(&world);
+
+    unsigned int spawnLoader, cameraLoader;
+    world_genChunkLoader(&world, &spawnLoader);
+    world_genChunkLoader(&world, &cameraLoader);
+    world_updateChunkLoader(&world, spawnLoader, GLM_VEC3_ZERO);
+    world_updateChunkLoader(&world, cameraLoader, GLM_VEC3_ZERO);
+
 
     while (!glfwWindowShouldClose(window)) {
+        processInput(window);
         processCameraInput(window, &camera);
+        world_doChunkLoading(&world);
 
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        world_updateChunkLoader(&world, cameraLoader, camera.eye);
+
+        glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
         glClear(GL_DEPTH_BUFFER_BIT);
         glClear(GL_COLOR_BUFFER_BIT);
 
 
         glUseProgram(program);
-        glEnable(GL_DEPTH_TEST);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        const int modelLocation = glGetUniformLocation(program, "model");
 
         camera_setView(&camera, program);
-
-        glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        glBindVertexArray(0);
+        world_draw(&world, modelLocation);
 
         glUseProgram(0);
 
@@ -212,6 +212,8 @@ int main(void) {
             LOG_ERROR("OpenGL error: %d", err);
         }
     }
+
+    world_free(&world);
 
     return 0;
 }
