@@ -182,8 +182,8 @@ void changeRUFtoXYZ(vec3 directionVector, const float yaw) {
     const float right = directionVector[0];
     const float forward = directionVector[2];
 
-    directionVector[0] = right * sinf(yaw) + forward * cosf(yaw);   // X
-    directionVector[2] = forward * -cosf(yaw) + right * sinf(yaw);  // Z
+    directionVector[0] = right * cosf(yaw) - forward * sinf(yaw);   // X
+    directionVector[2] = right * sinf(yaw) + forward * cosf(yaw);   // Z
 }
 
 // Assumes yaw = 0 implies -Z, yaw = pi/2 implies X and so on.

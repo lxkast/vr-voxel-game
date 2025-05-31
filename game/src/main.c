@@ -20,17 +20,18 @@ static double previousMouse[2];
 
 static void processPlayerInput(GLFWwindow *window, player_t *player) {
     vec3 acceleration = { 0.f, -10.f, 0.f };
+
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        acceleration[0] += 0.1f;
+        acceleration[2] += 0.1f;  // Forward
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        acceleration[0] -= 0.1f;
+        acceleration[2] -= 0.1f;  // Backward
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        acceleration[2] += 0.1f;
+        acceleration[0] -= 0.1f;  // Left
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        acceleration[2] -= 0.1f;
+        acceleration[0] += 0.1f;  // Right
     }
 
     LOG_DEBUG("Acceleration (Pre-Change): %f %f %f", acceleration[0], acceleration[1], acceleration[2]);
@@ -212,7 +213,7 @@ int main(void) {
 
     player_t player = {
         .entity = {
-            .position = {0.f, 50.f, 0.f},
+            .position = {0.f, 15.f, 0.f},
             .velocity = {0.f, 0.f, 0.f},
             .size = {0.6f, 1.8f, 0.6f},
             .acceleration = {0.f, 0.f, 0.f},
@@ -220,7 +221,7 @@ int main(void) {
             .yaw = 0,
         },
         .cameraPitch = 0.f,
-        .cameraOffset = {0.f, 0.f, 0.f}
+        .cameraOffset = {0.3f, 1.6f, 0.3f}
     };
 
     float prevTime = getTimeSeconds();
