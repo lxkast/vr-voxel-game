@@ -176,19 +176,19 @@ int main(void) {
     world_t world;
     world_init(&world);
 
-#define R_N 8
-#define N R_N * R_N
+    unsigned int spawnLoader, cameraLoader;
+    world_genChunkLoader(&world, &spawnLoader);
+    world_genChunkLoader(&world, &cameraLoader);
+    world_updateChunkLoader(&world, spawnLoader, GLM_VEC3_ZERO);
+    world_updateChunkLoader(&world, cameraLoader, GLM_VEC3_ZERO);
 
-    chunk_t *chunks[N];
-    for (int i = 0; i < N; i++) {
-        chunks[i] = (chunk_t *)malloc(sizeof(chunk_t));
-        chunk_create(chunks[i], i % R_N - R_N / 2, 0, i / R_N - R_N / 2, BL_GRASS);
-        world_addChunk(&world, chunks[i]);
-    }
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
         processCameraInput(window, &camera);
+        world_doChunkLoading(&world);
+
+        world_updateChunkLoader(&world, cameraLoader, camera.eye);
 
         glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
         glClear(GL_DEPTH_BUFFER_BIT);
@@ -213,8 +213,7 @@ int main(void) {
         }
     }
 
-    for (int i = 0; i < N; i++)
-        free(chunks[i]);
+    world_free(&world);
 
     return 0;
 }
