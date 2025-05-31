@@ -98,7 +98,7 @@ static void loadChunk(world_t *w, const int cx, const int cy, const int cz) {
 
     if (!cv->chunk) {
         cv->chunk = (chunk_t *)malloc(sizeof(chunk_t));
-        chunk_create(cv->chunk, cx, cy, cz, BL_GRASS);
+        chunk_generate(cv->chunk, cx, cy, cz);
         cluster->n++;
     }
     cv->reloaded = true;
@@ -158,7 +158,7 @@ void world_doChunkLoading(world_t *w) {
         const int cy = w->chunkLoaders[i].y >> 4;
         const int cz = w->chunkLoaders[i].z >> 4;
 
-#define CHUNK_LOAD_RADIUS 2
+#define CHUNK_LOAD_RADIUS 4
         for (int x = -CHUNK_LOAD_RADIUS; x <= CHUNK_LOAD_RADIUS; x++) {
             for (int y = -CHUNK_LOAD_RADIUS; y <= CHUNK_LOAD_RADIUS; y++) {
                 for (int z = -CHUNK_LOAD_RADIUS; z <= CHUNK_LOAD_RADIUS; z++) {
