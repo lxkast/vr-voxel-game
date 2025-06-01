@@ -139,6 +139,8 @@ int main(void) {
         "shaders/chunk.vert",
         "shaders/chunk.frag"
     );
+    int chunkDataIndex = glGetUniformBlockIndex(program, "ChunkData");
+    glUniformBlockBinding(program, chunkDataIndex, 0);
 
     GLuint postProcessProgram;
     BUILD_SHADER_PROGRAM(
@@ -217,8 +219,8 @@ int main(void) {
     postProcess_t postProcess;
     postProcess_init(&postProcess, postProcessProgram, screenWidth, screenHeight);
 
+    double lastTime = glfwGetTime();
     while (!glfwWindowShouldClose(window)) {
-
         world_doChunkLoading(&world);
         world_updateChunkLoader(&world, cameraLoader, camera.eye);
         processInput(window);
@@ -258,7 +260,6 @@ int main(void) {
             camera_translateX(&camera, -EYE_OFFSET);
         }
 
-
         glfwPollEvents();
         glfwSwapBuffers(window);
 
@@ -266,6 +267,9 @@ int main(void) {
         while ((err = glGetError()) != GL_NO_ERROR) {
             LOG_ERROR("OpenGL error: %d", err);
         }
+        double currentTime = glfwGetTime();
+        LOG_DEBUG("FPS: %f", 1/(currentTime - lastTime));
+        lastTime = currentTime;
     }
 
     world_free(&world);

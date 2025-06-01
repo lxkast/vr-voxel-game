@@ -38,7 +38,9 @@ float smoothValueNoise(const float x, const float y) {
  * @param c A pointer to a chunk
  */
 static void chunk_createMesh(chunk_t *c) {
-
+    glBindBuffer(GL_UNIFORM_BUFFER, c->ubo);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(c->blocks), c->blocks, GL_STATIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void chunk_create(chunk_t *c, const int cx, const int cy, const int cz, const block_t block) {
@@ -53,6 +55,8 @@ void chunk_create(chunk_t *c, const int cx, const int cy, const int cz, const bl
 
     glGenBuffers(1, &c->vbo);
     glGenVertexArrays(1, &c->vao);
+    glGenBuffers(1, &c->ubo);
+
     chunk_createMesh(c);
 }
 
@@ -82,6 +86,7 @@ void chunk_generate(chunk_t *c, int cx, int cy, int cz) {
 
     glGenBuffers(1, &c->vbo);
     glGenVertexArrays(1, &c->vao);
+    glGenBuffers(1, &c->ubo);
     chunk_createMesh(c);
 }
 
@@ -92,12 +97,14 @@ void chunk_draw(const chunk_t *c, const int modelLocation) {
 
     glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
 
-    //glBindVertexArray(c->vao);
-    glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, NULL);
-    //glBindVertexArray(0);
+    glBindBuffer(GL_UNIFORM_BUFFER, c->ubo);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, c->ubo);
+    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, NULL);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void chunk_free(const chunk_t *c) {
-    glDeleteVertexArrays(1, &c->vbo);
-    glDeleteBuffers(1, &c->vao);
+    glDeleteVertexArrays(1, &c->vao);
+    glDeleteBuffers(1, &c->vbo);
+    glDeleteBuffers(1, &c->ubo);
 }
