@@ -4,15 +4,27 @@
 #include "camera.h"
 #include "entity.h"
 
+/**
+ * @brief A struct containing player data.
+ */
 typedef struct {
-    entity_t entity;      // for minecraft this is typically 0.6x1.8x0.6
-    float cameraPitch;    // where the player is looking relative to the horizontal in radians
-    vec3 cameraOffset;    // if we implement translational headset movement this will change
-                          // default value of 0.3x1.6x0.3  (this isn't official just a guess)
-    // member for inventory
-    // member for hotbar
+    /// The player's entity.
+    entity_t entity;
+    /// Where the player is looking relative to the horizontal in radians
+    float cameraPitch;
+    /// Where in the player the camera will be placed
+    vec3 cameraOffset;
 } player_t;
 
+/**
+ * @brief Initialises a player object.
+ * @param p A pointer to a player
+ */
 void player_init(player_t *p);
 
+/**
+ * @brief Moves a camera to the player and sets orientation of the player.
+ * @param p A pointer to a player
+ * @param camera A pointer to a camera
+ */
 void player_attachCamera(player_t *p, camera_t *camera);
