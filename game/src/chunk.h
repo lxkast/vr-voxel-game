@@ -52,3 +52,5 @@ void chunk_generate(chunk_t *c, int cx, int cy, int cz);
  * @param modelLocation The location of the model matrix in the shader program
  */
 void chunk_draw(const chunk_t *c, int modelLocation);
+
+void chunk_free(const chunk_t *c);

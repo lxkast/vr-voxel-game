@@ -3,8 +3,8 @@
 #include <GLFW/glfw3.h>
 #include <logging.h>
 #include <stdio.h>
-#include <time.h>
 #include "camera.h"
+#include "postprocess.h"
 #include "shaderutil.h"
 #include "texture.h"
 #include "world.h"
@@ -17,6 +17,12 @@
 #endif
 
 #define FRICTION_CONSTANT 1
+
+#define EYE_OFFSET 0.032f
+#define SCREEN_WIDTH 1024
+#define SCREEN_HEIGHT 600
+#define FOV_Y 45.0f
+#define USING_RASPBERRY_PI false
 
 static double previousMouse[2];
 
@@ -62,15 +68,26 @@ static void processCameraInput(GLFWwindow *window, camera_t *camera) {
 }
 
 static bool wireframeView = false;
-static bool previousDown = false;
+static bool previousDownO = false;
+static bool postProcessingEnabled = true;
+static bool previousDownP = false;
+
 static void processInput(GLFWwindow *window) {
-    const int key = glfwGetKey(window, GLFW_KEY_P);
-    if (key == GLFW_PRESS && !previousDown) {
-        glPolygonMode(GL_FRONT_AND_BACK, wireframeView ? GL_FILL : GL_LINE);
+    const int oKey = glfwGetKey(window, GLFW_KEY_O);
+    if (oKey == GLFW_PRESS && !previousDownO) {
         wireframeView = !wireframeView;
-        previousDown = true;
-    } if (key == GLFW_RELEASE) {
-        previousDown = false;
+        previousDownO = true;
+    }
+    if (oKey == GLFW_RELEASE) {
+        previousDownO = false;
+    }
+    const int pKey = glfwGetKey(window, GLFW_KEY_P);
+    if (pKey == GLFW_PRESS && !previousDownP) {
+        postProcessingEnabled = !postProcessingEnabled;
+        previousDownP = true;
+    }
+    if (pKey == GLFW_RELEASE) {
+        previousDownP = false;
     }
 }
 
@@ -87,12 +104,12 @@ int main(void) {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
     GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
-    const GLFWvidmode* videoMode = glfwGetVideoMode(primaryMonitor);
+    //const GLFWvidmode* videoMode = glfwGetVideoMode(primaryMonitor);
 
-    const float screenWidth = (float)videoMode->width;
-    const float screenHeight = (float)videoMode->height;
+    const int screenWidth = SCREEN_WIDTH;
+    const int screenHeight = SCREEN_HEIGHT;
 
-    GLFWwindow *window = glfwCreateWindow((int)(screenWidth/2.0f), (int)(screenHeight/1.5f), "Hello, Window!", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow((int)(screenWidth), (int)(screenHeight), "Hello, Window!", USING_RASPBERRY_PI ? primaryMonitor : NULL, NULL);
 
     if (window == NULL) {
         LOG_ERROR("Failed to create GLFW window");
@@ -141,13 +158,26 @@ int main(void) {
         "shaders/basic.frag"
     );
 
+    GLuint postProcessProgram;
+    BUILD_SHADER_PROGRAM(
+        &postProcessProgram, {
+            glBindAttribLocation(program, 0, "aPos");
+            glBindAttribLocation(program, 1, "aTexCoord");
+        }, {
+            LOG_ERROR("Couldn't build shader program");
+            return -1;
+        },
+        "shaders/postprocess.vert",
+        "shaders/postprocess.frag"
+    );
+
 
     /*
         Textures
     */
 
 
-    const GLuint texture = loadTextureRGBA("../../textures/textures.png", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
+    const GLuint texture = loadTextureRGBA("textures/textures.png", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
 
 
     /*
@@ -155,9 +185,9 @@ int main(void) {
     */
 
 
-    {
+
         mat4 projection;
-        glm_perspective_default((float)screenWidth / (float)screenHeight, projection);
+        glm_perspective(FOV_Y, (float)screenWidth / (float)screenHeight, 0.1f, 500.0f, projection);
 
         glUseProgram(program);
 
@@ -166,7 +196,7 @@ int main(void) {
         glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projection);
 
         glUseProgram(0);
-    }
+
 
     // set texture unit
     {
@@ -216,6 +246,9 @@ int main(void) {
 
     double prevTime = glfwGetTime();
 
+    postProcess_t postProcess;
+    postProcess_init(&postProcess, postProcessProgram, screenWidth, screenHeight);
+
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
         processPlayerInput(window, &player);
@@ -260,13 +293,42 @@ int main(void) {
 
 
         glUseProgram(program);
-
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glUniform1i(glGetUniformLocation(program, "uTextureAtlas"), 0);
         const int modelLocation = glGetUniformLocation(program, "model");
+        glPolygonMode(GL_FRONT_AND_BACK, wireframeView ? GL_LINE : GL_FILL);
+        glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projection);
+
+        if (postProcessingEnabled) {
+            postProcess_bindBuffer(&postProcess.leftFramebuffer);
+            camera_translateX(&camera, -EYE_OFFSET);
+        }
+        glEnable(GL_DEPTH_TEST);
+        glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         camera_setView(&camera, program);
         world_draw(&world, modelLocation);
 
+        if (postProcessingEnabled) {
+            postProcess_bindBuffer(&postProcess.rightFramebuffer);
+            glEnable(GL_DEPTH_TEST);
+            glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            camera_translateX(&camera, 2 * EYE_OFFSET);
+        }
+
+        camera_setView(&camera, program);
+        world_draw(&world, modelLocation);
+
+        if (postProcessingEnabled) {
+            postProcess_draw(&postProcess);
+            camera_translateX(&camera, -EYE_OFFSET);
+        }
+
         glUseProgram(0);
+
 
         glfwPollEvents();
         glfwSwapBuffers(window);

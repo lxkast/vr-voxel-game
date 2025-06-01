@@ -12,5 +12,9 @@ add_subdirectory(external)
 set(PARENT_SRC "${CMAKE_SOURCE_DIR}/..")
 set(PARENT_BUILD "${CMAKE_BINARY_DIR}/parent")
 
+file(
+        COPY ${CMAKE_CURRENT_SOURCE_DIR}/textures
+        DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/src
+)
 
 add_subdirectory(${PARENT_SRC} ${PARENT_BUILD})
