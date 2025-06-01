@@ -2,6 +2,7 @@
 #include <logging.h>
 #include <stdlib.h>
 #include "chunk.h"
+#include "vertices.h"
 
 /**
  * @brief Key for hash table
@@ -106,10 +107,21 @@ static void loadChunk(world_t *w, const int cx, const int cy, const int cz) {
 
 void world_init(world_t *w) {
     w->clusterTable = NULL;
+    glGenVertexArrays(1, &w->chunkVao);
+    glGenBuffers(1, &w->chunkVbo);
+    glGenBuffers(1, &w->chunkEbo);
+    glBindVertexArray(w->chunkVao);
+    glBindBuffer(GL_ARRAY_BUFFER, w->chunkVbo);
+    glBufferData(GL_ARRAY_BUFFER, chunkVerticesSize, chunkVertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, w->chunkEbo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, chunkIndicesSize, chunkIndices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
 }
 
 void world_draw(const world_t *w, const int modelLocation) {
     cluster_t *cluster, *tmp;
+    glBindVertexArray(w->chunkVao);
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
         for (int i = 0; i < C_T * C_T * C_T; i++)
             if (cluster->cells[i].chunk)

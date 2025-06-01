@@ -57,21 +57,22 @@ const float grassVertices[] = {
 
 const unsigned int grassVerticesSize = sizeof(grassVertices);
 
-const float cubeVertices[] = {
-    // Front face
-    -0.5f, -0.5f,  0.5f,  // 0
-     0.5f, -0.5f,  0.5f,  // 1
-     0.5f,  0.5f,  0.5f,  // 2
-    -0.5f,  0.5f,  0.5f,  // 3
-    // Back face
-    -0.5f, -0.5f, -0.5f,  // 4
-     0.5f, -0.5f, -0.5f,  // 5
-     0.5f,  0.5f, -0.5f,  // 6
-    -0.5f,  0.5f, -0.5f   // 7
+const float chunkVertices[] = {
+ // Front face
+ 0.0f, 0.0f,  16.0f,  // 0
+  16.0f, 0.0f,  16.0f,  // 1
+  16.0f,  16.0f,  16.0f,  // 2
+ 0.0f,  16.0f,  16.0f,  // 3
+ // Back face
+ 0.0f, 0.0f, 0.0f,  // 4
+  16.0f, 0.0f, 0.0f,  // 5
+  16.0f,  16.0f, 0.0f,  // 6
+ 0.0f,  16.0f, 0.0f   // 7
 };
-const unsigned int cubeVerticesSize = sizeof(cubeVertices);
 
-const unsigned int cubeIndices[] = {
+const unsigned int chunkVerticesSize = sizeof(chunkVertices);
+
+const unsigned int chunkIndices[] = {
     // Front face
     0, 1, 2,
     2, 3, 0,
@@ -91,7 +92,7 @@ const unsigned int cubeIndices[] = {
     4, 5, 1,
     1, 0, 4
 };
-const unsigned int cubeIndicesSize = sizeof(cubeIndices);
+const unsigned int chunkIndicesSize = sizeof(chunkIndices);
 
 const float quadVertices[] = {
     // positions   // texCoords

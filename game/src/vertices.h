@@ -1,10 +1,10 @@
 #pragma once
 
-extern const float cubeVertices[];
-extern const unsigned int cubeVerticesSize;
+extern const float chunkVertices[];
+extern const unsigned int chunkVerticesSize;
 
-extern const unsigned int cubeIndices[];
-extern const unsigned int cubeIndicesSize;
+extern const unsigned int chunkIndices[];
+extern const unsigned int chunkIndicesSize;
 
 extern const float grassVertices[];
 extern const unsigned int grassVerticesSize;

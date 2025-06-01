@@ -136,8 +136,8 @@ int main(void) {
             LOG_ERROR("Couldn't build shader program");
             return -1;
         },
-        "shaders/basic.vert",
-        "shaders/basic.frag"
+        "shaders/chunk.vert",
+        "shaders/chunk.frag"
     );
 
     GLuint postProcessProgram;
@@ -218,12 +218,11 @@ int main(void) {
     postProcess_init(&postProcess, postProcessProgram, screenWidth, screenHeight);
 
     while (!glfwWindowShouldClose(window)) {
+
+        world_doChunkLoading(&world);
+        world_updateChunkLoader(&world, cameraLoader, camera.eye);
         processInput(window);
         processCameraInput(window, &camera);
-        world_doChunkLoading(&world);
-
-        world_updateChunkLoader(&world, cameraLoader, camera.eye);
-
         glUseProgram(program);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
