@@ -33,6 +33,14 @@ typedef struct {
 } blockData_t;
 
 /**
+ * @brief Struct that holds data about the result of a raycast
+ */
+typedef struct {
+    vec3 blockPosition;
+    bool found;
+} raycast_t;
+
+/**
  * @brief Initialises a world struct.
  * @param w A pointer to a world
  */

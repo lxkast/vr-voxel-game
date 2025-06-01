@@ -33,11 +33,6 @@ typedef struct {
 } aabb_t;
 
 typedef struct {
-    vec3 blockPosition;
-    bool found;
-} raycast_t;
-
-typedef struct {
     blockData_t data;
     aabb_t aabb;
 } blockBounding_t;

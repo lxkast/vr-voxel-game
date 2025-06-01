@@ -5,6 +5,9 @@
 #include "chunk.h"
 #include "entity.h"
 
+#define MAX_RAYCAST_DISTANCE 6.f
+#define RAYCAST_STEP_MAGNITUDE 0.1f
+
 /**
  * @brief Key for hash table
  */
@@ -257,4 +260,90 @@ void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, bl
             }
         }
     }
+}
+
+/**
+ * @brief Gets the type of a block at a chosen position
+ * @param w a pointer to the world
+ * @param position the position to get a block at
+ * @return The type of the block
+ */
+static block_t getBlockType(world_t *w, vec3 position) {
+    blockData_t bd;
+    world_getBlock(w, position, &bd);
+    return bd.type;
+}
+
+raycast_t world_raycast(world_t *w, const vec3 eyePosition, const vec3 viewDirection) {
+    for (float i = 0; i < MAX_RAYCAST_DISTANCE; i += RAYCAST_STEP_MAGNITUDE) {
+        const vec3 newPos = {
+            eyePosition[0] + i * viewDirection[0],
+            eyePosition[1] + i * viewDirection[1],
+            eyePosition[2] + i * viewDirection[2],
+        };
+
+        vec3 flooredPos = {floorf(newPos[0]), floorf(newPos[1]), floorf(newPos[2])};
+
+        const block_t block_type = getBlockType(w, flooredPos);
+        if (block_type != BL_AIR) {
+            return (raycast_t){
+                .blockPosition = {flooredPos[0], flooredPos[1], flooredPos[2]},
+                .found = true
+            };
+        }
+    }
+
+    return (raycast_t){
+            {0, 0, 0},
+            false
+        };
+}
+
+raycast_t raycastDDA(world_t *w, vec3 eyePosition, vec3 viewDirection) {
+    vec3 viewNormalised;
+    glm_vec3_copy(viewDirection, viewNormalised);
+    glm_normalize(viewNormalised);
+
+    vec3 currentBlock;
+    glm_vec3_floor(eyePosition, currentBlock);
+
+    // stores the amount we must move along the ray to get to the next edge
+    // in each direction
+    vec3 oneBlockMoveDist;
+
+    // ignoring divide by 0 error for the moment
+    oneBlockMoveDist[0] = 1 / viewNormalised[0];
+    oneBlockMoveDist[1] = 1 / viewNormalised[1];
+    oneBlockMoveDist[2] = 1 / viewNormalised[2];
+
+    // Calculating initial distances to next block
+    vec3 nextBlockDists;
+
+    nextBlockDists[0] = viewNormalised[0] < 0 ? eyePosition[0] - currentBlock[0] : currentBlock[0] + 1 - eyePosition[0];
+    nextBlockDists[1] = viewNormalised[1] < 0 ? eyePosition[1] - currentBlock[1] : currentBlock[1] + 1 - eyePosition[1];
+    nextBlockDists[2] = viewNormalised[2] < 0 ? eyePosition[2] - currentBlock[2] : currentBlock[2] + 1 - eyePosition[2];
+
+    nextBlockDists[0] *= oneBlockMoveDist[0];
+    nextBlockDists[1] *= oneBlockMoveDist[1];
+    nextBlockDists[2] *= oneBlockMoveDist[2];
+
+    float totalDistance = 0;
+
+    while (totalDistance < MAX_RAYCAST_DISTANCE) {
+        if (getBlockType(w, currentBlock) != BL_AIR) {
+            return (raycast_t){
+                .blockPosition = {currentBlock[0], currentBlock[1], currentBlock[2]},
+                .found = true
+            };
+        }
+
+        // Moving to the nearest new block
+        // TODO: Finish later
+    }
+
+    // This is here so CLion will typecheck correctly
+    return (raycast_t){
+        .blockPosition = {0, 0, 0},
+        .found = false
+    };
 }
