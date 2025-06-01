@@ -68,13 +68,17 @@ static aabb_t makeAABB(vec3 position, vec3 size) {
  * @param axisNum The axis we are resolving on
  */
 static void handleAxisCollision(entity_t *entity, const aabb_t aabb, const block_bounding_t block, vec3 deltaP, const int axisNum) {
-    if (aabb.min[axisNum] + deltaP[axisNum] < block.aabb.max[axisNum] && aabb.max[axisNum] + deltaP[axisNum] >= block.aabb.min[axisNum]) {
+    // checks to see if it collides in specified axis
+    if (aabb.min[axisNum] + deltaP[axisNum] < block.aabb.max[axisNum] && aabb.max[axisNum] + deltaP[axisNum] > block.aabb.min[axisNum]) {
         if (deltaP[axisNum] < 0) {
+            // if velocity is negative, makes the entity's min point end up at the block's max point
             deltaP[axisNum] = block.aabb.max[axisNum] - aabb.min[axisNum];
             if (axisNum == 1) {
+                // if the entity lands on a block from above, set grounded to true
                 entity->grounded = true;
             }
         } else {
+            // if velocity is positive, makes the entity's max point end up at the block's min point
             deltaP[axisNum] = block.aabb.min[axisNum] - aabb.max[axisNum];
         }
         entity->velocity[axisNum] = 0;
@@ -110,44 +114,40 @@ void glm_vec3_ceil(vec3 v, vec3 dest) {
  * @param deltaP the amount you want to change it by
  */
 static void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
+    // defining the entity's AABB bounding box
     const aabb_t aabb = makeAABB(entity->position, entity->size);
 
+    // working out the bottom left and top right corners of the cuboid of blocks
+    // around the player we want to check collisions with
     vec3 minPoint, maxPoint;
     vec3 shiftBy1 = {1.f, 1.f, 1.f};
 
-    vec3 destPosition;
-    glm_vec3_add(entity->position, deltaP, destPosition);
-
+    // calculating bottom left corner
     glm_vec3_sub(entity->position, shiftBy1, minPoint);
     glm_vec3_floor(minPoint, minPoint);
+
+    // calculating top right corner
     glm_vec3_add(entity->position, entity->size, maxPoint);
     glm_vec3_add(maxPoint, shiftBy1, maxPoint);
     glm_vec3_ceil(maxPoint, maxPoint);
 
+    // calculating how many blocks there are
     const int numBlocks = (int)(maxPoint[0] - minPoint[0]) *
                           (int)(maxPoint[1] - minPoint[1]) *
                           (int)(maxPoint[2] - minPoint[2]);
 
+    // getting all the blocks in the range
     block_data_t buf[numBlocks];
 
     world_getBlocksInRange(w, minPoint, maxPoint, buf);
 
+    // converting them to block_bounding_t boxes
     block_bounding_t blocks[numBlocks];
 
     blockDataToBlockBounding(buf, numBlocks, blocks);
 
     // resolves collisions in Y-axis
     for (int i = 0; i < numBlocks; i++) {
-        if (blocks[i].aabb.min[0] != (float)buf[i].x) {
-            LOG_FATAL("Block Bounding Error");
-        }
-        if (blocks[i].aabb.min[1] != (float)buf[i].y) {
-            LOG_FATAL("Block Bounding Error");
-        }
-        if (blocks[i].aabb.min[2] != (float)buf[i].z) {
-            LOG_FATAL("Block Bounding Error");
-        }
-
         if (blocks[i].data.type == BL_AIR) {
             continue;
         }
@@ -176,6 +176,7 @@ static void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
         }
     }
 
+    // updates position
     glm_vec3_add(entity->position, deltaP, entity->position);
 }
 
@@ -205,7 +206,6 @@ void changeRUFtoXYZ(vec3 directionVector, const float yaw) {
     directionVector[2] = -right * sinf(yaw) - forward * cosf(yaw);    // Z
 }
 
-// Assumes yaw = 0 implies -Z, yaw = pi/2 implies X and so on.
 void getViewDirection(const player_t *player, vec3 out) {
     const float XZscaling = cosf(player->cameraPitch);
     out[0] = -sinf(player->entity.yaw) * XZscaling;
