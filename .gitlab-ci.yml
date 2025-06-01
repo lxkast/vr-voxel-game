@@ -16,14 +16,14 @@
 # This specific template is located at:
 # https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Getting-Started.gitlab-ci.yml
 
-stages:          # List of stages for jobs, and their order of execution
+stages: # List of stages for jobs, and their order of execution
   - build
   - test
   - format
-  
+
 image: alpine:latest
 
-build-job:       # This job runs in the build stage, which runs first.
+build-job: # This job runs in the build stage, which runs first.
   stage: build
   before_script:
     - apk add --no-cache cmake make gcc libc-dev
@@ -42,10 +42,28 @@ build-job:       # This job runs in the build stage, which runs first.
         - assembler-emulator/**/*
         - .gitlab-ci.yml
 
-unit-test-job:   # This job runs in the test stage.
+build-docs:
+  stage: build
+  before_script:
+    - apk add --no-cache latexmk
+  script:
+    - cd doc
+    - make
+  artifacts:
+    paths:
+      - docs/Checkpoint.pdf
+      - docs/Report.pdf
+    expire_in: 1 day
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - changes:
+        - docs/**/*
+        - .gitlab-ci.yml
+
+unit-test-job: # This job runs in the test stage.
   image: python:3.10.12-alpine
   stage: test    # It only starts when the job in the build stage completes successfully.
-  needs: [build-job]
+  needs: [ build-job ]
   dependencies:
     - build-job
   before_script:
@@ -60,7 +78,7 @@ unit-test-job:   # This job runs in the test stage.
     - source .venv/bin/activate
     - ./run -p
   variables:
-    ACCESS_TOKEN: $MY_PAT_SECRET 
+    ACCESS_TOKEN: $MY_PAT_SECRET
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - changes:
