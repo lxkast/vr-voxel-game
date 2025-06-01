@@ -179,13 +179,13 @@ void readPacket(uint8_t *data, uint16_t *read_amount, fifodata_t *res) {
     static uint16_t last_time = 0;
 
     if ((data[0] & 0xFC) == 0x68) {
-        if (readVec3(data + 1, GYRO_SCALE_FACTOR, res->gyro)) {
+        if (readVec3(data + 7, GYRO_SCALE_FACTOR, res->gyro)) {
             res->gyroValid = true;
         } else {
             res->gyroValid = false;
         }
     
-        if (readVec3(data + 7, ACCEL_SCALE_FACTOR, res->accel)) {
+        if (readVec3(data + 1, ACCEL_SCALE_FACTOR, res->accel)) {
             res->accelValid = true;
         } else {
             res->accelValid = false;
@@ -203,7 +203,7 @@ void readPacket(uint8_t *data, uint16_t *read_amount, fifodata_t *res) {
     }
 }
 
-void readFIFOData(fifodata_t *res) {
+bool readFIFOData(fifodata_t *res) {
     uint16_t bytes = readFIFOLength();
     if (bytes > 0) {
         uint8_t *data = malloc(bytes);
@@ -211,7 +211,9 @@ void readFIFOData(fifodata_t *res) {
         
         uint16_t length = 0;  // for now assume only one packet
         readPacket(data, &length, res); 
+        return true;
     }
+    return false;
 }
 
 void init_imu(void) {

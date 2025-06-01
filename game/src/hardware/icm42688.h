@@ -15,4 +15,4 @@ void init_imu(void);
 
 uint16_t readFIFOLength();
 
-void readFIFOData(fifodata_t *res);
+bool readFIFOData(fifodata_t *res);

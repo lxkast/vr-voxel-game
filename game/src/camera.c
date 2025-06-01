@@ -1,8 +1,9 @@
 #include <cglm/cglm.h>
 #include <math.h>
+#include <logging.h>
+#include "hardware/orientation.h"
 
 #include "camera.h"
-
 /**
  * @brief Calculates and sets the ruf matrix based on the orientation.
  * @param c A pointer to a camera object
@@ -15,6 +16,16 @@ void camera_init(camera_t *c) {
     glm_vec3_copy(GLM_VEC3_ZERO, c->eye);
     glm_quat_for(GLM_ZUP, GLM_YUP, c->ori);
     camera_setRuf(c);
+}
+
+void update_ori(camera_t *c) {
+    LOG_DEBUG("Setting orientation");
+    quaternion orientation;
+    imu_getOrientation(orientation);
+    c->ori[0] = orientation[1];
+    c->ori[1] = orientation[2];
+    c->ori[2] = orientation[3];
+    c->ori[3] = orientation[0];
 }
 
 void camera_createView(camera_t *c, mat4 dest) {
@@ -44,6 +55,7 @@ void camera_translateZ(camera_t *c, const float dZ) {
 }
 
 void camera_fromMouse(camera_t *c, const float dX, const float dY) {
+    return;
     versor qYaw;
     glm_quat(qYaw, dX * 0.01f, 0.0f, 1.0f, 0.0f);
     glm_quat_mul(qYaw, c->ori, c->ori);
@@ -61,6 +73,7 @@ void camera_fromMouse(camera_t *c, const float dX, const float dY) {
 }
 
 void camera_setView(camera_t *c, GLuint program) {
+    update_ori(c);
     const int viewLocation = glGetUniformLocation(program, "view");
     mat4 view;
     camera_createView(c, view);

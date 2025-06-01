@@ -8,6 +8,7 @@
 #include "shaderutil.h"
 #include "texture.h"
 #include "world.h"
+#include "hardware/orientation.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #define MINOR_VERSION 2
@@ -79,6 +80,8 @@ int main(void) {
     */
 
     log_init(stdout);
+
+    startOrientationThread(); 
 
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);

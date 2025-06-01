@@ -106,6 +106,9 @@ static void loadChunk(world_t *w, const int cx, const int cy, const int cz) {
 
 void world_init(world_t *w) {
     w->clusterTable = NULL;
+    for (int i = 0; i < MAX_CHUNK_LOADERS; i++) {
+        w->chunkLoaders[i].active = false;
+    }
 }
 
 void world_draw(const world_t *w, const int modelLocation) {
@@ -161,7 +164,7 @@ void world_doChunkLoading(world_t *w) {
         const int cy = w->chunkLoaders[i].y >> 4;
         const int cz = w->chunkLoaders[i].z >> 4;
 
-#define CHUNK_LOAD_RADIUS 4
+#define CHUNK_LOAD_RADIUS 2
         for (int x = -CHUNK_LOAD_RADIUS; x <= CHUNK_LOAD_RADIUS; x++) {
             for (int y = -CHUNK_LOAD_RADIUS; y <= CHUNK_LOAD_RADIUS; y++) {
                 for (int z = -CHUNK_LOAD_RADIUS; z <= CHUNK_LOAD_RADIUS; z++) {
