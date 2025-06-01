@@ -263,10 +263,22 @@ int main(void) {
 
         processEntity(&world, &player.entity, dt);
 
+
+
         {
             vec3 camPos;
             glm_vec3_add(player.entity.position, player.cameraOffset, camPos);
             camera_setPos(&camera, camPos);
+
+            vec3 viewDirection;
+            getViewDirection(&player, viewDirection);
+            raycast_t raycast = world_raycast(&world, camPos, viewDirection);
+
+            if (raycast.found) {
+                LOG_DEBUG("Raycast found! Block at: x: %f y: %f z: %f", raycast.blockPosition[0], raycast.blockPosition[1], raycast.blockPosition[2]);
+            } else {
+                LOG_DEBUG("Raycast not found!");
+            }
 
             vec3 BlockPosition;
             vec3 sub1 = {0.f,1.f,0.f};
@@ -285,6 +297,9 @@ int main(void) {
             const float yaw = atan2f(siny_cosp, cosy_cosp);
 
             player.entity.yaw = yaw;
+
+            const float sinp = 2.0f * (qw * qx - qz * qy);
+            player.cameraPitch = asinf(sinp);
         }
 
         glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);

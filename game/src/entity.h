@@ -38,6 +38,14 @@ typedef struct {
 } blockBounding_t;
 
 /**
+ * @brief Calculates and returns a normalised direction vector passing through (0,0,0)
+ *        parallel to the one the player is looking along.
+ * @param player The player we want to get the information about
+ * @param out The vector where we should store the answer
+ */
+void getViewDirection(const player_t *player, vec3 out);
+
+/**
  * @brief Updates an entity's velocity based on world coordinates
  * @param entity The entity whose velocity we are updating
  * @param deltaV The amount we want to update that velocity by in x,y,z

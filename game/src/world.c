@@ -274,12 +274,12 @@ static block_t getBlockType(world_t *w, vec3 position) {
     return bd.type;
 }
 
-raycast_t world_raycast(world_t *w, const vec3 eyePosition, const vec3 viewDirection) {
+raycast_t world_raycast(world_t *w, const vec3 startPosition, const vec3 viewDirection) {
     for (float i = 0; i < MAX_RAYCAST_DISTANCE; i += RAYCAST_STEP_MAGNITUDE) {
         const vec3 newPos = {
-            eyePosition[0] + i * viewDirection[0],
-            eyePosition[1] + i * viewDirection[1],
-            eyePosition[2] + i * viewDirection[2],
+            startPosition[0] + i * viewDirection[0],
+            startPosition[1] + i * viewDirection[1],
+            startPosition[2] + i * viewDirection[2],
         };
 
         vec3 flooredPos = {floorf(newPos[0]), floorf(newPos[1]), floorf(newPos[2])};

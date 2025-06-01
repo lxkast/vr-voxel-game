@@ -213,6 +213,7 @@ void getViewDirection(const player_t *player, vec3 out) {
     out[0] = -sinf(player->entity.yaw) * XZscaling;
     out[1] = sinf(player->cameraPitch);
     out[2] = -cosf(player->entity.yaw) * XZscaling;
+    glm_vec3_normalize(out);
 }
 
 /**
