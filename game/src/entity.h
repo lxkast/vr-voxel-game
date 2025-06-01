@@ -4,16 +4,9 @@
 #include <stdbool.h>
 #include "world.h"
 
-#define MAX(x, y) ((x > y) ? (x) : (y))
-
 #define MAX_ABS_X_VELOCITY 2.0f
 #define MAX_ABS_Y_VELOCITY 5.0f
 #define MAX_ABS_Z_VELOCITY 2.0f
-
-typedef enum {
-    PLAYER,
-    ITEM,
-} entity_type;
 
 typedef struct {
     vec3 position;
@@ -47,7 +40,7 @@ typedef struct {
 typedef struct {
     blockData_t data;
     aabb_t aabb;
-} block_bounding_t;
+} blockBounding_t;
 
 /**
  * @brief Updates an entity's velocity based on world coordinates

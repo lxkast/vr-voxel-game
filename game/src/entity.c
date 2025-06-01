@@ -67,7 +67,7 @@ static aabb_t makeAABB(vec3 position, vec3 size) {
  * @param deltaP The amount we were originally planning on moving the entity by
  * @param axisNum The axis we are resolving on
  */
-static void handleAxisCollision(entity_t *entity, const aabb_t aabb, const block_bounding_t block, vec3 deltaP, const int axisNum) {
+static void handleAxisCollision(entity_t *entity, const aabb_t aabb, const blockBounding_t block, vec3 deltaP, const int axisNum) {
     // checks to see if it collides in specified axis
     if (aabb.min[axisNum] + deltaP[axisNum] < block.aabb.max[axisNum] && aabb.max[axisNum] + deltaP[axisNum] > block.aabb.min[axisNum]) {
         if (deltaP[axisNum] < 0) {
@@ -91,14 +91,14 @@ static void handleAxisCollision(entity_t *entity, const aabb_t aabb, const block
  * @param numBlocks the number of blocks in the array
  * @param result the array in which to store the block_bounding_t blocks
  */
-static void blockDataToBlockBounding(const blockData_t *buf, const unsigned int numBlocks, block_bounding_t *result) {
+static void blockDataToBlockBounding(const blockData_t *buf, const unsigned int numBlocks, blockBounding_t *result) {
     vec3 blockSize = {1.f, 1.f, 1.f};
     for (int i = 0; i < numBlocks; i++) {
         const blockData_t block = buf[i];
 
         vec3 position = {(float)block.x, (float)block.y, (float)block.z};
 
-        result[i] = (block_bounding_t){.data = block, .aabb = makeAABB(position, blockSize)};
+        result[i] = (blockBounding_t){.data = block, .aabb = makeAABB(position, blockSize)};
     }
 }
 
@@ -141,8 +141,8 @@ static void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
 
     world_getBlocksInRange(w, minPoint, maxPoint, buf);
 
-    // converting them to block_bounding_t boxes
-    block_bounding_t blocks[numBlocks];
+    // converting them to blockBounding_t boxes
+    blockBounding_t blocks[numBlocks];
 
     blockDataToBlockBounding(buf, numBlocks, blocks);
 
@@ -235,11 +235,11 @@ static block_t getBlockType(world_t *w, vec3 position) {
  * @param position the position to get a block at
  * @return The block_bounding_t block
  */
-static block_bounding_t getBlockBounding(world_t *w, vec3 position) {
+static blockBounding_t getBlockBounding(world_t *w, vec3 position) {
     blockData_t bd;
     world_getBlock(w, position, &bd);
     const aabb_t aabb = makeAABB((vec3){(float)bd.x, (float)bd.y, (float)bd.z}, (vec3){1.f, 1.f, 1.f});
-    return (block_bounding_t){bd, aabb};
+    return (blockBounding_t){bd, aabb};
 }
 
 raycast_t raycast(world_t *w, const vec3 eyePosition, const vec3 viewDirection) {
