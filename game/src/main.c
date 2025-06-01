@@ -8,12 +8,15 @@
 #include "shaderutil.h"
 #include "texture.h"
 #include "world.h"
+#include "entity.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #define MINOR_VERSION 2
 #else
 #define MINOR_VERSION 1
 #endif
+
+#define FRICTION_CONSTANT 1
 
 #define EYE_OFFSET 0.032f
 #define SCREEN_WIDTH 1024
@@ -23,21 +26,36 @@
 
 static double previousMouse[2];
 
+static void processPlayerInput(GLFWwindow *window, player_t *player) {
+    vec3 acceleration = { 0.f, -10.f, 0.f };
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        acceleration[2] += 7.f;  // Forward
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        acceleration[2] -= 7.f;  // Backward
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        acceleration[0] -= 7.f;  // Left
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        acceleration[0] += 7.f;  // Right
+    }
+
+    changeRUFtoXYZ(acceleration, player->entity.yaw);
+
+    if (player->entity.grounded) {
+        vec3 frictionDelta = {FRICTION_CONSTANT * player->entity.velocity[0], 0.f, FRICTION_CONSTANT * player->entity.velocity[2]};
+
+        glm_vec3_sub(acceleration, frictionDelta, acceleration);
+    }
+
+    glm_vec3_copy(acceleration, player->entity.acceleration);
+}
+
 static void processCameraInput(GLFWwindow *window, camera_t *camera) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        camera_translateZ(camera, -0.15f);
-    }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        camera_translateZ(camera, 0.15f);
-    }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        camera_translateX(camera, -0.15f);
-    }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        camera_translateX(camera, 0.15f);
     }
 
     double currentMouse[2];
@@ -200,7 +218,7 @@ int main(void) {
     // Camera setup
     camera_t camera;
     camera_init(&camera);
-    vec3 p = { 0.f, 18.f, 0.f };
+    vec3 p = { 0.f, 15.f, 0.f };
     camera_setPos(&camera, p);
 
     // World setup
@@ -213,16 +231,66 @@ int main(void) {
     world_updateChunkLoader(&world, spawnLoader, GLM_VEC3_ZERO);
     world_updateChunkLoader(&world, cameraLoader, GLM_VEC3_ZERO);
 
+    player_t player = {
+        .entity = {
+            .position = {0.f, 15.f, 0.f},
+            .velocity = {0.f, 0.f, 0.f},
+            .size = {0.6f, 1.8f, 0.6f},
+            .acceleration = {0.f, 0.f, 0.f},
+            .grounded = false,
+            .yaw = 0,
+        },
+        .cameraPitch = 0.f,
+        .cameraOffset = {0.3f, 1.6f, 0.3f}
+    };
+
+    double prevTime = glfwGetTime();
 
     postProcess_t postProcess;
     postProcess_init(&postProcess, postProcessProgram, screenWidth, screenHeight);
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
+        processPlayerInput(window, &player);
         processCameraInput(window, &camera);
         world_doChunkLoading(&world);
 
         world_updateChunkLoader(&world, cameraLoader, camera.eye);
+
+        const double currentTime = glfwGetTime();
+        const double dt = currentTime - prevTime;
+        prevTime = currentTime;
+
+        processEntity(&world, &player.entity, dt);
+
+        {
+            vec3 camPos;
+            glm_vec3_add(player.entity.position, player.cameraOffset, camPos);
+            camera_setPos(&camera, camPos);
+
+            vec3 BlockPosition;
+            vec3 sub1 = {0.f,1.f,0.f};
+            glm_vec3_sub(player.entity.position, sub1, BlockPosition);
+            glm_vec3_floor(BlockPosition,BlockPosition);
+            blockData_t block;
+            world_getBlock(&world, BlockPosition, &block);
+
+            const float qx = camera.ori[0];
+            const float qy = camera.ori[1];
+            const float qz = camera.ori[2];
+            const float qw = camera.ori[3];
+
+            const float siny_cosp = 2.0f * ( qw*qy + qx*qz );
+            const float cosy_cosp = 1.0f - 2.0f * ( qy*qy + qz*qz );
+            const float yaw = atan2f(siny_cosp, cosy_cosp);
+
+            player.entity.yaw = yaw;
+        }
+
+        glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT);
+
 
         glUseProgram(program);
         glActiveTexture(GL_TEXTURE0);
@@ -258,6 +326,8 @@ int main(void) {
             postProcess_draw(&postProcess);
             camera_translateX(&camera, -EYE_OFFSET);
         }
+
+        glUseProgram(0);
 
 
         glfwPollEvents();
