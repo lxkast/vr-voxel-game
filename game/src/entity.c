@@ -180,12 +180,12 @@ void updateVelocityViewRel(entity_t *entity, vec3 deltaV) {
  */
 void changeRUFtoXYZ(vec3 directionVector, const float yaw) {
     const float right = directionVector[0];
-    const float forward = -directionVector[2];
+    const float forward = directionVector[2];
 
     LOG_DEBUG("Pre Change: %f", forward);
     directionVector[0] = right * cosf(yaw) - forward * sinf(yaw);   // X
     LOG_DEBUG("After Change: %f", forward);
-    directionVector[2] = right * sinf(yaw) + forward * cosf(yaw);   // Z
+    directionVector[2] = - right * sinf(yaw) - forward * cosf(yaw);   // Z
 }
 
 // Assumes yaw = 0 implies -Z, yaw = pi/2 implies X and so on.

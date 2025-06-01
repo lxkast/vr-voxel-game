@@ -34,6 +34,10 @@ static void processPlayerInput(GLFWwindow *window, player_t *player) {
         acceleration[0] += 1.f;  // Right
     }
 
+    if (acceleration[0] == 0.f && acceleration[2] == 0.f && player->entity.grounded) {
+        glm_vec3_scale(player->entity.velocity, 0.8f, player->entity.velocity);
+    }
+
     LOG_DEBUG("Acceleration (Pre-Change): %f %f %f", acceleration[0], acceleration[1], acceleration[2]);
     changeRUFtoXYZ(acceleration, player->entity.yaw);
     LOG_DEBUG("Acceleration (Post-Change):%f %f %f", acceleration[0], acceleration[1], acceleration[2]);
@@ -243,7 +247,7 @@ int main(void) {
 
             const float siny_cosp = 2.0f * ( qw*qy + qx*qz );
             const float cosy_cosp = 1.0f - 2.0f * ( qy*qy + qz*qz );
-            float yaw = atan2f(siny_cosp, cosy_cosp);
+            const float yaw = atan2f(siny_cosp, cosy_cosp);
 
             player.entity.yaw = yaw;
             LOG_DEBUG("Player Yaw: %.2f", player.entity.yaw);
