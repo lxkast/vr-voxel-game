@@ -270,10 +270,13 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
     if (bd.type == BL_AIR) return false;
 
     size_t chunkOffset;
-    const cluster_t *cluster = clusterGet(w, x >> 4, y >> 4, z >> 4, false, &chunkOffset);
+    const int cx = x >> 4;
+    const int cy = y >> 4;
+    const int cz = z >> 4;
+    const cluster_t *cluster = clusterGet(w, cx, cy, cz, false, &chunkOffset);
 
     chunk_t *chunk = cluster->cells[chunkOffset].chunk;
-    chunk->blocks[x - (x << 4)][y - (y << 4)][z - (z << 4)] = BL_AIR;
+    chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)] = BL_AIR;
     chunk->tainted = true;
 
     return true;
@@ -286,10 +289,13 @@ bool world_placeBlock(world_t *w, int x, int y, int z, block_t block) {
     if (bd.type != BL_AIR) return false;
 
     size_t chunkOffset;
-    const cluster_t *cluster = clusterGet(w, x >> 4, y >> 4, z >> 4, false, &chunkOffset);
+    const int cx = x >> 4;
+    const int cy = y >> 4;
+    const int cz = z >> 4;
+    const cluster_t *cluster = clusterGet(w, cx, cy, cz, false, &chunkOffset);
 
     chunk_t *chunk = cluster->cells[chunkOffset].chunk;
-    chunk->blocks[x - (x << 4)][y - (y << 4)][z - (z << 4)] = block;
+    chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)] = block;
     chunk->tainted = true;
 
     return true;
