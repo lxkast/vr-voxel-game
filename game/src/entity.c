@@ -3,15 +3,15 @@
 #include "logging.h"
 
 bool intersectsX(const aabb_t box1, const aabb_t box2) {
-    return box1.min[0] < box2.max[0] && box1.max[0] >= box2.min[0];
+    return box1.min[0] < box2.max[0] && box1.max[0] > box2.min[0];
 }
 
 bool intersectsY(const aabb_t box1, const aabb_t box2) {
-    return box1.min[1] < box2.max[1] && box1.max[1] >= box2.min[1];
+    return box1.min[1] < box2.max[1] && box1.max[1] > box2.min[1];
 }
 
 bool intersectsZ(const aabb_t box1, const aabb_t box2) {
-    return box1.min[2] < box2.max[2] && box1.max[2] >= box2.min[2];
+    return box1.min[2] < box2.max[2] && box1.max[2] > box2.min[2];
 }
 
 bool intersects(const aabb_t box1, const aabb_t box2) {
@@ -44,12 +44,12 @@ aabb_t makeAABB(vec3 position, vec3 size) {
 void handleAxisCollision(entity_t *entity, const aabb_t aabb, const block_bounding_t block, vec3 deltaP, const int axisNum) {
     if (aabb.min[axisNum] + deltaP[axisNum] < block.aabb.max[axisNum] && aabb.max[axisNum] + deltaP[axisNum] >= block.aabb.min[axisNum]) {
         if (deltaP[axisNum] < 0) {
-            deltaP[axisNum] = block.aabb.max[axisNum] - entity->position[axisNum];
+            deltaP[axisNum] = block.aabb.max[axisNum] - aabb.min[axisNum];
             if (axisNum == 1) {
                 entity->grounded = true;
             }
         } else {
-            deltaP[axisNum] = block.aabb.min[axisNum] - entity->size[axisNum] - entity->position[axisNum];
+            deltaP[axisNum] = block.aabb.min[axisNum] - aabb.max[axisNum];
         }
         entity->velocity[axisNum] = 0;
     }
@@ -83,61 +83,64 @@ void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
     vec3 minPoint, maxPoint;
     vec3 shiftBy1 = {1.f, 1.f, 1.f};
 
+    vec3 destPosition;
+    glm_vec3_add(entity->position, deltaP, destPosition);
+
     glm_vec3_sub(entity->position, shiftBy1, minPoint);
     glm_vec3_floor(minPoint,minPoint);
     glm_vec3_add(entity->position, entity->size, maxPoint);
-    glm_vec3_add(entity->position, shiftBy1, maxPoint);
+    glm_vec3_add(maxPoint, shiftBy1, maxPoint);
     glm_vec3_ceil(maxPoint, maxPoint);
 
-    const int numBlocks = (int)(maxPoint[0] - minPoint[0] + 1) *
-                          (int)(maxPoint[1] - minPoint[1] + 1) *
-                          (int)(maxPoint[2] - minPoint[2] + 1);
+    const int numBlocks = (int)(maxPoint[0] - minPoint[0]) *
+                          (int)(maxPoint[1] - minPoint[1]) *
+                          (int)(maxPoint[2] - minPoint[2]);
 
-    //LOG_DEBUG("Num Blocks: %i",numBlocks);
 
     block_data_t buf[numBlocks];
 
-    world_getBlocksInRange(w,minPoint, maxPoint, buf);
+    world_getBlocksInRange(w, minPoint, maxPoint, buf);
 
     block_bounding_t blocks[numBlocks];
 
     blockDataToBlockBounding(buf,numBlocks,blocks);
 
-    //LOG_DEBUG("Beginning to Resolve Collisions");
-
     // resolves collisions in Y-axis
     for (int i = 0; i < numBlocks; i++) {
-        if (blocks[i].data.type == AIR) { continue; }
+        if (blocks[i].aabb.min[0] != (float)buf[i].x) {
+            LOG_FATAL("Block Bounding Error");
+        }
+        if (blocks[i].aabb.min[1] != (float)buf[i].y) {
+            LOG_FATAL("Block Bounding Error");
+        }
+        if (blocks[i].aabb.min[2] != (float)buf[i].z) {
+            LOG_FATAL("Block Bounding Error");
+        }
+
+        if (blocks[i].data.type == BL_AIR) { continue; }
         if (intersectsX(aabb, blocks[i].aabb) && intersectsZ(aabb, blocks[i].aabb)) {
             handleAxisCollision(entity, aabb, blocks[i], deltaP, 1);
         }
     }
 
-    //LOG_DEBUG("Resolved Y-axis");
-
     // resolves collisions in X-axis
     for (int i = 0; i < numBlocks; i++) {
-        if (blocks[i].data.type == AIR) { continue; }
+        if (blocks[i].data.type == BL_AIR) { continue; }
         if (intersectsY(aabb, blocks[i].aabb) && intersectsZ(aabb, blocks[i].aabb)) {
             handleAxisCollision(entity, aabb, blocks[i], deltaP, 0);
         }
     }
 
-    //LOG_DEBUG("Resolved X-axis");
-
     // resolves collisions in Z-axis
     for (int i = 0; i < numBlocks; i++) {
-        if (blocks[i].data.type == AIR) { continue; }
+        if (blocks[i].data.type == BL_AIR) { continue; }
         if (intersectsX(aabb, blocks[i].aabb) && intersectsY(aabb, blocks[i].aabb)) {
             handleAxisCollision(entity, aabb, blocks[i], deltaP, 2);
         }
     }
 
-    //LOG_DEBUG("Resolved Z-axis");
-
     glm_vec3_add(entity->position, deltaP, entity->position);
 
-    //LOG_DEBUG("Moving Done");
 }
 
 /**
@@ -182,9 +185,7 @@ void changeRUFtoXYZ(vec3 directionVector, const float yaw) {
     const float right = directionVector[0];
     const float forward = directionVector[2];
 
-    LOG_DEBUG("Pre Change: %f", forward);
     directionVector[0] = right * cosf(yaw) - forward * sinf(yaw);   // X
-    LOG_DEBUG("After Change: %f", forward);
     directionVector[2] = - right * sinf(yaw) - forward * cosf(yaw);   // Z
 }
 
@@ -200,7 +201,7 @@ void getViewDirection(const player_t *player, vec3 out) {
 #define RAYCAST_STEP_MAGNITUDE 0.1f
 #define vec3_SIZE 12
 // TODO: Will implement when chunks implemented
-block_type_e getBlockType(world_t *w, vec3 position) {
+block_t getBlockType(world_t *w, vec3 position) {
     block_data_t bd;
     world_getBlock(w, position, &bd);
     return bd.type;
@@ -223,8 +224,8 @@ raycast_t raycast(world_t *w, const vec3 eyePosition, const vec3 viewDirection) 
 
         const vec3 flooredPos = { floorf(newPos[0]), floorf(newPos[1]), floorf(newPos[2]) };
 
-        const block_type_e block_type = getBlockType(w, flooredPos);
-        if (block_type != AIR) {
+        const block_t block_type = getBlockType(w, flooredPos);
+        if (block_type != BL_AIR) {
             return (raycast_t){
                 .blockPosition = {flooredPos[0], flooredPos[1], flooredPos[2]},
                 .found = true};
@@ -238,6 +239,17 @@ void floorVec3(const vec3 vector, vec3 result) {
     result[0] = floorf(vector[0]);
     result[1] = floorf(vector[1]);
     result[2] = floorf(vector[2]);
+}
+
+void processEntity(world_t *w, entity_t *entity, const float dt) {
+    vec3 deltaV;
+    glm_vec3_scale(entity->acceleration, dt, deltaV);
+    updateVelocity(entity, deltaV);
+
+    vec3 deltaP;
+    glm_vec3_scale(entity->velocity, dt, deltaP);
+
+    moveEntity(w, entity, deltaP);
 }
 
 raycast_t raycastDDA(world_t *w, vec3 eyePosition, vec3 viewDirection) {
@@ -271,7 +283,7 @@ raycast_t raycastDDA(world_t *w, vec3 eyePosition, vec3 viewDirection) {
     float totalDistance = 0;
 
     while (totalDistance < MAX_RAYCAST_DISTANCE) {
-        if (getBlockType(w, currentBlock) != AIR) {
+        if (getBlockType(w, currentBlock) != BL_AIR) {
             return (raycast_t){
                 .blockPosition = {currentBlock[0], currentBlock[1], currentBlock[2]},
                 .found = true};
@@ -285,19 +297,4 @@ raycast_t raycastDDA(world_t *w, vec3 eyePosition, vec3 viewDirection) {
     return (raycast_t){
         .blockPosition = {0, 0, 0},
         .found = false};
-}
-
-void processEntity(world_t *w, entity_t *entity, const float dt) {
-    //LOG_DEBUG("Starting Process");
-    vec3 deltaV;
-    glm_vec3_scale(entity->acceleration, dt, deltaV);
-    updateVelocity(entity, deltaV);
-
-    //LOG_DEBUG("Finished Updating Velocity");
-
-    vec3 deltaP;
-    glm_vec3_scale(entity->velocity, dt, deltaP);
-    moveEntity(w, entity, deltaP);
-
-    //LOG_DEBUG("Finished Updating Position");
 }

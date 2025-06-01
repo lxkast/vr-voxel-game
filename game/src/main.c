@@ -38,9 +38,7 @@ static void processPlayerInput(GLFWwindow *window, player_t *player) {
         glm_vec3_scale(player->entity.velocity, 0.8f, player->entity.velocity);
     }
 
-    LOG_DEBUG("Acceleration (Pre-Change): %f %f %f", acceleration[0], acceleration[1], acceleration[2]);
     changeRUFtoXYZ(acceleration, player->entity.yaw);
-    LOG_DEBUG("Acceleration (Post-Change):%f %f %f", acceleration[0], acceleration[1], acceleration[2]);
 
     glm_vec3_copy(acceleration, player->entity.acceleration);
 }
@@ -237,8 +235,12 @@ int main(void) {
             glm_vec3_add(player.entity.position, player.cameraOffset, camPos);
             camera_setPos(&camera, camPos);
 
-            LOG_DEBUG("Player Position: x:%f y:%f z:%f", player.entity.position[0], player.entity.position[1], player.entity.position[2]);
-            LOG_DEBUG("Camera Position: x:%f y:%f z:%f", camPos[0],camPos[1],camPos[2]);
+            vec3 BlockPosition;
+            vec3 sub1 = {0.f,1.f,0.f};
+            glm_vec3_sub(player.entity.position, sub1, BlockPosition);
+            glm_vec3_floor(BlockPosition,BlockPosition);
+            block_data_t block;
+            world_getBlock(&world, BlockPosition, &block);
 
             const float qx = camera.ori[0];
             const float qy = camera.ori[1];
@@ -250,7 +252,6 @@ int main(void) {
             const float yaw = atan2f(siny_cosp, cosy_cosp);
 
             player.entity.yaw = yaw;
-            LOG_DEBUG("Player Yaw: %.2f", player.entity.yaw);
         }
 
         glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);

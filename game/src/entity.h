@@ -44,13 +44,6 @@ typedef struct {
     bool found;
 } raycast_t;
 
-// this is TEMPORARY, will be updated when merging onto main branch
-typedef enum {
-    AIR,
-    DIRT,
-    STONE,
-} block_type_e;
-
 typedef struct {
     block_data_t data;
     aabb_t aabb;

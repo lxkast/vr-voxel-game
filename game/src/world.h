@@ -103,4 +103,4 @@ void world_getAdjacentBlocks(world_t *w, vec3 position, block_data_t *buf);
  * @param topRight top right corner of the cuboid
  * @param buf the array where the blocks are stored
  */
-void world_getBlocksInRange(world_t *w, vec3 bottomLeft, vec3 topRight, block_data_t *buf);
+void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, block_data_t *buf);
