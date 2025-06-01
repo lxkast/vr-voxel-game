@@ -24,22 +24,32 @@
 #define FOV_Y 45.0f
 #define USING_RASPBERRY_PI false
 
+#define SPRINT_MULTIPLIER 1.3f
+
 static double previousMouse[2];
 
 static void processPlayerInput(GLFWwindow *window, player_t *player) {
     vec3 acceleration = { 0.f, -10.f, 0.f };
 
+    const float sprintMultiplier = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? SPRINT_MULTIPLIER : 1.f ;
+
+    LOG_DEBUG("Sprinting: %f", sprintMultiplier);
+
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        acceleration[2] += 7.f;  // Forward
+        acceleration[2] += 7.f * sprintMultiplier;  // Forward
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        acceleration[2] -= 7.f;  // Backward
+        acceleration[2] -= 7.f * sprintMultiplier;  // Backward
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        acceleration[0] -= 7.f;  // Left
+        acceleration[0] -= 7.f * sprintMultiplier;  // Left
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        acceleration[0] += 7.f;  // Right
+        acceleration[0] += 7.f * sprintMultiplier;  // Right
+    }
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && player->entity.grounded) {
+        player->entity.velocity[1] = 8;
+        player->entity.grounded = false;
     }
 
     changeRUFtoXYZ(acceleration, player->entity.yaw);
