@@ -275,39 +275,23 @@ void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, bl
 }
 
 bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
-    blockData_t bd;
-    if (!world_getBlocki(w, x, y, z, &bd)) return false;
+    block_t *bp;
+    chunk_t *cp;
+    if (!getBlockAddr(w, x, y, z, &bp, &cp)) return false;
 
-    if (bd.type == BL_AIR) return false;
+    if (*bp == BL_AIR) return false;
 
-    size_t chunkOffset;
-    const int cx = x >> 4;
-    const int cy = y >> 4;
-    const int cz = z >> 4;
-    const cluster_t *cluster = clusterGet(w, cx, cy, cz, false, &chunkOffset);
-
-    chunk_t *chunk = cluster->cells[chunkOffset].chunk;
-    chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)] = BL_AIR;
-    chunk->tainted = true;
-
-    return true;
+    *bp = BL_AIR;
+    cp->tainted = true;
 }
 
 bool world_placeBlock(world_t *w, int x, int y, int z, block_t block) {
-    blockData_t bd;
-    if (!world_getBlocki(w, x, y, z, &bd)) return false;
+    block_t *bp;
+    chunk_t *cp;
+    if (!getBlockAddr(w, x, y, z, &bp, &cp)) return false;
 
-    if (bd.type != BL_AIR) return false;
+    if (*bp != BL_AIR) return false;
 
-    size_t chunkOffset;
-    const int cx = x >> 4;
-    const int cy = y >> 4;
-    const int cz = z >> 4;
-    const cluster_t *cluster = clusterGet(w, cx, cy, cz, false, &chunkOffset);
-
-    chunk_t *chunk = cluster->cells[chunkOffset].chunk;
-    chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)] = block;
-    chunk->tainted = true;
-
-    return true;
+    *bp = block;
+    cp->tainted = true;
 }
