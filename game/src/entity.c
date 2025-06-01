@@ -1,20 +1,47 @@
 #include "entity.h"
-
 #include "logging.h"
 
-bool intersectsX(const aabb_t box1, const aabb_t box2) {
+#define MAX_RAYCAST_DISTANCE 6.f
+#define RAYCAST_STEP_MAGNITUDE 0.1f
+#define vec3_SIZE 12
+
+/**
+ * @brief Determines if two bounding boxes intersect in the X-axis
+ * @param box1 the first bounding box
+ * @param box2 the second bounding box
+ * @return whether box1 and box2 intersect in the X-axis
+ */
+static bool intersectsX(const aabb_t box1, const aabb_t box2) {
     return box1.min[0] < box2.max[0] && box1.max[0] > box2.min[0];
 }
 
-bool intersectsY(const aabb_t box1, const aabb_t box2) {
+/**
+ * @brief Determines if two bounding boxes intersect in the Y-axis
+ * @param box1 the first bounding box
+ * @param box2 the second bounding box
+ * @return Whether box1 and box2 intersect in the Y-axis
+ */
+static bool intersectsY(const aabb_t box1, const aabb_t box2) {
     return box1.min[1] < box2.max[1] && box1.max[1] > box2.min[1];
 }
 
-bool intersectsZ(const aabb_t box1, const aabb_t box2) {
+/**
+ * @brief Determines if two bounding boxes intersect in the Z-axis
+ * @param box1 the first bounding box
+ * @param box2 the second bounding box
+ * @return Whether box1 and box2 intersect in the Z-axis
+ */
+static bool intersectsZ(const aabb_t box1, const aabb_t box2) {
     return box1.min[2] < box2.max[2] && box1.max[2] > box2.min[2];
 }
 
-bool intersects(const aabb_t box1, const aabb_t box2) {
+/**
+ * @brief Determines if two bounding boxes intersect in the X-axis
+ * @param box1 the first bounding box
+ * @param box2 the second bounding box
+ * @return Whether box1 and box2 intersect in the X-axis
+ */
+static bool intersects(const aabb_t box1, const aabb_t box2) {
     return intersectsX(box1,box2) && intersectsY(box1,box2) && intersectsZ(box1,box2);
 }
 
@@ -24,7 +51,7 @@ bool intersects(const aabb_t box1, const aabb_t box2) {
  * @param size The size of the object we want to get the bounding box of
  * @return The entity's bounding box
  */
-aabb_t makeAABB(vec3 position, vec3 size) {
+static aabb_t makeAABB(vec3 position, vec3 size) {
     aabb_t box;
     glm_vec3_copy(position, box.min);
     glm_vec3_add(position, size, box.max);
@@ -41,7 +68,7 @@ aabb_t makeAABB(vec3 position, vec3 size) {
  * @param deltaP The amount we were originally planning on moving the entity by
  * @param axisNum The axis we are resolving on
  */
-void handleAxisCollision(entity_t *entity, const aabb_t aabb, const block_bounding_t block, vec3 deltaP, const int axisNum) {
+static void handleAxisCollision(entity_t *entity, const aabb_t aabb, const block_bounding_t block, vec3 deltaP, const int axisNum) {
     if (aabb.min[axisNum] + deltaP[axisNum] < block.aabb.max[axisNum] && aabb.max[axisNum] + deltaP[axisNum] >= block.aabb.min[axisNum]) {
         if (deltaP[axisNum] < 0) {
             deltaP[axisNum] = block.aabb.max[axisNum] - aabb.min[axisNum];
@@ -55,7 +82,13 @@ void handleAxisCollision(entity_t *entity, const aabb_t aabb, const block_boundi
     }
 }
 
-void blockDataToBlockBounding(const block_data_t *buf, const unsigned int numBlocks, block_bounding_t *result) {
+/**
+ * @brief Converts a list of block_data_t to block_bounding_t
+ * @param buf the array containing the block_data_t blocks
+ * @param numBlocks the number of blocks in the array
+ * @param result the array in which to store the block_bounding_t blocks
+ */
+static void blockDataToBlockBounding(const block_data_t *buf, const unsigned int numBlocks, block_bounding_t *result) {
     vec3 blockSize = {1.f, 1.f, 1.f};
     for (int i = 0; i < numBlocks; i++) {
         const block_data_t block = buf[i];
@@ -73,11 +106,11 @@ void glm_vec3_ceil(vec3 v, vec3 dest) {
 }
 
 /**
- * @brief updates the entity's position using deltaP, whilst checking for possible collisions
+ * @brief Updates the entity's position using deltaP, whilst checking for possible collisions
  * @param entity the entity whose position you're changing
  * @param deltaP the amount you want to change it by
  */
-void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
+static void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
     const aabb_t aabb = makeAABB(entity->position, entity->size);
 
     vec3 minPoint, maxPoint;
@@ -145,16 +178,14 @@ void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
 
 /**
  * @brief Clamps a value between a minimum and maximum value
+ * @param value The value to be clamped
+ * @param min The minimum value allowed
+ * @param max The maximum value allowed
  */
 static float clamp(const float value, const float min, const float max) {
     return (value < min) ? min : ((value > max) ? max : value);
 }
 
-/**
- * @brief Updates an entity's velocity based on world coordinates
- * @param entity The entity whose velocity we are updating
- * @param deltaV The amount we want to update that velocity by in x,y,z
- */
 void updateVelocity(entity_t *entity, vec3 deltaV) {
     glm_vec3_add(entity->velocity, deltaV, entity->velocity);
 
@@ -163,24 +194,6 @@ void updateVelocity(entity_t *entity, vec3 deltaV) {
     entity->velocity[2] = clamp(entity->velocity[2], -MAX_ABS_Z_VELOCITY, MAX_ABS_Z_VELOCITY);
 }
 
-/**
- * @brief Updates an entity's velocity based on where it is looking.
- *        Assumes yaw = 0 implies -Z, yaw = pi/2 implies X and so on.
- * @param entity The entity whose velocity we are updating
- * @param deltaV The amount we want to update that velocity by relative to direction
- *               deltaV = {forward, up, right}
- */
-void updateVelocityViewRel(entity_t *entity, vec3 deltaV) {
-    entity->velocity[0] = clamp(entity->velocity[0] + deltaV[0] * sinf(entity->yaw) + deltaV[2] * cosf(entity->yaw), -MAX_ABS_X_VELOCITY, MAX_ABS_X_VELOCITY);
-    entity->velocity[1] = clamp(entity->velocity[1] + deltaV[1], -MAX_ABS_Y_VELOCITY, MAX_ABS_Y_VELOCITY);
-    entity->velocity[2] = clamp(entity->velocity[2] + deltaV[0] * -cosf(entity->yaw) + deltaV[2] * sinf(entity->yaw), -MAX_ABS_Z_VELOCITY, MAX_ABS_Z_VELOCITY);
-}
-
-/**
- * @brief Transforms a vector from right, upwards, forwards to x,y,z
- * @param directionVector The direction vector to change
- * @param yaw The yaw of the object
- */
 void changeRUFtoXYZ(vec3 directionVector, const float yaw) {
     const float right = directionVector[0];
     const float forward = directionVector[2];
@@ -197,24 +210,31 @@ void getViewDirection(const player_t *player, vec3 out) {
     out[2] = -cosf(player->entity.yaw) * XZscaling;
 }
 
-#define MAX_RAYCAST_DISTANCE 6.f
-#define RAYCAST_STEP_MAGNITUDE 0.1f
-#define vec3_SIZE 12
-// TODO: Will implement when chunks implemented
-block_t getBlockType(world_t *w, vec3 position) {
+/**
+ * @brief Gets the type of a block at a chosen position
+ * @param w a pointer to the world
+ * @param position the position to get a block at
+ * @return The type of the block
+ */
+static block_t getBlockType(world_t *w, vec3 position) {
     block_data_t bd;
     world_getBlock(w, position, &bd);
     return bd.type;
 }
 
-block_bounding_t getBlockBounding(world_t *w, vec3 position) {
+/**
+ * @brief Gets the block at a chosen position, with the block_bounding_t datatype.
+ * @param w a pointer to the world
+ * @param position the position to get a block at
+ * @return The block_bounding_t block
+ */
+static block_bounding_t getBlockBounding(world_t *w, vec3 position) {
     block_data_t bd;
     world_getBlock(w, position, &bd);
     const aabb_t aabb = makeAABB((vec3){(float)bd.x, (float)bd.y, (float)bd.z}, (vec3){1.f, 1.f , 1.f});
     return (block_bounding_t){bd, aabb};
 }
 
-// will rewrite in DDA later
 raycast_t raycast(world_t *w, const vec3 eyePosition, const vec3 viewDirection) {
     for (float i = 0; i < MAX_RAYCAST_DISTANCE; i += RAYCAST_STEP_MAGNITUDE) {
         const vec3 newPos = {eyePosition[0] + i * viewDirection[0],
@@ -235,11 +255,6 @@ raycast_t raycast(world_t *w, const vec3 eyePosition, const vec3 viewDirection) 
     return (raycast_t){{0,0,0}, false};
 }
 
-void floorVec3(const vec3 vector, vec3 result) {
-    result[0] = floorf(vector[0]);
-    result[1] = floorf(vector[1]);
-    result[2] = floorf(vector[2]);
-}
 
 void processEntity(world_t *w, entity_t *entity, const float dt) {
     vec3 deltaV;

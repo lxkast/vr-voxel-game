@@ -49,11 +49,31 @@ typedef struct {
     aabb_t aabb;
 } block_bounding_t;
 
+/**
+ * @brief Updates an entity's velocity based on world coordinates
+ * @param entity The entity whose velocity we are updating
+ * @param deltaV The amount we want to update that velocity by in x,y,z
+ */
 void updateVelocity(entity_t *entity, vec3 deltaV);
-void updateVelocityViewRel(entity_t *entity, vec3 deltaV);
-void moveEntity(world_t *w, entity_t *entity, vec3 deltaP);
-void updateEntity(world_t *w);
+
+/**
+ * @brief Transforms a vector from right, upwards, forwards to x,y,z
+ * @param directionVector The direction vector to change
+ * @param yaw The yaw of the object
+ */
 void changeRUFtoXYZ(vec3 directionVector, float yaw);
-raycast_t raycast(world_t *w, const vec3 eyePosition, const vec3 viewDirection);
+
+/**
+ * @brief Updates an entity's data every frame.
+ * @param w a pointer to the world
+ * @param entity the entity to update
+ * @param dt the time since the last tick
+ */
 void processEntity(world_t *w, entity_t *entity, float dt);
+
+/**
+ * @brief Performs the ceil function on a vec3
+ * @param v the vector to apply the function to
+ * @param dest the vector to store the result in
+ */
 void glm_vec3_ceil(vec3 v, vec3 dest);
