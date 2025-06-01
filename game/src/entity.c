@@ -1,9 +1,9 @@
 #include "entity.h"
-#include "logging.h"
 
 #define MAX_RAYCAST_DISTANCE 6.f
 #define RAYCAST_STEP_MAGNITUDE 0.1f
 #define vec3_SIZE 12
+#define VELOCITY_CUTOFF 0.05f
 
 /**
  * @brief Determines if two bounding boxes intersect in the X-axis
@@ -190,12 +190,16 @@ static float clamp(const float value, const float min, const float max) {
     return (value < min) ? min : ((value > max) ? max : value);
 }
 
+static float velocityCutoff(const float velocity) {
+    return ((velocity < 0 ? -velocity : velocity) < VELOCITY_CUTOFF) ? 0 : velocity;
+}
+
 void updateVelocity(entity_t *entity, vec3 deltaV) {
     glm_vec3_add(entity->velocity, deltaV, entity->velocity);
 
-    entity->velocity[0] = clamp(entity->velocity[0], -MAX_ABS_X_VELOCITY, MAX_ABS_X_VELOCITY);
-    entity->velocity[1] = clamp(entity->velocity[1], -MAX_ABS_Y_VELOCITY, MAX_ABS_Y_VELOCITY);
-    entity->velocity[2] = clamp(entity->velocity[2], -MAX_ABS_Z_VELOCITY, MAX_ABS_Z_VELOCITY);
+    entity->velocity[0] = velocityCutoff(clamp(entity->velocity[0], -MAX_ABS_X_VELOCITY, MAX_ABS_X_VELOCITY));
+    entity->velocity[1] = velocityCutoff(clamp(entity->velocity[1], -MAX_ABS_Y_VELOCITY, MAX_ABS_Y_VELOCITY));
+    entity->velocity[2] = velocityCutoff(clamp(entity->velocity[2], -MAX_ABS_Z_VELOCITY, MAX_ABS_Z_VELOCITY));
 }
 
 void changeRUFtoXYZ(vec3 directionVector, const float yaw) {

@@ -16,29 +16,33 @@
 #define MINOR_VERSION 1
 #endif
 
+#define FRICTION_CONSTANT 1
+
 static double previousMouse[2];
 
 static void processPlayerInput(GLFWwindow *window, player_t *player) {
     vec3 acceleration = { 0.f, -10.f, 0.f };
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        acceleration[2] += 1.f;  // Forward
+        acceleration[2] += 7.f;  // Forward
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        acceleration[2] -= 1.f;  // Backward
+        acceleration[2] -= 7.f;  // Backward
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        acceleration[0] -= 1.f;  // Left
+        acceleration[0] -= 7.f;  // Left
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        acceleration[0] += 1.f;  // Right
-    }
-
-    if (acceleration[0] == 0.f && acceleration[2] == 0.f && player->entity.grounded) {
-        glm_vec3_scale(player->entity.velocity, 0.8f, player->entity.velocity);
+        acceleration[0] += 7.f;  // Right
     }
 
     changeRUFtoXYZ(acceleration, player->entity.yaw);
+
+    if (player->entity.grounded) {
+        vec3 frictionDelta = {FRICTION_CONSTANT * player->entity.velocity[0], 0.f, FRICTION_CONSTANT * player->entity.velocity[2]};
+
+        glm_vec3_sub(acceleration, frictionDelta, acceleration);
+    }
 
     glm_vec3_copy(acceleration, player->entity.acceleration);
 }

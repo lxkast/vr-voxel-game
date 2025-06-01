@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include "world.h"
 
-#define ABS(x, y) ((x > y) ? (x) : (y))
+#define MAX(x, y) ((x > y) ? (x) : (y))
 
 #define MAX_ABS_X_VELOCITY 2.0f
 #define MAX_ABS_Y_VELOCITY 5.0f
