@@ -106,19 +106,22 @@ static void loadChunk(world_t *w, const int cx, const int cy, const int cz) {
     cv->reloaded = true;
 }
 
-static block_t *getBlockAddr(world_t *w, int x, int y, int z) {
+static bool getBlockAddr(world_t *w, int x, int y, int z, block_t **block, chunk_t **chunk) {
     const int cx = x >> 4;
     const int cy = y >> 4;
     const int cz = z >> 4;
 
     size_t offset;
     cluster_t *cluster = clusterGet(w, cx, cy, cz, false, &offset);
-    if (!cluster) return NULL;
+    if (!cluster) return false;
 
     const chunkValue_t cv = cluster->cells[offset];
-    if (!cv.chunk) return NULL;
+    if (!cv.chunk) return false;
 
-    return &cv.chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)];
+    *chunk = cv.chunk;
+    *block = &cv.chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)];
+
+    return true;
 }
 
 void world_init(world_t *w) {
@@ -213,8 +216,9 @@ void world_doChunkLoading(world_t *w) {
 }
 
 bool world_getBlocki(world_t *w, int x, int y, int z, blockData_t *bd) {
-    block_t *block = getBlockAddr(w, x, y, z);
-    if (!block) return false;
+    block_t *block;
+    chunk_t *chunk;
+    if (!getBlockAddr(w, x, y, z, &block, &chunk)) return false;
 
     bd->type = *block;
     bd->x = x;
