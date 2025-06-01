@@ -16,8 +16,6 @@
 #define MINOR_VERSION 1
 #endif
 
-#define FRICTION_CONSTANT 1
-
 #define EYE_OFFSET 0.032f
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
@@ -25,6 +23,7 @@
 #define USING_RASPBERRY_PI false
 
 #define SPRINT_MULTIPLIER 1.3f
+#define ACCELERATION 9.f
 
 static double previousMouse[2];
 
@@ -36,29 +35,23 @@ static void processPlayerInput(GLFWwindow *window, player_t *player) {
     LOG_DEBUG("Sprinting: %f", sprintMultiplier);
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        acceleration[2] += 7.f * sprintMultiplier;  // Forward
+        acceleration[2] += ACCELERATION * sprintMultiplier;  // Forward
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        acceleration[2] -= 7.f * sprintMultiplier;  // Backward
+        acceleration[2] -= ACCELERATION * sprintMultiplier;  // Backward
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        acceleration[0] -= 7.f * sprintMultiplier;  // Left
+        acceleration[0] -= ACCELERATION * sprintMultiplier;  // Left
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        acceleration[0] += 7.f * sprintMultiplier;  // Right
+        acceleration[0] += ACCELERATION * sprintMultiplier;  // Right
     }
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && player->entity.grounded) {
-        player->entity.velocity[1] = 8;
+        player->entity.velocity[1] = 5;
         player->entity.grounded = false;
     }
 
     changeRUFtoXYZ(acceleration, player->entity.yaw);
-
-    if (player->entity.grounded) {
-        vec3 frictionDelta = {FRICTION_CONSTANT * player->entity.velocity[0], 0.f, FRICTION_CONSTANT * player->entity.velocity[2]};
-
-        glm_vec3_sub(acceleration, frictionDelta, acceleration);
-    }
 
     glm_vec3_copy(acceleration, player->entity.acceleration);
 }
