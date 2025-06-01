@@ -1,23 +1,25 @@
 #pragma once
 
+#include <cglm/cglm.h>
 #include <glad/gl.h>
 #include <stddef.h>
 #include "chunk.h"
 #include "uthash.h"
-#include <cglm/cglm.h>
 
 #define MAX_CHUNKS 256
 #define MAX_CHUNK_LOADERS 8
 #define C_T 8
 #define LOG_C_T 3
 
-
 /**
  * @brief A struct that holds data about the world.
  */
 typedef struct {
     /// The array of chunk loaders present
-    struct { bool active; int x, y, z; } chunkLoaders[MAX_CHUNK_LOADERS];
+    struct {
+        bool active;
+        int x, y, z;
+    } chunkLoaders[MAX_CHUNK_LOADERS];
     /// The hash table used keeping track of chunks
     struct _s_cluster *clusterTable;
 } world_t;

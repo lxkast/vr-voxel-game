@@ -1,8 +1,8 @@
 #include "world.h"
+#include <cglm/cglm.h>
 #include <logging.h>
 #include <stdlib.h>
 #include "chunk.h"
-#include <cglm/cglm.h>
 #include "entity.h"
 
 /**
@@ -25,7 +25,7 @@ typedef struct {
 /**
  * @brief A cluster and also hashmap
  * @note A cluster is essentially a group of adjacent chunks
-*/
+ */
 typedef struct _s_cluster {
     /// The key to the hashmap entry
     clusterKey_t key;
@@ -69,7 +69,7 @@ static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int c
         if (!create) return 0;
 
         // Allocate space for the cluster
-        clusterPtr = (cluster_t *)calloc(1,sizeof(cluster_t));
+        clusterPtr = (cluster_t *)calloc(1, sizeof(cluster_t));
         // Allocate space for the cells array inside the cluster
         clusterPtr->cells = calloc(C_T * C_T * C_T, sizeof(chunkValue_t));
         clusterPtr->key = k;
@@ -79,8 +79,8 @@ static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int c
     // The direct access index of the chunk into the cluster
     *offset =
         (cz - (k.z << LOG_C_T)) * C_T * C_T +
-            (cy - (k.y << LOG_C_T)) * C_T +
-                (cx - (k.x << LOG_C_T));
+        (cy - (k.y << LOG_C_T)) * C_T +
+        (cx - (k.x << LOG_C_T));
     return clusterPtr;
 }
 
@@ -164,7 +164,7 @@ void world_doChunkLoading(world_t *w) {
         for (int x = -CHUNK_LOAD_RADIUS; x <= CHUNK_LOAD_RADIUS; x++) {
             for (int y = -CHUNK_LOAD_RADIUS; y <= CHUNK_LOAD_RADIUS; y++) {
                 for (int z = -CHUNK_LOAD_RADIUS; z <= CHUNK_LOAD_RADIUS; z++) {
-                    if (x*x + y*y + z*z <= CHUNK_LOAD_RADIUS * CHUNK_LOAD_RADIUS) {
+                    if (x * x + y * y + z * z <= CHUNK_LOAD_RADIUS * CHUNK_LOAD_RADIUS) {
                         loadChunk(w, cx + x, cy + y, cz + z);
                     }
                 }
@@ -225,7 +225,7 @@ void world_getAdjacentBlocks(world_t *w, vec3 position, block_data_t *buf) {
                 if (dx == 0 && dy == 0 && dz == 0) {
                     continue;
                 }
-                vec3 delta = { (float)dx, (float)dy, (float)dz};
+                vec3 delta = {(float)dx, (float)dy, (float)dz};
                 vec3 newBlockPosition;
                 glm_vec3_add(position, delta, newBlockPosition);
 
@@ -242,7 +242,7 @@ void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, bl
     for (int dx = 0; dx < (int)(topRight[0] - bottomLeft[0]); dx++) {
         for (int dy = 0; dy < (int)(topRight[1] - bottomLeft[1]); dy++) {
             for (int dz = 0; dz < (int)(topRight[2] - bottomLeft[2]); dz++) {
-                vec3 delta = { (float)dx, (float)dy, (float)dz};
+                vec3 delta = {(float)dx, (float)dy, (float)dz};
 
                 vec3 newBlockPosition;
 

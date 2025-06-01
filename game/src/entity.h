@@ -1,10 +1,10 @@
 #pragma once
 
-#include <stdbool.h>
 #include <cglm/cglm.h>
+#include <stdbool.h>
 #include "world.h"
 
-#define ABS(x,y) ((x>y) ? (x) : (y))
+#define ABS(x, y) ((x > y) ? (x) : (y))
 
 #define MAX_ABS_X_VELOCITY 2.0f
 #define MAX_ABS_Y_VELOCITY 5.0f
@@ -22,14 +22,14 @@ typedef struct {
     vec3 acceleration;
     bool grounded;
     // stored in radians
-    float yaw;   // rename to orientation?
+    float yaw;    // rename to orientation?
 } entity_t;
 
 typedef struct {
-    entity_t entity;        // for minecraft this is typically 0.6x1.8x0.6
-    float cameraPitch;      // where the player is looking relative to the horizontal in radians
-    vec3 cameraOffset;   // if we implement translational headset movement this will change
-                            // default value of 0.3x1.6x0.3  (this isn't official just a guess)
+    entity_t entity;      // for minecraft this is typically 0.6x1.8x0.6
+    float cameraPitch;    // where the player is looking relative to the horizontal in radians
+    vec3 cameraOffset;    // if we implement translational headset movement this will change
+                          // default value of 0.3x1.6x0.3  (this isn't official just a guess)
     // member for inventory
     // member for hotbar
 } player_t;
