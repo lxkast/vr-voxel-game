@@ -39,7 +39,7 @@ float smoothValueNoise(const float x, const float y) {
  */
 static void chunk_createMesh(chunk_t *c) {
     glBindBuffer(GL_UNIFORM_BUFFER, c->ubo);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(c->blocks), c->blocks, GL_STATIC_DRAW);
+    glBufferData(GL_UNIFORM_BUFFER, CHUNK_SIZE_CUBED * sizeof(int), c->blocks, GL_STATIC_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
@@ -99,7 +99,7 @@ void chunk_draw(const chunk_t *c, const int modelLocation) {
 
     glBindBuffer(GL_UNIFORM_BUFFER, c->ubo);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, c->ubo);
-    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, NULL);
+    glDrawArrays(GL_TRIANGLES, 0, 16 * 3 * 2 * 3);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 

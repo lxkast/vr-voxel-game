@@ -57,43 +57,6 @@ const float grassVertices[] = {
 
 const unsigned int grassVerticesSize = sizeof(grassVertices);
 
-const float chunkVertices[] = {
- // Front face
- 0.0f, 0.0f,  16.0f,  // 0
-  16.0f, 0.0f,  16.0f,  // 1
-  16.0f,  16.0f,  16.0f,  // 2
- 0.0f,  16.0f,  16.0f,  // 3
- // Back face
- 0.0f, 0.0f, 0.0f,  // 4
-  16.0f, 0.0f, 0.0f,  // 5
-  16.0f,  16.0f, 0.0f,  // 6
- 0.0f,  16.0f, 0.0f   // 7
-};
-
-const unsigned int chunkVerticesSize = sizeof(chunkVertices);
-
-const unsigned int chunkIndices[] = {
-    // Front face
-    0, 1, 2,
-    2, 3, 0,
-    // Right face
-    1, 5, 6,
-    6, 2, 1,
-    // Back face
-    5, 4, 7,
-    7, 6, 5,
-    // Left face
-    4, 0, 3,
-    3, 7, 4,
-    // Top face
-    3, 2, 6,
-    6, 7, 3,
-    // Bottom face
-    4, 5, 1,
-    1, 0, 4
-};
-const unsigned int chunkIndicesSize = sizeof(chunkIndices);
-
 const float quadVertices[] = {
     // positions   // texCoords
 
@@ -118,3 +81,20 @@ const float quadVertices[] = {
 };
 
 const unsigned int quadVerticesSize = sizeof(quadVertices);
+
+const float xzFace[] = {
+ 0.0f, 0.0f, 0.0f, 16.0f, 0.0f, 0.0f, 16.0f, 0.0f, 16.0f,
+ 0.0f, 0.0f, 0.0f, 16.0f, 0.0f, 16.0f, 0.0f, 0.0f, 16.0f
+};
+
+const float yzFace[] = {
+ 0.0f, 0.0f, 0.0f, 0.0f, 16.0f, 0.0f, 0.0f, 16.0f, 16.0f,
+ 0.0f, 0.0f, 0.0f, 0.0f, 16.0f, 16.0f, 0.0f, 0.0f, 16.0f
+};
+
+const float xyFace[] = {
+ 0.0f, 0.0f, 0.0f, 16.0f, 0.0f, 0.0f, 16.0f, 16.0f, 0.0f,
+ 0.0f, 0.0f, 0.0f, 16.0f, 16.0f, 0.0f, 0.0f, 16.0f, 0.0f,
+};
+
+const unsigned int faceSize = sizeof(xzFace);

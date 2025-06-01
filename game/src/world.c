@@ -107,16 +107,49 @@ static void loadChunk(world_t *w, const int cx, const int cy, const int cz) {
 
 void world_init(world_t *w) {
     w->clusterTable = NULL;
+    float *chunkVertices = malloc(sizeof(float) * 6 * 16 * 3 * 3);
+    if (!chunkVertices) {
+        LOG_FATAL("chunkVertices malloc failed");
+    }
+    const int faceFloats = 6 * 3;                 // 18 floats per face
+    const int faceBytes  = faceFloats * sizeof(float);
+    const int totalFaces          = 16 * 3;   // 48
+    const int totalFloats         = totalFaces * faceFloats;               // 48 * 18 = 864
+    const int totalBytes          = totalFloats * sizeof(float);
+    // xz faces
+    for (int i = 0; i < 16; ++i) {
+        float *dest = chunkVertices + (i * faceFloats);
+        memcpy(dest, xzFace, faceBytes);
+        for (int k = 0; k < 6; ++k) {
+            dest[k * 3 + 1] = (float)i;
+        }
+    }
+    // yz faces
+    for (int i = 0; i < 16; ++i) {
+        int faceIndex = i + 16;
+        float *dest   = chunkVertices + (faceIndex * faceFloats);
+        memcpy(dest, yzFace, faceBytes);
+        for (int k = 0; k < 6; ++k) {
+            dest[k * 3 + 0] = (float)i;
+        }
+    }
+    // xy faces
+    for (int i = 0; i < 16; ++i) {
+        int faceIndex = i + 2 * 16;  // = i + 32
+        float *dest   = chunkVertices + (faceIndex * faceFloats);
+        memcpy(dest, xyFace, faceBytes);
+        for (int k = 0; k < 6; ++k) {
+            dest[k * 3 + 2] = (float)i;
+        }
+    }
     glGenVertexArrays(1, &w->chunkVao);
     glGenBuffers(1, &w->chunkVbo);
-    glGenBuffers(1, &w->chunkEbo);
     glBindVertexArray(w->chunkVao);
     glBindBuffer(GL_ARRAY_BUFFER, w->chunkVbo);
-    glBufferData(GL_ARRAY_BUFFER, chunkVerticesSize, chunkVertices, GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, w->chunkEbo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, chunkIndicesSize, chunkIndices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, totalBytes, chunkVertices, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+    free(chunkVertices);
 }
 
 void world_draw(const world_t *w, const int modelLocation) {

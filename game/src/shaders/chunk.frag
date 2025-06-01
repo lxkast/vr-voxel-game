@@ -15,5 +15,22 @@ int atlasWidth = 96;
 int atlasHeight = 16;
 
 void main() {
-    FragColor = vec4(sin(vPos.x), sin(vPos.y), sin(vPos.z), 1);
+    int type = types[int(vPos.z) + 16 * int(vPos.y) + 16 * 16 * int(vPos.x)];
+    if (type == 0) {
+        discard;
+    } else {
+        FragColor = vec4(1,1,1,1);
+    }
 }
+
+
+//    int type = types[int(vPos.z) + 16 * int(vPos.y) + 16 * 16 * int(vPos.x)];
+//    if (type == 0) {
+//        discard;
+//    }
+//    vec2 texCoord = vPos.xy;
+//    if (texCoord.y < 0.001 || texCoord.y > 0.999) {
+//        texCoord.y = vPos.z;
+//    } else if (texCoord.x < 0.001 || texCoord.x > 0.999) {
+//        texCoord.x = vPos.x;
+//    }
