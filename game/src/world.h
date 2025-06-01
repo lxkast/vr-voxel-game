@@ -81,6 +81,8 @@ void world_delChunkLoader(world_t *w, unsigned int id);
  */
 void world_doChunkLoading(world_t *w);
 
+bool world_getBlocki(world_t *w, int x, int y, int z, blockData_t *bd);
+
 /**
  * @brief Gets a block (if possible) at a position.
  * @param w A pointer to a world
