@@ -267,7 +267,7 @@ raycast_t raycast(world_t *w, const vec3 eyePosition, const vec3 viewDirection) 
     };
 }
 
-void processEntity(world_t *w, entity_t *entity, const float dt) {
+void processEntity(world_t *w, entity_t *entity, const double dt) {
     vec3 deltaV;
     glm_vec3_scale(entity->acceleration, dt, deltaV);
     updateVelocity(entity, deltaV);

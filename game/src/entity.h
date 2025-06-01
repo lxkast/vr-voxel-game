@@ -69,7 +69,7 @@ void changeRUFtoXYZ(vec3 directionVector, float yaw);
  * @param entity the entity to update
  * @param dt the time since the last tick
  */
-void processEntity(world_t *w, entity_t *entity, float dt);
+void processEntity(world_t *w, entity_t *entity, double dt);
 
 /**
  * @brief Performs the ceil function on a vec3

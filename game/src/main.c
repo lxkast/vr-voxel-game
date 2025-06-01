@@ -61,10 +61,6 @@ static void processCameraInput(GLFWwindow *window, camera_t *camera) {
     camera_fromMouse(camera, -dX, -dY);
 }
 
-float getTimeSeconds() {
-    return (float)clock() / CLOCKS_PER_SEC;
-}
-
 static bool wireframeView = false;
 static bool previousDown = false;
 static void processInput(GLFWwindow *window) {
@@ -218,7 +214,7 @@ int main(void) {
         .cameraOffset = {0.3f, 1.6f, 0.3f}
     };
 
-    float prevTime = getTimeSeconds();
+    double prevTime = glfwGetTime();
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
@@ -228,8 +224,8 @@ int main(void) {
 
         world_updateChunkLoader(&world, cameraLoader, camera.eye);
 
-        const float currentTime = getTimeSeconds();
-        const float dt = currentTime - prevTime;
+        const double currentTime = glfwGetTime();
+        const double dt = currentTime - prevTime;
         prevTime = currentTime;
 
         processEntity(&world, &player.entity, dt);
