@@ -193,7 +193,7 @@ void world_doChunkLoading(world_t *w) {
     }
 }
 
-bool world_getBlock(world_t *w, vec3 pos, block_data_t *bd) {
+bool world_getBlock(world_t *w, vec3 pos, blockData_t *bd) {
     const int x = (int)floorf(pos[0]);
     const int y = (int)floorf(pos[1]);
     const int z = (int)floorf(pos[2]);
@@ -217,7 +217,7 @@ bool world_getBlock(world_t *w, vec3 pos, block_data_t *bd) {
     return true;
 }
 
-void world_getAdjacentBlocks(world_t *w, vec3 position, block_data_t *buf) {
+void world_getAdjacentBlocks(world_t *w, vec3 position, blockData_t *buf) {
     int index = 0;
     for (int dx = -1; dx <= 1; dx++) {
         for (int dy = -1; dy <= 1; dy++) {
@@ -236,7 +236,7 @@ void world_getAdjacentBlocks(world_t *w, vec3 position, block_data_t *buf) {
     }
 }
 
-void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, block_data_t *buf) {
+void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, blockData_t *buf) {
     int index = 0;
 
     for (int dx = 0; dx < (int)(topRight[0] - bottomLeft[0]); dx++) {

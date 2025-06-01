@@ -86,15 +86,15 @@ static void handleAxisCollision(entity_t *entity, const aabb_t aabb, const block
 }
 
 /**
- * @brief Converts a list of block_data_t to block_bounding_t
- * @param buf the array containing the block_data_t blocks
+ * @brief Converts a list of blockData_t to block_bounding_t
+ * @param buf the array containing the blockData_t blocks
  * @param numBlocks the number of blocks in the array
  * @param result the array in which to store the block_bounding_t blocks
  */
-static void blockDataToBlockBounding(const block_data_t *buf, const unsigned int numBlocks, block_bounding_t *result) {
+static void blockDataToBlockBounding(const blockData_t *buf, const unsigned int numBlocks, block_bounding_t *result) {
     vec3 blockSize = {1.f, 1.f, 1.f};
     for (int i = 0; i < numBlocks; i++) {
-        const block_data_t block = buf[i];
+        const blockData_t block = buf[i];
 
         vec3 position = {(float)block.x, (float)block.y, (float)block.z};
 
@@ -137,7 +137,7 @@ static void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
                           (int)(maxPoint[2] - minPoint[2]);
 
     // getting all the blocks in the range
-    block_data_t buf[numBlocks];
+    blockData_t buf[numBlocks];
 
     world_getBlocksInRange(w, minPoint, maxPoint, buf);
 
@@ -224,7 +224,7 @@ void getViewDirection(const player_t *player, vec3 out) {
  * @return The type of the block
  */
 static block_t getBlockType(world_t *w, vec3 position) {
-    block_data_t bd;
+    blockData_t bd;
     world_getBlock(w, position, &bd);
     return bd.type;
 }
@@ -236,7 +236,7 @@ static block_t getBlockType(world_t *w, vec3 position) {
  * @return The block_bounding_t block
  */
 static block_bounding_t getBlockBounding(world_t *w, vec3 position) {
-    block_data_t bd;
+    blockData_t bd;
     world_getBlock(w, position, &bd);
     const aabb_t aabb = makeAABB((vec3){(float)bd.x, (float)bd.y, (float)bd.z}, (vec3){1.f, 1.f, 1.f});
     return (block_bounding_t){bd, aabb};

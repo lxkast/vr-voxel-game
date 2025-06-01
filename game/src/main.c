@@ -239,7 +239,7 @@ int main(void) {
             vec3 sub1 = {0.f,1.f,0.f};
             glm_vec3_sub(player.entity.position, sub1, BlockPosition);
             glm_vec3_floor(BlockPosition,BlockPosition);
-            block_data_t block;
+            blockData_t block;
             world_getBlock(&world, BlockPosition, &block);
 
             const float qx = camera.ori[0];

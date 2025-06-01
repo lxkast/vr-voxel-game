@@ -30,7 +30,7 @@ typedef struct {
 typedef struct {
     int x, y, z;
     block_t type;
-} block_data_t;
+} blockData_t;
 
 /**
  * @brief Initialises a world struct.
@@ -88,7 +88,7 @@ void world_doChunkLoading(world_t *w);
  * @param bd A block data struct to allocate to
  * @return Whether the operation was successful
  */
-bool world_getBlock(world_t *w, vec3 pos, block_data_t *bd);
+bool world_getBlock(world_t *w, vec3 pos, blockData_t *bd);
 
 /**
  * @brief Gets all adjacent blocks to a block at a specific position
@@ -96,7 +96,7 @@ bool world_getBlock(world_t *w, vec3 pos, block_data_t *bd);
  * @param position the position of the block
  * @param buf the array where the blocks are stored
  */
-void world_getAdjacentBlocks(world_t *w, vec3 position, block_data_t *buf);
+void world_getAdjacentBlocks(world_t *w, vec3 position, blockData_t *buf);
 
 /**
  * @brief gets all blocks within a cuboid defined by two opposite corners
@@ -105,4 +105,4 @@ void world_getAdjacentBlocks(world_t *w, vec3 position, block_data_t *buf);
  * @param topRight top right corner of the cuboid
  * @param buf the array where the blocks are stored
  */
-void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, block_data_t *buf);
+void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, blockData_t *buf);

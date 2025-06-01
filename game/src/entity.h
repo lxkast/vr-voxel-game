@@ -45,7 +45,7 @@ typedef struct {
 } raycast_t;
 
 typedef struct {
-    block_data_t data;
+    blockData_t data;
     aabb_t aabb;
 } block_bounding_t;
 
