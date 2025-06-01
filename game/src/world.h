@@ -110,3 +110,5 @@ void world_getAdjacentBlocks(world_t *w, vec3 position, blockData_t *buf);
 void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, blockData_t *buf);
 
 bool world_removeBlock(world_t *w, int x, int y, int z);
+
+bool world_placeBlock(world_t *w, int x, int y, int z, block_t block);

@@ -278,3 +278,19 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
 
     return true;
 }
+
+bool world_placeBlock(world_t *w, int x, int y, int z, block_t block) {
+    blockData_t bd;
+    if (!world_getBlocki(w, x, y, z, &bd)) return false;
+
+    if (bd.type != BL_AIR) return false;
+
+    size_t chunkOffset;
+    const cluster_t *cluster = clusterGet(w, x >> 4, y >> 4, z >> 4, false, &chunkOffset);
+
+    chunk_t *chunk = cluster->cells[chunkOffset].chunk;
+    chunk->blocks[x - (x << 4)][y - (y << 4)][z - (z << 4)] = block;
+    chunk->tainted = true;
+
+    return true;
+}
