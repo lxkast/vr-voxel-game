@@ -22,16 +22,16 @@ static void processPlayerInput(GLFWwindow *window, player_t *player) {
     vec3 acceleration = { 0.f, -10.f, 0.f };
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        acceleration[2] += 0.3f;  // Forward
+        acceleration[2] += 1.f;  // Forward
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        acceleration[2] -= 0.3f;  // Backward
+        acceleration[2] -= 1.f;  // Backward
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        acceleration[0] -= 0.3f;  // Left
+        acceleration[0] -= 1.f;  // Left
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        acceleration[0] += 0.3f;  // Right
+        acceleration[0] += 1.f;  // Right
     }
 
     LOG_DEBUG("Acceleration (Pre-Change): %f %f %f", acceleration[0], acceleration[1], acceleration[2]);
