@@ -198,7 +198,7 @@ int main(void) {
     // Camera setup
     camera_t camera;
     camera_init(&camera);
-    vec3 p = { 0.f, 0.f, -5.f };
+    vec3 p = { 0.f, 15.f, 0.f };
     camera_setPos(&camera, p);
 
     // World setup
@@ -245,6 +245,9 @@ int main(void) {
             glm_vec3_add(player.entity.position, player.cameraOffset, camPos);
             camera_setPos(&camera, camPos);
 
+            LOG_DEBUG("Player Position: x:%f y:%f z:%f", player.entity.position);
+            LOG_DEBUG("Camera Position: x:%f y:%f z:%f", camPos);
+
             mat4 rot;
             vec3 euler;
 
@@ -252,6 +255,7 @@ int main(void) {
 
             glm_euler_angles(rot, euler);
             player.entity.yaw = euler[1];
+            LOG_DEBUG("Player Yaw: %.2f", player.entity.yaw);
         }
 
         glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);

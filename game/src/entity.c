@@ -62,7 +62,7 @@ void blockDataToBlockBounding(const block_data_t *buf, const unsigned int numBlo
 
         vec3 position = {(float)block.x, (float)block.y, (float)block.z};
 
-        result[i] = (block_bounding_t){.data = buf[0], .aabb = makeAABB(position, blockSize)};
+        result[i] = (block_bounding_t){.data = block, .aabb = makeAABB(position, blockSize)};
     }
 }
 
@@ -144,7 +144,7 @@ void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
  * @brief Clamps a value between a minimum and maximum value
  */
 static float clamp(const float value, const float min, const float max) {
-    return (value < min) ? min : (value > max) ? max : value;
+    return (value < min) ? min : ((value > max) ? max : value);
 }
 
 /**
@@ -157,7 +157,7 @@ void updateVelocity(entity_t *entity, vec3 deltaV) {
 
     entity->velocity[0] = clamp(entity->velocity[0], -MAX_ABS_X_VELOCITY, MAX_ABS_X_VELOCITY);
     entity->velocity[1] = clamp(entity->velocity[1], -MAX_ABS_Y_VELOCITY, MAX_ABS_Y_VELOCITY);
-    entity->velocity[2] = clamp(entity->velocity[2], -MAX_ABS_Y_VELOCITY, MAX_ABS_Y_VELOCITY);
+    entity->velocity[2] = clamp(entity->velocity[2], -MAX_ABS_Z_VELOCITY, MAX_ABS_Z_VELOCITY);
 }
 
 /**
@@ -182,7 +182,9 @@ void changeRUFtoXYZ(vec3 directionVector, const float yaw) {
     const float right = directionVector[0];
     const float forward = directionVector[2];
 
+    LOG_DEBUG("Pre Change: %f", forward);
     directionVector[0] = right * cosf(yaw) - forward * sinf(yaw);   // X
+    LOG_DEBUG("After Change: %f", forward);
     directionVector[2] = right * sinf(yaw) + forward * cosf(yaw);   // Z
 }
 
