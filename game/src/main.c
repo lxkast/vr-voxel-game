@@ -22,16 +22,16 @@ static void processPlayerInput(GLFWwindow *window, player_t *player) {
     vec3 acceleration = { 0.f, -10.f, 0.f };
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        acceleration[2] += 0.1f;  // Forward
+        acceleration[2] += 0.3f;  // Forward
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        acceleration[2] -= 0.1f;  // Backward
+        acceleration[2] -= 0.3f;  // Backward
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        acceleration[0] -= 0.1f;  // Left
+        acceleration[0] -= 0.3f;  // Left
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        acceleration[0] += 0.1f;  // Right
+        acceleration[0] += 0.3f;  // Right
     }
 
     LOG_DEBUG("Acceleration (Pre-Change): %f %f %f", acceleration[0], acceleration[1], acceleration[2]);
@@ -45,18 +45,6 @@ static void processCameraInput(GLFWwindow *window, camera_t *camera) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     }
-    // if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-    //     camera_translateZ(camera, -0.15f);
-    // }
-    // if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-    //     camera_translateZ(camera, 0.15f);
-    // }
-    // if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-    //     camera_translateX(camera, -0.15f);
-    // }
-    // if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-    //     camera_translateX(camera, 0.15f);
-    // }
 
     double currentMouse[2];
     glfwGetCursorPos(window, &currentMouse[0], &currentMouse[1]);
@@ -245,16 +233,19 @@ int main(void) {
             glm_vec3_add(player.entity.position, player.cameraOffset, camPos);
             camera_setPos(&camera, camPos);
 
-            LOG_DEBUG("Player Position: x:%f y:%f z:%f", player.entity.position);
-            LOG_DEBUG("Camera Position: x:%f y:%f z:%f", camPos);
+            LOG_DEBUG("Player Position: x:%f y:%f z:%f", player.entity.position[0], player.entity.position[1], player.entity.position[2]);
+            LOG_DEBUG("Camera Position: x:%f y:%f z:%f", camPos[0],camPos[1],camPos[2]);
 
-            mat4 rot;
-            vec3 euler;
+            const float qx = camera.ori[0];
+            const float qy = camera.ori[1];
+            const float qz = camera.ori[2];
+            const float qw = camera.ori[3];
 
-            glm_quat_mat4(camera.ori, rot);
+            const float siny_cosp = 2.0f * ( qw*qy + qx*qz );
+            const float cosy_cosp = 1.0f - 2.0f * ( qy*qy + qz*qz );
+            float yaw = atan2f(siny_cosp, cosy_cosp);
 
-            glm_euler_angles(rot, euler);
-            player.entity.yaw = euler[1];
+            player.entity.yaw = yaw;
             LOG_DEBUG("Player Yaw: %.2f", player.entity.yaw);
         }
 
