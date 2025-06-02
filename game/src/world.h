@@ -32,6 +32,24 @@ typedef struct {
     block_t type;
 } blockData_t;
 
+typedef enum {
+    POS_X_FACE,
+    NEG_X_FACE,
+    POS_Y_FACE,
+    NEG_Y_FACE,
+    POS_Z_FACE,
+    NEG_Z_FACE,
+} raycastFace_e;
+
+/**
+ * @brief Struct that holds data about the result of a raycast
+ */
+typedef struct {
+    vec3 blockPosition;
+    raycastFace_e face;
+    bool found;
+} raycast_t;
+
 /**
  * @brief Initialises a world struct.
  * @param w A pointer to a world
@@ -118,6 +136,16 @@ void world_getAdjacentBlocks(world_t *w, vec3 position, blockData_t *buf);
  * @param buf the array where the blocks are stored
  */
 void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, blockData_t *buf);
+
+/**
+ * @brief Performs raycasting from a point at a specific angle
+ * @param w a pointer to the world
+ * @param startPosition the position to start the raycast from
+ * @param viewDirection the direction to raycast along
+ * @return whether the raycast was successful - found = False mean no block was found, otherwise found = true
+ *         and block = found block
+ */
+raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection);
 
 /**
  * @brief Tries to remove a block at a position.

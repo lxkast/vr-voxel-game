@@ -5,6 +5,9 @@
 #include "chunk.h"
 #include "entity.h"
 
+#define MAX_RAYCAST_DISTANCE 6.f
+#define RAYCAST_STEP_MAGNITUDE 0.1f
+
 /**
  * @brief Key for hash table
  */
@@ -294,4 +297,104 @@ bool world_placeBlock(world_t *w, int x, int y, int z, block_t block) {
 
     *bp = block;
     cp->tainted = true;
+}
+
+/**
+ * @brief Gets the type of a block at a chosen position
+ * @param w a pointer to the world
+ * @param position the position to get a block at
+ * @return The type of the block
+ */
+static block_t getBlockType(world_t *w, vec3 position) {
+    blockData_t bd;
+    world_getBlock(w, position, &bd);
+    return bd.type;
+}
+
+raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection) {
+    vec3 viewNormalised;
+    glm_vec3_copy(viewDirection, viewNormalised);
+    glm_normalize(viewNormalised);
+
+    vec3 currentBlock;
+    glm_vec3_floor(startPosition, currentBlock);
+
+    // stores the amount we must move along the ray to get to the next edge
+    // in each direction
+    vec3 axisMoveDelta;
+
+    axisMoveDelta[0] = (viewNormalised[0] == 0) ? 1e5f : fabsf(1 / viewNormalised[0]);
+    axisMoveDelta[1] = (viewNormalised[1] == 0) ? 1e5f : fabsf(1 / viewNormalised[1]);
+    axisMoveDelta[2] = (viewNormalised[2] == 0) ? 1e5f : fabsf(1 / viewNormalised[2]);
+
+    // calculates which direction we move in along each axis
+    vec3 stepDirection;
+    stepDirection[0] = viewNormalised[0] < 0 ? -1.0f : 1.0f;
+    stepDirection[1] = viewNormalised[1] < 0 ? -1.0f : 1.0f;
+    stepDirection[2] = viewNormalised[2] < 0 ? -1.0f : 1.0f;
+
+    // Calculating initial distances to next block
+    vec3 distToNextBlock;
+
+    distToNextBlock[0] = viewNormalised[0] < 0 ? startPosition[0] - currentBlock[0] : currentBlock[0] + 1 - startPosition[0];
+    distToNextBlock[1] = viewNormalised[1] < 0 ? startPosition[1] - currentBlock[1] : currentBlock[1] + 1 - startPosition[1];
+    distToNextBlock[2] = viewNormalised[2] < 0 ? startPosition[2] - currentBlock[2] : currentBlock[2] + 1 - startPosition[2];
+
+    distToNextBlock[0] *= axisMoveDelta[0];
+    distToNextBlock[1] *= axisMoveDelta[1];
+    distToNextBlock[2] *= axisMoveDelta[2];
+
+    float totalDistance = 0;
+
+    raycastFace_e currentFace = POS_X_FACE;
+
+    while (totalDistance < MAX_RAYCAST_DISTANCE) {
+        // checks for a solid block
+        if (getBlockType(w, currentBlock) != BL_AIR) {
+            return (raycast_t){
+                .blockPosition = {currentBlock[0], currentBlock[1], currentBlock[2]},
+                .face = currentFace,
+                .found = true
+            };
+        }
+
+        // steps to the next closest block
+        if (distToNextBlock[0] < distToNextBlock[1] && distToNextBlock[0] < distToNextBlock[2]) {
+            // Step in X direction
+            totalDistance = distToNextBlock[0];
+            distToNextBlock[0] += axisMoveDelta[0];
+            currentBlock[0] += stepDirection[0];
+            if (stepDirection[0] == 1) {
+                currentFace = NEG_X_FACE;
+            } else {
+                currentFace = POS_X_FACE;
+            }
+        } else if (distToNextBlock[1] < distToNextBlock[2]) {
+            // Step in Y direction
+            totalDistance = distToNextBlock[1];
+            distToNextBlock[1] += axisMoveDelta[1];
+            currentBlock[1] += stepDirection[1];
+            if (stepDirection[1] == 1) {
+                currentFace = NEG_Y_FACE;
+            } else {
+                currentFace = POS_Y_FACE;
+            }
+        } else {
+            // Step in Z direction
+            totalDistance = distToNextBlock[2];
+            distToNextBlock[2] += axisMoveDelta[2];
+            currentBlock[2] += stepDirection[2];
+            if (stepDirection[2] == 1) {
+                currentFace = NEG_Z_FACE;
+            } else {
+                currentFace = POS_Z_FACE;
+            }
+        }
+    }
+
+    return (raycast_t){
+        .blockPosition = {0, 0, 0},
+        .face = POS_X_FACE,
+        .found = false
+    };
 }
