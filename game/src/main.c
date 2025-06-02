@@ -44,11 +44,9 @@ static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w)
     }
 
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-        LOG_DEBUG("Breaking Block");
         player_removeBlock(player, w);
     } else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-            LOG_DEBUG("Placing Grass Block");
-            player_placeBlock(player, w, BL_GRASS);
+        player_placeBlock(player, w, BL_GRASS);
     }
 
     changeRUFtoXYZ(acceleration, player->entity.yaw);
