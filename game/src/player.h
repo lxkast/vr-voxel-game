@@ -30,3 +30,5 @@ void player_init(player_t *p);
 void player_attachCamera(player_t *p, camera_t *camera);
 
 void player_removeBlock(player_t *p, world_t *w);
+
+void player_placeBlock(player_t *p, world_t *w, block_t block);
