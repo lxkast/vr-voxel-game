@@ -81,6 +81,16 @@ void world_delChunkLoader(world_t *w, unsigned int id);
  */
 void world_doChunkLoading(world_t *w);
 
+
+/**
+ * @brief Gets a block (if possible) at by the block position.
+ * @param w A pointer to a world
+ * @param x Block x
+ * @param y Block y
+ * @param z Block z
+ * @param bd A block data struct to allocate to
+ * @return Whether the operation was successful
+ */
 bool world_getBlocki(world_t *w, int x, int y, int z, blockData_t *bd);
 
 /**
@@ -109,6 +119,23 @@ void world_getAdjacentBlocks(world_t *w, vec3 position, blockData_t *buf);
  */
 void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, blockData_t *buf);
 
+/**
+ * @brief Tries to remove a block at a position.
+ * @param w A pointer to the world
+ * @param x Block x
+ * @param y Block y
+ * @param z Block z
+ * @return Whether the operation was successful
+ */
 bool world_removeBlock(world_t *w, int x, int y, int z);
 
+/**
+ * @brief Tries to place a block at a position.
+ * @param w A pointer to the world
+ * @param x Block x
+ * @param y Block y
+ * @param z Block z
+ * @param block The type of block to try and place
+ * @return Whether the operation was successful
+ */
 bool world_placeBlock(world_t *w, int x, int y, int z, block_t block);
