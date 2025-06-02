@@ -208,14 +208,6 @@ void changeRUFtoXYZ(vec3 directionVector, const float yaw) {
     directionVector[2] = -right * sinf(yaw) - forward * cosf(yaw);    // Z
 }
 
-void getViewDirection(const player_t *player, vec3 out) {
-    const float XZscaling = cosf(player->cameraPitch);
-    out[0] = -sinf(player->entity.yaw) * XZscaling;
-    out[1] = sinf(player->cameraPitch);
-    out[2] = -cosf(player->entity.yaw) * XZscaling;
-    glm_vec3_normalize(out);
-}
-
 /**
  * @brief Gets the block at a chosen position, with the block_bounding_t datatype.
  * @param w a pointer to the world

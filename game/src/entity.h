@@ -19,15 +19,6 @@ typedef struct {
 } entity_t;
 
 typedef struct {
-    entity_t entity;      // for minecraft this is typically 0.6x1.8x0.6
-    float cameraPitch;    // where the player is looking relative to the horizontal in radians
-    vec3 cameraOffset;    // if we implement translational headset movement this will change
-                          // default value of 0.3x1.6x0.3  (this isn't official just a guess)
-    // member for inventory
-    // member for hotbar
-} player_t;
-
-typedef struct {
     vec3 min;
     vec3 max;
 } aabb_t;
@@ -36,14 +27,6 @@ typedef struct {
     blockData_t data;
     aabb_t aabb;
 } blockBounding_t;
-
-/**
- * @brief Calculates and returns a normalised direction vector passing through (0,0,0)
- *        parallel to the one the player is looking along.
- * @param player The player we want to get the information about
- * @param out The vector where we should store the answer
- */
-void getViewDirection(const player_t *player, vec3 out);
 
 /**
  * @brief Updates an entity's velocity based on world coordinates

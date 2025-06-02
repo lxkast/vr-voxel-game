@@ -9,6 +9,7 @@
 #include "texture.h"
 #include "world.h"
 #include "entity.h"
+#include "player.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #define MINOR_VERSION 2
@@ -231,18 +232,8 @@ int main(void) {
     world_updateChunkLoader(&world, spawnLoader, GLM_VEC3_ZERO);
     world_updateChunkLoader(&world, cameraLoader, GLM_VEC3_ZERO);
 
-    player_t player = {
-        .entity = {
-            .position = {0.f, 15.f, 0.f},
-            .velocity = {0.f, 0.f, 0.f},
-            .size = {0.6f, 1.8f, 0.6f},
-            .acceleration = {0.f, 0.f, 0.f},
-            .grounded = false,
-            .yaw = 0,
-        },
-        .cameraPitch = 0.f,
-        .cameraOffset = {0.3f, 1.6f, 0.3f}
-    };
+    player_t player;
+    player_init(&player);
 
     double prevTime = glfwGetTime();
 
@@ -262,35 +253,8 @@ int main(void) {
         prevTime = currentTime;
 
         processEntity(&world, &player.entity, dt);
+        player_attachCamera(&player, &camera);
 
-
-
-        {
-            vec3 camPos;
-            glm_vec3_add(player.entity.position, player.cameraOffset, camPos);
-            camera_setPos(&camera, camPos);
-
-            vec3 BlockPosition;
-            vec3 sub1 = {0.f,1.f,0.f};
-            glm_vec3_sub(player.entity.position, sub1, BlockPosition);
-            glm_vec3_floor(BlockPosition,BlockPosition);
-            blockData_t block;
-            world_getBlock(&world, BlockPosition, &block);
-
-            const float qx = camera.ori[0];
-            const float qy = camera.ori[1];
-            const float qz = camera.ori[2];
-            const float qw = camera.ori[3];
-
-            const float siny_cosp = 2.0f * ( qw*qy + qx*qz );
-            const float cosy_cosp = 1.0f - 2.0f * ( qy*qy + qz*qz );
-            const float yaw = atan2f(siny_cosp, cosy_cosp);
-
-            player.entity.yaw = yaw;
-
-            const float sinp = 2.0f * (qw * qx - qz * qy);
-            player.cameraPitch = asinf(sinp);
-        }
 
         glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
         glClear(GL_DEPTH_BUFFER_BIT);
