@@ -1,43 +1,37 @@
-#include <string.h>
 #include <logging.h>
+#include <pthread.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <pthread.h>
-
+#include <string.h>
 #include "icm42688.h"
+#include "orientation.h"
 #include "quaternion.h"
 
-#include "orientation.h"
-
-typedef struct {
-    quaternion ori;
-    double[3] omega;
-} state_t;
+typedef double state_t[7];
 
 pthread_t thread;
 
-state_t currentState = {.ori = {1, 0}, .omega = {0}}
+state_t currentState = {1, 0, 0, 0, 0, 0, 0};
 
 void imu_getOrientation(quaternion res) {
-    memcpy(res, orientation, 4 * sizeof(double));
+    memcpy(res, currentState, 4 * sizeof(double));
 }
 
 void predict() {
-    
 }
 
-void* runOrientation(void* arg) {
+void *runOrientation(void *arg) {
     LOG_DEBUG("Running orientation thread");
     init_imu();
-    
+
     fifodata_t res;
     FILE *fpt = fopen("output.csv", "w+");
 
     double lastTime = 0.0;
 
-    while(1) {
+    while (1) {
         if (readFIFOData(&res)) {
-            double deltaTime =  res.timestamp - lastTime;
+            double deltaTime = res.timestamp - lastTime;
             lastTime = res.timestamp;
 
             if (!res.accelValid) {
@@ -49,15 +43,14 @@ void* runOrientation(void* arg) {
             } else {
                 fprintf(fpt, "%f, %f, %f\n", res.gyro[0], res.gyro[1], res.gyro[2]);
                 quaternion diff;
-                fromEulers(res.gyro, deltaTime, diff);               
- 
+                quat_fromEulers(res.gyro, deltaTime, diff);
+
                 quaternion qres;
-                multiplyQuat(orientation, diff, qres);
+                quat_multiply(orientation, diff, qres);
 
                 memcpy(orientation, qres, 4 * sizeof(double));
 
-        
-                //LOG_DEBUG("Current quaternion %f, %f, %f, %f", orientation[0], orientation[1], orientation[2], orientation[3]);        
+                // LOG_DEBUG("Current quaternion %f, %f, %f, %f", orientation[0], orientation[1], orientation[2], orientation[3]);
             }
         }
     }

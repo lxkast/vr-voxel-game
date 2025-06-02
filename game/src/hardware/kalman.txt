@@ -1,0 +1,11 @@
+State modelled as 7 doubles, first 4 representing the current quaternion, last 3 representing the current euler rotational velocity.
+
+Predict step:
+    Multiply quaternion state by new quat
+    Leave rv constant
+
+Update step gyro:
+    h(x) = Set euler rotational velocity to value read, update current quaternion
+
+ Update step accel:
+    h'(x) = Set quaternion to make gravity vector make sense

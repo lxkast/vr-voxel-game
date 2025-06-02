@@ -1,6 +1,6 @@
 #pragma once
 
-#include "quaternion.h"
+#include "linalg.h"
 
 extern void startOrientationThread(void);
 extern void imu_getOrientation(quaternion res);
