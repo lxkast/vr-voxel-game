@@ -274,6 +274,7 @@ static block_t getBlockType(world_t *w, vec3 position) {
     return bd.type;
 }
 
+// Note this function is now outdated - doesn't work with faces
 raycast_t world_raycast(world_t *w, const vec3 startPosition, const vec3 viewDirection) {
     for (float i = 0; i < MAX_RAYCAST_DISTANCE; i += RAYCAST_STEP_MAGNITUDE) {
         const vec3 newPos = {
@@ -288,6 +289,7 @@ raycast_t world_raycast(world_t *w, const vec3 startPosition, const vec3 viewDir
         if (block_type != BL_AIR) {
             return (raycast_t){
                 .blockPosition = {flooredPos[0], flooredPos[1], flooredPos[2]},
+                .face = POS_X_FACE,
                 .found = true
             };
         }
@@ -295,6 +297,7 @@ raycast_t world_raycast(world_t *w, const vec3 startPosition, const vec3 viewDir
 
     return (raycast_t){
             {0, 0, 0},
+             POS_X_FACE,
             false
         };
 }
@@ -333,10 +336,13 @@ raycast_t world_raycastDDA(world_t *w, vec3 startPosition, vec3 viewDirection) {
 
     float totalDistance = 0;
 
+    raycastFace_e currentFace = POS_X_FACE;
+
     while (totalDistance < MAX_RAYCAST_DISTANCE) {
         if (getBlockType(w, currentBlock) != BL_AIR) {
             return (raycast_t){
                 .blockPosition = {currentBlock[0], currentBlock[1], currentBlock[2]},
+                .face = currentFace,
                 .found = true
             };
         }
@@ -346,16 +352,31 @@ raycast_t world_raycastDDA(world_t *w, vec3 startPosition, vec3 viewDirection) {
             totalDistance = nextBlockDists[0];
             nextBlockDists[0] += oneBlockMoveDist[0];
             currentBlock[0] += stepDirection[0];
+            if (stepDirection[0] == 1) {
+                currentFace = NEG_X_FACE;
+            } else {
+                currentFace = POS_X_FACE;
+            }
         } else if (nextBlockDists[1] < nextBlockDists[2]) {
             // Step in Y direction
             totalDistance = nextBlockDists[1];
             nextBlockDists[1] += oneBlockMoveDist[1];
             currentBlock[1] += stepDirection[1];
+            if (stepDirection[1] == 1) {
+                currentFace = NEG_Y_FACE;
+            } else {
+                currentFace = POS_Y_FACE;
+            }
         } else {
             // Step in Z direction
             totalDistance = nextBlockDists[2];
             nextBlockDists[2] += oneBlockMoveDist[2];
             currentBlock[2] += stepDirection[2];
+            if (stepDirection[2] == 1) {
+                currentFace = NEG_Z_FACE;
+            } else {
+                currentFace = POS_Z_FACE;
+            }
         }
     }
 
