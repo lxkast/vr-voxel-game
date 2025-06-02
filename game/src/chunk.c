@@ -48,12 +48,6 @@ static void chunk_createMesh(chunk_t *c) {
     glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_R,GL_CLAMP_TO_EDGE);
 }
 
-static void chunk_createBuffers(chunk_t *c) {
-    glGenBuffers(1, &c->vbo);
-    glGenVertexArrays(1, &c->vao);
-    glGenTextures(1, &c->blockTexture);
-}
-
 void chunk_create(chunk_t *c, const int cx, const int cy, const int cz, const block_t block) {
     c->cx = cx;
     c->cy = cy;
@@ -64,7 +58,7 @@ void chunk_create(chunk_t *c, const int cx, const int cy, const int cz, const bl
         ptr[i] = block;
     }
 
-    chunk_createBuffers(c);
+    glGenTextures(1, &c->blockTexture);
     chunk_createMesh(c);
 }
 
@@ -83,8 +77,10 @@ void chunk_generate(chunk_t *c, int cx, int cy, int cz) {
             float height = n * 20.f;
 
             for (int y = 0; y < CHUNK_SIZE; y++) {
-                if (cy * CHUNK_SIZE + y < height) {
+                if (cy * CHUNK_SIZE + y == (int)height) {
                     ptr[x][y][z] = BL_GRASS;
+                } else if (cy * CHUNK_SIZE + y < height){
+                    ptr[x][y][z] = BL_DIRT;
                 } else {
                     ptr[x][y][z] = BL_AIR;
                 }
@@ -92,7 +88,7 @@ void chunk_generate(chunk_t *c, int cx, int cy, int cz) {
         }
     }
 
-    chunk_createBuffers(c);
+    glGenTextures(1, &c->blockTexture);
     chunk_createMesh(c);
 }
 
@@ -103,14 +99,11 @@ void chunk_draw(const chunk_t *c, const int modelLocation) {
 
     glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
 
-
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_3D, c->blockTexture);
-    glDrawArrays(GL_TRIANGLES, 0, 16 * 3 * 2 * 3);
+    glDrawArrays(GL_TRIANGLES, 0, 17 * 3 * 2 * 3);
 }
 
 void chunk_free(const chunk_t *c) {
-    glDeleteVertexArrays(1, &c->vao);
-    glDeleteBuffers(1, &c->vbo);
     glDeleteTextures(1, &c->blockTexture);
 }

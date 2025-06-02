@@ -107,17 +107,17 @@ static void loadChunk(world_t *w, const int cx, const int cy, const int cz) {
 
 void world_init(world_t *w) {
     w->clusterTable = NULL;
-    float *chunkVertices = malloc(sizeof(float) * 6 * 16 * 3 * 3);
+    float *chunkVertices = malloc(sizeof(float) * 6 * 17 * 3 * 3);
     if (!chunkVertices) {
         LOG_FATAL("chunkVertices malloc failed");
     }
     const int faceFloats = 6 * 3;
     const int faceBytes = faceFloats * sizeof(float);
-    const int totalFaces = 16 * 3;
+    const int totalFaces = 17 * 3;
     const int totalFloats = totalFaces * faceFloats;
     const int totalBytes = totalFloats * sizeof(float);
     // xz faces
-    for (int i = 0; i < 16; ++i) {
+    for (int i = 0; i < 17; ++i) {
         float *dest = chunkVertices + (i * faceFloats);
         memcpy(dest, xzFace, faceBytes);
         for (int k = 0; k < 6; ++k) {
@@ -125,8 +125,8 @@ void world_init(world_t *w) {
         }
     }
     // yz faces
-    for (int i = 0; i < 16; ++i) {
-        int faceIndex = i + 16;
+    for (int i = 0; i < 17; ++i) {
+        int faceIndex = i + 17;
         float *dest   = chunkVertices + (faceIndex * faceFloats);
         memcpy(dest, yzFace, faceBytes);
         for (int k = 0; k < 6; ++k) {
@@ -134,8 +134,8 @@ void world_init(world_t *w) {
         }
     }
     // xy faces
-    for (int i = 0; i < 16; ++i) {
-        int faceIndex = i + 2 * 16;
+    for (int i = 0; i < 17; ++i) {
+        int faceIndex = i + 2 * 17;
         float *dest   = chunkVertices + (faceIndex * faceFloats);
         memcpy(dest, xyFace, faceBytes);
         for (int k = 0; k < 6; ++k) {
@@ -206,7 +206,7 @@ void world_doChunkLoading(world_t *w) {
         const int cy = w->chunkLoaders[i].y >> 4;
         const int cz = w->chunkLoaders[i].z >> 4;
 
-#define CHUNK_LOAD_RADIUS 3
+#define CHUNK_LOAD_RADIUS 4
         for (int x = -CHUNK_LOAD_RADIUS; x <= CHUNK_LOAD_RADIUS; x++) {
             for (int y = -CHUNK_LOAD_RADIUS; y <= CHUNK_LOAD_RADIUS; y++) {
                 for (int z = -CHUNK_LOAD_RADIUS; z <= CHUNK_LOAD_RADIUS; z++) {

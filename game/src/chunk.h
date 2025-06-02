@@ -17,12 +17,6 @@ typedef struct {
     block_t blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
     /// The 3D array of blocks as a 3D texture
     GLuint blockTexture;
-    /// The VBO that holds the mesh.
-    GLuint vbo;
-    /// The VAO that is used for drawing.
-    GLuint vao;
-    /// Number of vertices in the current mesh
-    int meshVertices;
     /// Holds whether the mesh needs to be regenerated.
     bool tainted;
 } chunk_t;

@@ -12,18 +12,101 @@ float atlasHeight = 32.0;
 
 void main() {
     ivec3 intPos = ivec3(int(vPos.x), int(vPos.y), int(vPos.z));
-    int type = texelFetch(uTypes, intPos, 0).r;
-    if (type == 0) {
-        discard;
+    vec3 pos = vPos;
+    if (intPos.x >= 16) {
+        pos.x = 15.9999;
+        intPos.x = 15;
     }
-    vec2 texCoord = vPos.xy;
+    if (intPos.y >= 16) {
+        pos.y = 15.9999;
+        intPos.y = 15;
+    }
+    if (intPos.z >= 16) {
+        pos.z = 15.9999;
+        intPos.z = 15;
+    }
+    int type = texelFetch(uTypes, intPos, 0).r;
+
+    // if the current block is air but is neighbouring a solid block, make the face solid
+    if (type == 0) {
+        if (mod(pos.x, 1.0) < 0.001) {
+            if (intPos.x > 0) {
+                ivec3 neighbor = intPos;
+                neighbor.x -= 1;
+                type = texelFetch(uTypes, neighbor, 0).r;
+                if (type == 0) {
+                    discard;
+                }
+            } else {
+                discard;
+            }
+        } else if (mod(pos.x, 1.0) > 0.999) {
+            if (intPos.x < 15) {
+                ivec3 neighbor = intPos;
+                neighbor.x += 1;
+                type = texelFetch(uTypes, neighbor, 0).r;
+                if (type == 0) {
+                    discard;
+                }
+            } else {
+                discard;
+            }
+        } else if (mod(pos.y, 1.0) < 0.001) {
+            if (intPos.y > 0) {
+                ivec3 neighbor = intPos;
+                neighbor.y -= 1;
+                type = texelFetch(uTypes, neighbor, 0).r;
+                if (type == 0) {
+                    discard;
+                }
+            } else {
+                discard;
+            }
+        } else if (mod(pos.y, 1.0) > 0.999) {
+            if (intPos.y < 15) {
+                ivec3 neighbor = intPos;
+                neighbor.y += 1;
+                type = texelFetch(uTypes, neighbor, 0).r;
+                if (type == 0) {
+                    discard;
+                }
+            } else {
+                discard;
+            }
+        } else if (mod(pos.z, 1.0) < 0.001) {
+            if (intPos.z > 0) {
+                ivec3 neighbor = intPos;
+                neighbor.z -= 1;
+                type = texelFetch(uTypes, neighbor, 0).r;
+                if (type == 0) {
+                    discard;
+                }
+            } else {
+                discard;
+            }
+        } else if (mod(pos.z, 1.0) > 0.999) {
+            if (intPos.z < 15) {
+                ivec3 neighbor = intPos;
+                neighbor.z += 1;
+                type = texelFetch(uTypes, neighbor, 0).r;
+                if (type == 0) {
+                    discard;
+                }
+            } else {
+                discard;
+            }
+        } else {
+            discard;
+        }
+    }
+
+    vec2 texCoord = pos.xy;
     bool below = false;
     if (mod(texCoord.y, 1.0) < 0.001 || mod(texCoord.y, 1.0) > 0.999) {
-        texCoord.y = vPos.z;
+        texCoord.y = pos.z;
         below = true;
     } else if (mod(texCoord.x, 1.0) < 0.001 || mod(texCoord.x, 1.0) > 0.999) {
-        texCoord.x = vPos.z;
+        texCoord.x = pos.z;
     }
     FragColor = texture(uTextureAtlas, vec2((mod(texCoord.x, 1.0) * 16 + 16.0 * float(type))/atlasWidth, (16 * mod(texCoord.y,1.0) + (below ? 16.0 : 0.0))/atlasHeight));
-    //FragColor = vec4((float(type) * float(textureWidth) + texCoord.x), 1,1,1);
 }
