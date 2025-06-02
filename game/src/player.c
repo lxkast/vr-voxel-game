@@ -21,10 +21,10 @@ void player_attachCamera(player_t *p, camera_t *camera) {
     glm_vec3_add(p->entity.position, p->cameraOffset, camPos);
     camera_setPos(camera, camPos);
 
-    vec3 BlockPosition;
+    vec3 blockPosition;
     vec3 sub1 = {0.f, 1.f, 0.f};
-    glm_vec3_sub(p->entity.position, sub1, BlockPosition);
-    glm_vec3_floor(BlockPosition, BlockPosition);
+    glm_vec3_sub(p->entity.position, sub1, blockPosition);
+    glm_vec3_floor(blockPosition, blockPosition);
 
     const float qx = camera->ori[0];
     const float qy = camera->ori[1];
