@@ -299,29 +299,33 @@ raycast_t world_raycast(world_t *w, const vec3 startPosition, const vec3 viewDir
         };
 }
 
-raycast_t raycastDDA(world_t *w, vec3 eyePosition, vec3 viewDirection) {
+raycast_t world_raycastDDA(world_t *w, vec3 startPosition, vec3 viewDirection) {
     vec3 viewNormalised;
     glm_vec3_copy(viewDirection, viewNormalised);
     glm_normalize(viewNormalised);
 
     vec3 currentBlock;
-    glm_vec3_floor(eyePosition, currentBlock);
+    glm_vec3_floor(startPosition, currentBlock);
 
     // stores the amount we must move along the ray to get to the next edge
     // in each direction
     vec3 oneBlockMoveDist;
 
-    // ignoring divide by 0 error for the moment
-    oneBlockMoveDist[0] = 1 / viewNormalised[0];
-    oneBlockMoveDist[1] = 1 / viewNormalised[1];
-    oneBlockMoveDist[2] = 1 / viewNormalised[2];
+    oneBlockMoveDist[0] = (viewNormalised[0] == 0) ? 1e5f : fabsf(1 / viewNormalised[0]);
+    oneBlockMoveDist[1] = (viewNormalised[1] == 0) ? 1e5f : fabsf(1 / viewNormalised[1]);
+    oneBlockMoveDist[2] = (viewNormalised[2] == 0) ? 1e5f : fabsf(1 / viewNormalised[2]);
+
+    vec3 stepDirection;
+    stepDirection[0] = viewNormalised[0] < 0 ? -1.0f : 1.0f;
+    stepDirection[1] = viewNormalised[1] < 0 ? -1.0f : 1.0f;
+    stepDirection[2] = viewNormalised[2] < 0 ? -1.0f : 1.0f;
 
     // Calculating initial distances to next block
     vec3 nextBlockDists;
 
-    nextBlockDists[0] = viewNormalised[0] < 0 ? eyePosition[0] - currentBlock[0] : currentBlock[0] + 1 - eyePosition[0];
-    nextBlockDists[1] = viewNormalised[1] < 0 ? eyePosition[1] - currentBlock[1] : currentBlock[1] + 1 - eyePosition[1];
-    nextBlockDists[2] = viewNormalised[2] < 0 ? eyePosition[2] - currentBlock[2] : currentBlock[2] + 1 - eyePosition[2];
+    nextBlockDists[0] = viewNormalised[0] < 0 ? startPosition[0] - currentBlock[0] : currentBlock[0] + 1 - startPosition[0];
+    nextBlockDists[1] = viewNormalised[1] < 0 ? startPosition[1] - currentBlock[1] : currentBlock[1] + 1 - startPosition[1];
+    nextBlockDists[2] = viewNormalised[2] < 0 ? startPosition[2] - currentBlock[2] : currentBlock[2] + 1 - startPosition[2];
 
     nextBlockDists[0] *= oneBlockMoveDist[0];
     nextBlockDists[1] *= oneBlockMoveDist[1];
@@ -337,11 +341,24 @@ raycast_t raycastDDA(world_t *w, vec3 eyePosition, vec3 viewDirection) {
             };
         }
 
-        // Moving to the nearest new block
-        // TODO: Finish later
+        if (nextBlockDists[0] < nextBlockDists[1] && nextBlockDists[0] < nextBlockDists[2]) {
+            // Step in X direction
+            totalDistance = nextBlockDists[0];
+            nextBlockDists[0] += oneBlockMoveDist[0];
+            currentBlock[0] += stepDirection[0];
+        } else if (nextBlockDists[1] < nextBlockDists[2]) {
+            // Step in Y direction
+            totalDistance = nextBlockDists[1];
+            nextBlockDists[1] += oneBlockMoveDist[1];
+            currentBlock[1] += stepDirection[1];
+        } else {
+            // Step in Z direction
+            totalDistance = nextBlockDists[2];
+            nextBlockDists[2] += oneBlockMoveDist[2];
+            currentBlock[2] += stepDirection[2];
+        }
     }
 
-    // This is here so CLion will typecheck correctly
     return (raycast_t){
         .blockPosition = {0, 0, 0},
         .found = false
