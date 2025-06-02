@@ -22,6 +22,12 @@ typedef struct {
     } chunkLoaders[MAX_CHUNK_LOADERS];
     /// The hash table used keeping track of chunks
     struct _s_cluster *clusterTable;
+    /// Vertex array object for all chunks
+    GLuint chunkVao;
+    /// Vertex buffer object for all chunks
+    GLuint chunkVbo;
+    /// Element buffer object for all chunks
+    GLuint chunkEbo;
 } world_t;
 
 /**

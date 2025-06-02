@@ -2,6 +2,6 @@
 
 typedef enum {
     BL_AIR,
-    BL_DIRT,
     BL_GRASS,
+    BL_DIRT,
 } block_t;
