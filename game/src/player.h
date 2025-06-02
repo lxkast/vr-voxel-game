@@ -10,8 +10,8 @@
 typedef struct {
     /// The player's entity.
     entity_t entity;
-    /// Where the player is looking relative to the horizontal in radians
-    float cameraPitch;
+    /// The direction in which the player is looking
+    vec3 lookVector;
     /// The displacement of the camera from the player
     vec3 cameraOffset;
 } player_t;

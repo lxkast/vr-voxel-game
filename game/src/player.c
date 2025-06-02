@@ -1,7 +1,6 @@
 #include "player.h"
 
 void player_init(player_t *p) {
-    p->cameraPitch = 0.f;
     *p = (player_t){
         .entity = {
                    .position = {0.f, 15.f, 0.f},
@@ -11,7 +10,7 @@ void player_init(player_t *p) {
                    .grounded = false,
                    .yaw = 0,
                    },
-        .cameraPitch = 0.f,
+        .lookVector = { 0.f, 0.f, 0.f },
         .cameraOffset = {0.3f, 1.6f, 0.3f}
     };
 }
@@ -36,4 +35,5 @@ void player_attachCamera(player_t *p, camera_t *camera) {
     const float yaw = atan2f(sinyCosp, cosyCosp);
 
     p->entity.yaw = yaw;
+    glm_vec3_copy(camera->ruf[2], p->lookVector);
 }
