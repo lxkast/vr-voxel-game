@@ -32,8 +32,6 @@ static void processPlayerInput(GLFWwindow *window, player_t *player) {
 
     const float sprintMultiplier = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? SPRINT_MULTIPLIER : 1.f ;
 
-    LOG_DEBUG("Sprinting: %f", sprintMultiplier);
-
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
         acceleration[2] += ACCELERATION * sprintMultiplier;  // Forward
     }
