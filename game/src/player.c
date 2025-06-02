@@ -78,6 +78,8 @@ void player_placeBlock(player_t *p, world_t *w, const block_t block) {
         newBlockPosition[1] = (int)raycastBlock.blockPosition[1] - moveDelta[1];
         newBlockPosition[2] = (int)raycastBlock.blockPosition[2] - moveDelta[2];
 
-        world_placeBlock(w, newBlockPosition[0], newBlockPosition[1], newBlockPosition[2], block);
-    }
+        if (!intersectsWithBlock(p->entity, newBlockPosition)) {
+            world_placeBlock(w, newBlockPosition[0], newBlockPosition[1], newBlockPosition[2], block);
+        }
+   }
 }
