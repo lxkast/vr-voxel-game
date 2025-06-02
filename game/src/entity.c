@@ -56,6 +56,13 @@ static aabb_t makeAABB(vec3 position, vec3 size) {
     return box;
 }
 
+bool intersectsWithBlock(const entity_t entity, ivec3 blockPosition) {
+    const aabb_t entityAABB = makeAABB(entity.position, entity.size);
+    const aabb_t blockAABB = makeAABB((vec3){(float)blockPosition[0], (float)blockPosition[1], (float)blockPosition[2]}, (vec3){1.f, 1.f, 1.f});
+
+    return intersects(entityAABB, blockAABB);
+}
+
 /**
  * @brief Handles a collision of an entity and a block along a specific axis. Tries to
  *        resolve collisions by updating deltaP so the entity never moves inside a block.

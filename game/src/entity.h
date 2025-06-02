@@ -29,6 +29,14 @@ typedef struct {
 } blockBounding_t;
 
 /**
+ * @brief Determines if two bounding boxes intersect in the X-axis
+ * @param entity the entity to check collisions with
+ * @param blockPosition the position of the block to check collisions with
+ * @return Whether box1 and box2 intersect in the X-axis
+ */
+bool intersectsWithBlock(entity_t entity, ivec3 blockPosition);
+
+/**
  * @brief Updates an entity's velocity based on world coordinates
  * @param entity The entity whose velocity we are updating
  * @param deltaV The amount we want to update that velocity by in x,y,z

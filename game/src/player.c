@@ -1,4 +1,16 @@
 #include "player.h"
+#include "GLFW/glfw3.h"
+#include "logging.h"
+
+static const int faceToBlock[6][3] = {{-1,0,0}, {1,0,0}, {0,-1,0}, {0,1,0}, {0,0,-1}, {0,0,1} };
+
+static bool onBlockCooldown(player_t *p) {
+    if (glfwGetTime() - p->blockCooldown < BLOCK_COOLDOWN_TIME) {
+        return true;
+    }
+    p->blockCooldown = glfwGetTime();
+    return false;
+}
 
 void player_init(player_t *p) {
     *p = (player_t){
@@ -36,4 +48,53 @@ void player_attachCamera(player_t *p, camera_t *camera) {
 
     p->entity.yaw = yaw;
     glm_vec3_copy(camera->ruf[2], p->lookVector);
+}
+
+void player_removeBlock(player_t *p, world_t *w) {
+    if (onBlockCooldown(p)) {
+        return;
+    }
+
+    vec3 camPos;
+
+    glm_vec3_add(p->entity.position, p->cameraOffset, camPos);
+
+    // remove minus sign later
+    vec3 lookVector;
+    glm_vec3_scale(p->lookVector, -1, lookVector);
+
+    const raycast_t raycastBlock = world_raycast(w, camPos, lookVector);
+
+    if (raycastBlock.found) {
+        world_removeBlock(w,(int)raycastBlock.blockPosition[0], (int)raycastBlock.blockPosition[1], (int)raycastBlock.blockPosition[2]);
+    }
+}
+
+void player_placeBlock(player_t *p, world_t *w, const block_t block) {
+    if (onBlockCooldown(p)) {
+        return;
+    }
+    vec3 camPos;
+
+    glm_vec3_add(p->entity.position, p->cameraOffset, camPos);
+
+    // remove minus sign later
+    vec3 lookVector;
+    glm_vec3_scale(p->lookVector, -1, lookVector);
+
+    const raycast_t raycastBlock = world_raycast(w, camPos, lookVector);
+
+    if (raycastBlock.found) {
+        const int *moveDelta = faceToBlock[raycastBlock.face];
+
+        ivec3 newBlockPosition;
+
+        newBlockPosition[0] = (int)raycastBlock.blockPosition[0] - moveDelta[0];
+        newBlockPosition[1] = (int)raycastBlock.blockPosition[1] - moveDelta[1];
+        newBlockPosition[2] = (int)raycastBlock.blockPosition[2] - moveDelta[2];
+
+        if (!intersectsWithBlock(p->entity, newBlockPosition)) {
+            world_placeBlock(w, newBlockPosition[0], newBlockPosition[1], newBlockPosition[2], block);
+        }
+   }
 }
