@@ -83,8 +83,8 @@ const float quadVertices[] = {
 const unsigned int quadVerticesSize = sizeof(quadVertices);
 
 const float xzFace[] = {
- 0.0f, 0.0f, 0.0f, 16.0f, 0.0f, 0.0f, 16.0f, 0.0f, 16.0f,
- 0.0f, 0.0f, 0.0f, 16.0f, 0.0f, 16.0f, 0.0f, 0.0f, 16.0f
+ 0.0f, 0.0f, 0.0f, 16.0f, 0.0f, 16.0f, 0.0f, 0.0f, 16.0f,
+ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 16.0f, 16.0f, 0.0f, 16.0f
 };
 
 const float yzFace[] = {

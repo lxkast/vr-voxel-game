@@ -38,9 +38,20 @@ float smoothValueNoise(const float x, const float y) {
  * @param c A pointer to a chunk
  */
 static void chunk_createMesh(chunk_t *c) {
-    glBindBuffer(GL_UNIFORM_BUFFER, c->ubo);
-    glBufferData(GL_UNIFORM_BUFFER, CHUNK_SIZE_CUBED * sizeof(int), c->blocks, GL_STATIC_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    glBindTexture(GL_TEXTURE_3D, c->blockTexture);
+    glBindTexture(GL_TEXTURE_3D, c->blockTexture);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_R32I, CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE, 0, GL_RED_INTEGER, GL_INT, c->blocks);
+    glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_R,GL_CLAMP_TO_EDGE);
+}
+
+static void chunk_createBuffers(chunk_t *c) {
+    glGenBuffers(1, &c->vbo);
+    glGenVertexArrays(1, &c->vao);
+    glGenTextures(1, &c->blockTexture);
 }
 
 void chunk_create(chunk_t *c, const int cx, const int cy, const int cz, const block_t block) {
@@ -53,10 +64,7 @@ void chunk_create(chunk_t *c, const int cx, const int cy, const int cz, const bl
         ptr[i] = block;
     }
 
-    glGenBuffers(1, &c->vbo);
-    glGenVertexArrays(1, &c->vao);
-    glGenBuffers(1, &c->ubo);
-
+    chunk_createBuffers(c);
     chunk_createMesh(c);
 }
 
@@ -84,9 +92,7 @@ void chunk_generate(chunk_t *c, int cx, int cy, int cz) {
         }
     }
 
-    glGenBuffers(1, &c->vbo);
-    glGenVertexArrays(1, &c->vao);
-    glGenBuffers(1, &c->ubo);
+    chunk_createBuffers(c);
     chunk_createMesh(c);
 }
 
@@ -97,14 +103,14 @@ void chunk_draw(const chunk_t *c, const int modelLocation) {
 
     glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
 
-    glBindBuffer(GL_UNIFORM_BUFFER, c->ubo);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, c->ubo);
+
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_3D, c->blockTexture);
     glDrawArrays(GL_TRIANGLES, 0, 16 * 3 * 2 * 3);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void chunk_free(const chunk_t *c) {
     glDeleteVertexArrays(1, &c->vao);
     glDeleteBuffers(1, &c->vbo);
-    glDeleteBuffers(1, &c->ubo);
+    glDeleteTextures(1, &c->blockTexture);
 }

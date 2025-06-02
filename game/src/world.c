@@ -111,11 +111,11 @@ void world_init(world_t *w) {
     if (!chunkVertices) {
         LOG_FATAL("chunkVertices malloc failed");
     }
-    const int faceFloats = 6 * 3;                 // 18 floats per face
-    const int faceBytes  = faceFloats * sizeof(float);
-    const int totalFaces          = 16 * 3;   // 48
-    const int totalFloats         = totalFaces * faceFloats;               // 48 * 18 = 864
-    const int totalBytes          = totalFloats * sizeof(float);
+    const int faceFloats = 6 * 3;
+    const int faceBytes = faceFloats * sizeof(float);
+    const int totalFaces = 16 * 3;
+    const int totalFloats = totalFaces * faceFloats;
+    const int totalBytes = totalFloats * sizeof(float);
     // xz faces
     for (int i = 0; i < 16; ++i) {
         float *dest = chunkVertices + (i * faceFloats);
@@ -135,7 +135,7 @@ void world_init(world_t *w) {
     }
     // xy faces
     for (int i = 0; i < 16; ++i) {
-        int faceIndex = i + 2 * 16;  // = i + 32
+        int faceIndex = i + 2 * 16;
         float *dest   = chunkVertices + (faceIndex * faceFloats);
         memcpy(dest, xyFace, faceBytes);
         for (int k = 0; k < 6; ++k) {
@@ -206,7 +206,7 @@ void world_doChunkLoading(world_t *w) {
         const int cy = w->chunkLoaders[i].y >> 4;
         const int cz = w->chunkLoaders[i].z >> 4;
 
-#define CHUNK_LOAD_RADIUS 4
+#define CHUNK_LOAD_RADIUS 3
         for (int x = -CHUNK_LOAD_RADIUS; x <= CHUNK_LOAD_RADIUS; x++) {
             for (int y = -CHUNK_LOAD_RADIUS; y <= CHUNK_LOAD_RADIUS; y++) {
                 for (int z = -CHUNK_LOAD_RADIUS; z <= CHUNK_LOAD_RADIUS; z++) {

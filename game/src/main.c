@@ -161,7 +161,7 @@ int main(void) {
     */
 
 
-    const GLuint texture = loadTextureRGBA("textures/textures.png", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
+    const GLuint texture = loadTextureRGBA("textures/atlas.png", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
 
 
     /*
@@ -232,6 +232,8 @@ int main(void) {
         const int modelLocation = glGetUniformLocation(program, "model");
         glPolygonMode(GL_FRONT_AND_BACK, wireframeView ? GL_LINE : GL_FILL);
         glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projection);
+        const int typesLocation = glGetUniformLocation(program, "uTypes");
+        glUniform1i(typesLocation, 3);
 
         if (postProcessingEnabled) {
             postProcess_bindBuffer(&postProcess.leftFramebuffer);
