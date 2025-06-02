@@ -1,8 +1,16 @@
 #include "player.h"
-
+#include "GLFW/glfw3.h"
 #include "logging.h"
 
 static const int faceToBlock[6][3] = {{-1,0,0}, {1,0,0}, {0,-1,0}, {0,1,0}, {0,0,-1}, {0,0,1} };
+
+static bool onBlockCooldown(player_t *p) {
+    if (glfwGetTime() - p->blockCooldown < BLOCK_COOLDOWN_TIME) {
+        return true;
+    }
+    p->blockCooldown = glfwGetTime();
+    return false;
+}
 
 void player_init(player_t *p) {
     *p = (player_t){
@@ -43,6 +51,10 @@ void player_attachCamera(player_t *p, camera_t *camera) {
 }
 
 void player_removeBlock(player_t *p, world_t *w) {
+    if (onBlockCooldown(p)) {
+        return;
+    }
+
     vec3 camPos;
 
     glm_vec3_add(p->entity.position, p->cameraOffset, camPos);
@@ -59,6 +71,9 @@ void player_removeBlock(player_t *p, world_t *w) {
 }
 
 void player_placeBlock(player_t *p, world_t *w, const block_t block) {
+    if (onBlockCooldown(p)) {
+        return;
+    }
     vec3 camPos;
 
     glm_vec3_add(p->entity.position, p->cameraOffset, camPos);

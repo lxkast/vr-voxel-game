@@ -4,6 +4,8 @@
 #include "camera.h"
 #include "entity.h"
 
+#define BLOCK_COOLDOWN_TIME 0.5
+
 /**
  * @brief A struct containing player data.
  */
@@ -14,6 +16,8 @@ typedef struct {
     vec3 lookVector;
     /// The displacement of the camera from the player
     vec3 cameraOffset;
+
+    double blockCooldown;
 } player_t;
 
 /**
