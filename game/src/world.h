@@ -133,14 +133,4 @@ void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, bl
  * @return whether the raycast was successful - found = False mean no block was found, otherwise found = true
  *         and block = found block
  */
-raycast_t world_raycast(world_t *w, const vec3 startPosition, const vec3 viewDirection);
-
-/**
- * @brief Performs raycasting from a point at a specific angle
- * @param w a pointer to the world
- * @param startPosition the position to start the raycast from
- * @param viewDirection the direction to raycast along
- * @return whether the raycast was successful - found = False mean no block was found, otherwise found = true
- *         and block = found block
- */
-raycast_t world_raycastDDA(world_t *w, vec3 startPosition, vec3 viewDirection);
+raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection);
