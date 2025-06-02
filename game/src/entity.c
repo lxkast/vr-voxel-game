@@ -2,6 +2,8 @@
 
 #define vec3_SIZE 12
 #define VELOCITY_CUTOFF 0.05f
+#define GROUND_FRICTION_CONSTANT 0.4f
+#define AIR_FRICTION_CONSTANT 0.8f
 
 /**
  * @brief Determines if two bounding boxes intersect in the X-axis
@@ -202,9 +204,9 @@ static float velocityCutoff(const float velocity) {
 void updateVelocity(entity_t *entity, vec3 deltaV) {
     glm_vec3_add(entity->velocity, deltaV, entity->velocity);
 
-    entity->velocity[0] = velocityCutoff(clamp(entity->velocity[0], -MAX_ABS_X_VELOCITY, MAX_ABS_X_VELOCITY));
-    entity->velocity[1] = velocityCutoff(clamp(entity->velocity[1], -MAX_ABS_Y_VELOCITY, MAX_ABS_Y_VELOCITY));
-    entity->velocity[2] = velocityCutoff(clamp(entity->velocity[2], -MAX_ABS_Z_VELOCITY, MAX_ABS_Z_VELOCITY));
+    entity->velocity[0] = velocityCutoff(entity->velocity[0]);
+    entity->velocity[1] = velocityCutoff(entity->velocity[1]);
+    entity->velocity[2] = velocityCutoff(entity->velocity[2]);
 }
 
 void changeRUFtoXYZ(vec3 directionVector, const float yaw) {
@@ -229,12 +231,23 @@ static blockBounding_t getBlockBounding(world_t *w, vec3 position) {
 }
 
 void processEntity(world_t *w, entity_t *entity, const double dt) {
+    // handling friction
+
+    if (entity->grounded) {
+        const float frictionFactor = powf(GROUND_FRICTION_CONSTANT, (float)dt / 0.25f);
+        entity->velocity[0] = velocityCutoff(entity->velocity[0] * frictionFactor);
+        entity->velocity[2] = velocityCutoff(entity->velocity[2] * frictionFactor);
+    } else {
+        const float frictionFactor = powf(AIR_FRICTION_CONSTANT, (float)dt / 0.25f);
+        entity->velocity[0] = velocityCutoff(entity->velocity[0] * frictionFactor);
+        entity->velocity[2] = velocityCutoff(entity->velocity[2] * frictionFactor);    }
+
     vec3 deltaV;
-    glm_vec3_scale(entity->acceleration, dt, deltaV);
+    glm_vec3_scale(entity->acceleration, (float)dt, deltaV);
     updateVelocity(entity, deltaV);
 
     vec3 deltaP;
-    glm_vec3_scale(entity->velocity, dt, deltaP);
+    glm_vec3_scale(entity->velocity, (float)dt, deltaP);
 
     moveEntity(w, entity, deltaP);
 }

@@ -4,10 +4,6 @@
 #include <stdbool.h>
 #include "world.h"
 
-#define MAX_ABS_X_VELOCITY 2.0f
-#define MAX_ABS_Y_VELOCITY 5.0f
-#define MAX_ABS_Z_VELOCITY 2.0f
-
 typedef struct {
     vec3 position;
     vec3 velocity;
@@ -15,7 +11,7 @@ typedef struct {
     vec3 acceleration;
     bool grounded;
     // stored in radians
-    float yaw;    // rename to orientation?
+    float yaw;
 } entity_t;
 
 typedef struct {
