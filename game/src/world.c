@@ -321,33 +321,35 @@ raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection) {
 
     // stores the amount we must move along the ray to get to the next edge
     // in each direction
-    vec3 oneBlockMoveDist;
+    vec3 axisMoveDelta;
 
-    oneBlockMoveDist[0] = (viewNormalised[0] == 0) ? 1e5f : fabsf(1 / viewNormalised[0]);
-    oneBlockMoveDist[1] = (viewNormalised[1] == 0) ? 1e5f : fabsf(1 / viewNormalised[1]);
-    oneBlockMoveDist[2] = (viewNormalised[2] == 0) ? 1e5f : fabsf(1 / viewNormalised[2]);
+    axisMoveDelta[0] = (viewNormalised[0] == 0) ? 1e5f : fabsf(1 / viewNormalised[0]);
+    axisMoveDelta[1] = (viewNormalised[1] == 0) ? 1e5f : fabsf(1 / viewNormalised[1]);
+    axisMoveDelta[2] = (viewNormalised[2] == 0) ? 1e5f : fabsf(1 / viewNormalised[2]);
 
+    // calculates which direction we move in along each axis
     vec3 stepDirection;
     stepDirection[0] = viewNormalised[0] < 0 ? -1.0f : 1.0f;
     stepDirection[1] = viewNormalised[1] < 0 ? -1.0f : 1.0f;
     stepDirection[2] = viewNormalised[2] < 0 ? -1.0f : 1.0f;
 
     // Calculating initial distances to next block
-    vec3 nextBlockDists;
+    vec3 distToNextBlock;
 
-    nextBlockDists[0] = viewNormalised[0] < 0 ? startPosition[0] - currentBlock[0] : currentBlock[0] + 1 - startPosition[0];
-    nextBlockDists[1] = viewNormalised[1] < 0 ? startPosition[1] - currentBlock[1] : currentBlock[1] + 1 - startPosition[1];
-    nextBlockDists[2] = viewNormalised[2] < 0 ? startPosition[2] - currentBlock[2] : currentBlock[2] + 1 - startPosition[2];
+    distToNextBlock[0] = viewNormalised[0] < 0 ? startPosition[0] - currentBlock[0] : currentBlock[0] + 1 - startPosition[0];
+    distToNextBlock[1] = viewNormalised[1] < 0 ? startPosition[1] - currentBlock[1] : currentBlock[1] + 1 - startPosition[1];
+    distToNextBlock[2] = viewNormalised[2] < 0 ? startPosition[2] - currentBlock[2] : currentBlock[2] + 1 - startPosition[2];
 
-    nextBlockDists[0] *= oneBlockMoveDist[0];
-    nextBlockDists[1] *= oneBlockMoveDist[1];
-    nextBlockDists[2] *= oneBlockMoveDist[2];
+    distToNextBlock[0] *= axisMoveDelta[0];
+    distToNextBlock[1] *= axisMoveDelta[1];
+    distToNextBlock[2] *= axisMoveDelta[2];
 
     float totalDistance = 0;
 
     raycastFace_e currentFace = POS_X_FACE;
 
     while (totalDistance < MAX_RAYCAST_DISTANCE) {
+        // checks for a solid block
         if (getBlockType(w, currentBlock) != BL_AIR) {
             return (raycast_t){
                 .blockPosition = {currentBlock[0], currentBlock[1], currentBlock[2]},
@@ -356,20 +358,21 @@ raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection) {
             };
         }
 
-        if (nextBlockDists[0] < nextBlockDists[1] && nextBlockDists[0] < nextBlockDists[2]) {
+        // steps to the next closest block
+        if (distToNextBlock[0] < distToNextBlock[1] && distToNextBlock[0] < distToNextBlock[2]) {
             // Step in X direction
-            totalDistance = nextBlockDists[0];
-            nextBlockDists[0] += oneBlockMoveDist[0];
+            totalDistance = distToNextBlock[0];
+            distToNextBlock[0] += axisMoveDelta[0];
             currentBlock[0] += stepDirection[0];
             if (stepDirection[0] == 1) {
                 currentFace = NEG_X_FACE;
             } else {
                 currentFace = POS_X_FACE;
             }
-        } else if (nextBlockDists[1] < nextBlockDists[2]) {
+        } else if (distToNextBlock[1] < distToNextBlock[2]) {
             // Step in Y direction
-            totalDistance = nextBlockDists[1];
-            nextBlockDists[1] += oneBlockMoveDist[1];
+            totalDistance = distToNextBlock[1];
+            distToNextBlock[1] += axisMoveDelta[1];
             currentBlock[1] += stepDirection[1];
             if (stepDirection[1] == 1) {
                 currentFace = NEG_Y_FACE;
@@ -378,8 +381,8 @@ raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection) {
             }
         } else {
             // Step in Z direction
-            totalDistance = nextBlockDists[2];
-            nextBlockDists[2] += oneBlockMoveDist[2];
+            totalDistance = distToNextBlock[2];
+            distToNextBlock[2] += axisMoveDelta[2];
             currentBlock[2] += stepDirection[2];
             if (stepDirection[2] == 1) {
                 currentFace = NEG_Z_FACE;
@@ -391,6 +394,7 @@ raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection) {
 
     return (raycast_t){
         .blockPosition = {0, 0, 0},
+        .face = POS_X_FACE,
         .found = false
     };
 }
