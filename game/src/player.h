@@ -12,7 +12,7 @@ typedef struct {
     entity_t entity;
     /// Where the player is looking relative to the horizontal in radians
     float cameraPitch;
-    /// Where in the player the camera will be placed
+    /// The displacement of the camera from the player
     vec3 cameraOffset;
 } player_t;
 
