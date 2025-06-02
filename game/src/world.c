@@ -106,6 +106,24 @@ static void loadChunk(world_t *w, const int cx, const int cy, const int cz) {
     cv->reloaded = true;
 }
 
+static bool getBlockAddr(world_t *w, int x, int y, int z, block_t **block, chunk_t **chunk) {
+    const int cx = x >> 4;
+    const int cy = y >> 4;
+    const int cz = z >> 4;
+
+    size_t offset;
+    cluster_t *cluster = clusterGet(w, cx, cy, cz, false, &offset);
+    if (!cluster) return false;
+
+    const chunkValue_t cv = cluster->cells[offset];
+    if (!cv.chunk) return false;
+
+    *chunk = cv.chunk;
+    *block = &cv.chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)];
+
+    return true;
+}
+
 void world_init(world_t *w) {
     w->clusterTable = NULL;
 }
@@ -197,28 +215,25 @@ void world_doChunkLoading(world_t *w) {
     }
 }
 
-bool world_getBlock(world_t *w, vec3 pos, blockData_t *bd) {
-    const int x = (int)floorf(pos[0]);
-    const int y = (int)floorf(pos[1]);
-    const int z = (int)floorf(pos[2]);
+bool world_getBlocki(world_t *w, int x, int y, int z, blockData_t *bd) {
+    block_t *block;
+    chunk_t *chunk;
+    if (!getBlockAddr(w, x, y, z, &block, &chunk)) return false;
 
-    const int cx = x >> 4;
-    const int cy = y >> 4;
-    const int cz = z >> 4;
-
-    size_t offset;
-    cluster_t *cluster = clusterGet(w, cx, cy, cz, false, &offset);
-    if (!cluster) return false;
-
-    const chunkValue_t cv = cluster->cells[offset];
-    if (!cv.chunk) return false;
-
-    bd->type = cv.chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)];
+    bd->type = *block;
     bd->x = x;
     bd->y = y;
     bd->z = z;
 
     return true;
+}
+
+bool world_getBlock(world_t *w, vec3 pos, blockData_t *bd) {
+    const int x = (int)floorf(pos[0]);
+    const int y = (int)floorf(pos[1]);
+    const int z = (int)floorf(pos[2]);
+
+    return world_getBlocki(w, x, y, z, bd);
 }
 
 void world_getAdjacentBlocks(world_t *w, vec3 position, blockData_t *buf) {
@@ -257,4 +272,26 @@ void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, bl
             }
         }
     }
+}
+
+bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
+    block_t *bp;
+    chunk_t *cp;
+    if (!getBlockAddr(w, x, y, z, &bp, &cp)) return false;
+
+    if (*bp == BL_AIR) return false;
+
+    *bp = BL_AIR;
+    cp->tainted = true;
+}
+
+bool world_placeBlock(world_t *w, int x, int y, int z, block_t block) {
+    block_t *bp;
+    chunk_t *cp;
+    if (!getBlockAddr(w, x, y, z, &bp, &cp)) return false;
+
+    if (*bp != BL_AIR) return false;
+
+    *bp = block;
+    cp->tainted = true;
 }
