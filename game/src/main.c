@@ -270,16 +270,6 @@ int main(void) {
             glm_vec3_add(player.entity.position, player.cameraOffset, camPos);
             camera_setPos(&camera, camPos);
 
-            vec3 viewDirection;
-            getViewDirection(&player, viewDirection);
-            raycast_t raycast = world_raycast(&world, camPos, viewDirection);
-
-            if (raycast.found) {
-                LOG_DEBUG("Raycast found! Block at: x: %f y: %f z: %f", raycast.blockPosition[0], raycast.blockPosition[1], raycast.blockPosition[2]);
-            } else {
-                LOG_DEBUG("Raycast not found!");
-            }
-
             vec3 BlockPosition;
             vec3 sub1 = {0.f,1.f,0.f};
             glm_vec3_sub(player.entity.position, sub1, BlockPosition);
