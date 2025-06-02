@@ -96,10 +96,13 @@ void chunk_generate(chunk_t *c, int cx, int cy, int cz) {
     chunk_createMesh(c);
 }
 
-void chunk_draw(const chunk_t *c, const int modelLocation) {
+void chunk_draw(chunk_t *c, const int modelLocation) {
     if (c->allAir) {
         return;
     }
+    if (c->tainted) chunk_createMesh(c);
+    c->tainted = false;
+
     mat4 model;
     const vec3 cPos = { c->cx * CHUNK_SIZE, c->cy * CHUNK_SIZE, c->cz * CHUNK_SIZE };
     glm_translate_make(model, cPos);

@@ -8,12 +8,16 @@
 #include "shaderutil.h"
 #include "texture.h"
 #include "world.h"
+#include "entity.h"
+#include "player.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #define MINOR_VERSION 2
 #else
 #define MINOR_VERSION 1
 #endif
+
+#define FRICTION_CONSTANT 1
 
 #define EYE_OFFSET 0.032f
 #define SCREEN_WIDTH 1024
@@ -23,21 +27,36 @@
 
 static double previousMouse[2];
 
+static void processPlayerInput(GLFWwindow *window, player_t *player) {
+    vec3 acceleration = { 0.f, -10.f, 0.f };
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        acceleration[2] += 7.f;  // Forward
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        acceleration[2] -= 7.f;  // Backward
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        acceleration[0] -= 7.f;  // Left
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        acceleration[0] += 7.f;  // Right
+    }
+
+    changeRUFtoXYZ(acceleration, player->entity.yaw);
+
+    if (player->entity.grounded) {
+        vec3 frictionDelta = {FRICTION_CONSTANT * player->entity.velocity[0], 0.f, FRICTION_CONSTANT * player->entity.velocity[2]};
+
+        glm_vec3_sub(acceleration, frictionDelta, acceleration);
+    }
+
+    glm_vec3_copy(acceleration, player->entity.acceleration);
+}
+
 static void processCameraInput(GLFWwindow *window, camera_t *camera) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        camera_translateZ(camera, -0.15f);
-    }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        camera_translateZ(camera, 0.15f);
-    }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        camera_translateX(camera, -0.15f);
-    }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        camera_translateX(camera, 0.15f);
     }
 
     double currentMouse[2];
@@ -139,8 +158,6 @@ int main(void) {
         "shaders/chunk.vert",
         "shaders/chunk.frag"
     );
-    int chunkDataIndex = glGetUniformBlockIndex(program, "ChunkData");
-    glUniformBlockBinding(program, chunkDataIndex, 0);
 
     GLuint postProcessProgram;
     BUILD_SHADER_PROGRAM(
@@ -202,7 +219,7 @@ int main(void) {
     // Camera setup
     camera_t camera;
     camera_init(&camera);
-    vec3 p = { 0.f, 18.f, 0.f };
+    vec3 p = { 0.f, 15.f, 0.f };
     camera_setPos(&camera, p);
 
     // World setup
@@ -215,16 +232,35 @@ int main(void) {
     world_updateChunkLoader(&world, spawnLoader, GLM_VEC3_ZERO);
     world_updateChunkLoader(&world, cameraLoader, GLM_VEC3_ZERO);
 
+    player_t player;
+    player_init(&player);
+
+    double prevTime = glfwGetTime();
 
     postProcess_t postProcess;
     postProcess_init(&postProcess, postProcessProgram, screenWidth, screenHeight);
 
-    double lastTime = glfwGetTime();
     while (!glfwWindowShouldClose(window)) {
-        world_doChunkLoading(&world);
-        world_updateChunkLoader(&world, cameraLoader, camera.eye);
         processInput(window);
+        processPlayerInput(window, &player);
         processCameraInput(window, &camera);
+        world_doChunkLoading(&world);
+
+        world_updateChunkLoader(&world, cameraLoader, camera.eye);
+
+        const double currentTime = glfwGetTime();
+        const double dt = currentTime - prevTime;
+        prevTime = currentTime;
+
+        processEntity(&world, &player.entity, dt);
+        player_attachCamera(&player, &camera);
+
+
+        glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+
         glUseProgram(program);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
@@ -262,6 +298,9 @@ int main(void) {
             camera_translateX(&camera, -EYE_OFFSET);
         }
 
+        glUseProgram(0);
+
+
         glfwPollEvents();
         glfwSwapBuffers(window);
 
@@ -269,9 +308,7 @@ int main(void) {
         while ((err = glGetError()) != GL_NO_ERROR) {
             LOG_ERROR("OpenGL error: %d", err);
         }
-        double currentTime = glfwGetTime();
-        LOG_DEBUG("FPS: %f", 1/(currentTime - lastTime));
-        lastTime = currentTime;
+        LOG_DEBUG("FPS: %f", 1/(dt));
     }
 
     world_free(&world);
