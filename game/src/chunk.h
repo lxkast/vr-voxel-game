@@ -19,6 +19,8 @@ typedef struct {
     GLuint blockTexture;
     /// Holds whether the mesh needs to be regenerated.
     bool tainted;
+    /// Holds whether the chunk is made entirely of air blocks.
+    bool allAir;
 } chunk_t;
 
 /**

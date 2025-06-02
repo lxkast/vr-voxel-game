@@ -52,6 +52,7 @@ void chunk_create(chunk_t *c, const int cx, const int cy, const int cz, const bl
     c->cx = cx;
     c->cy = cy;
     c->cz = cz;
+    c->allAir = block == BL_AIR;
 
     int *ptr = c->blocks;
     for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE; i++) {
@@ -66,6 +67,7 @@ void chunk_generate(chunk_t *c, int cx, int cy, int cz) {
     c->cx = cx;
     c->cy = cy;
     c->cz = cz;
+    c->allAir = true;
 
     int (*ptr)[CHUNK_SIZE][CHUNK_SIZE] = (int (*)[CHUNK_SIZE][CHUNK_SIZE]) c->blocks;
     for (int x = 0; x < CHUNK_SIZE; x++) {
@@ -79,8 +81,10 @@ void chunk_generate(chunk_t *c, int cx, int cy, int cz) {
             for (int y = 0; y < CHUNK_SIZE; y++) {
                 if (cy * CHUNK_SIZE + y == (int)height) {
                     ptr[x][y][z] = BL_GRASS;
+                    c->allAir = false;
                 } else if (cy * CHUNK_SIZE + y < height){
                     ptr[x][y][z] = BL_DIRT;
+                    c->allAir = false;
                 } else {
                     ptr[x][y][z] = BL_AIR;
                 }
@@ -93,6 +97,9 @@ void chunk_generate(chunk_t *c, int cx, int cy, int cz) {
 }
 
 void chunk_draw(const chunk_t *c, const int modelLocation) {
+    if (c->allAir) {
+        return;
+    }
     mat4 model;
     const vec3 cPos = { c->cx * CHUNK_SIZE, c->cy * CHUNK_SIZE, c->cz * CHUNK_SIZE };
     glm_translate_make(model, cPos);
