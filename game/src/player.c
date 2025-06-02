@@ -1,5 +1,7 @@
 #include "player.h"
 
+#include "logging.h"
+
 void player_init(player_t *p) {
     *p = (player_t){
         .entity = {
@@ -36,4 +38,24 @@ void player_attachCamera(player_t *p, camera_t *camera) {
 
     p->entity.yaw = yaw;
     glm_vec3_copy(camera->ruf[2], p->lookVector);
+}
+
+void player_removeBlock(player_t *p, world_t *w) {
+    vec3 camPos;
+
+    glm_vec3_add(p->entity.position, p->cameraOffset, camPos);
+
+    LOG_DEBUG("Look Vector: %f %f %f", p->lookVector[0], p->lookVector[1], p->lookVector[2]);
+
+    vec3 lookVector;
+    glm_vec3_scale(p->lookVector, -1, lookVector);
+
+    const raycast_t raycastBlock = world_raycast(w, camPos, lookVector);
+
+    LOG_DEBUG("Block at %d %d %d",(int)raycastBlock.blockPosition[0], (int)raycastBlock.blockPosition[1], (int)raycastBlock.blockPosition[2]);
+
+    if (raycastBlock.found) {
+        LOG_DEBUG("Breaking Block");
+        world_removeBlock(w,(int)raycastBlock.blockPosition[0], (int)raycastBlock.blockPosition[1], (int)raycastBlock.blockPosition[2]);
+    }
 }

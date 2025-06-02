@@ -27,7 +27,7 @@
 
 static double previousMouse[2];
 
-static void processPlayerInput(GLFWwindow *window, player_t *player) {
+static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
     vec3 acceleration = { 0.f, -10.f, 0.f };
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
@@ -41,6 +41,11 @@ static void processPlayerInput(GLFWwindow *window, player_t *player) {
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
         acceleration[0] += 7.f;  // Right
+    }
+
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+        LOG_DEBUG("Breaking Block");
+        player_removeBlock(player, w);
     }
 
     changeRUFtoXYZ(acceleration, player->entity.yaw);
@@ -242,7 +247,7 @@ int main(void) {
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
-        processPlayerInput(window, &player);
+        processPlayerInput(window, &player, &world);
         processCameraInput(window, &camera);
         world_doChunkLoading(&world);
 

@@ -28,3 +28,5 @@ void player_init(player_t *p);
  * @param camera A pointer to a camera
  */
 void player_attachCamera(player_t *p, camera_t *camera);
+
+void player_removeBlock(player_t *p, world_t *w);
