@@ -4,12 +4,12 @@
 
 static const int faceToBlock[6][3] = {{-1,0,0}, {1,0,0}, {0,-1,0}, {0,1,0}, {0,0,-1}, {0,0,1} };
 
+static void setBlockCooldown(player_t *p) {
+    p->blockCooldown = glfwGetTime() + BLOCK_COOLDOWN_TIME;
+}
+
 static bool onBlockCooldown(player_t *p) {
-    if (glfwGetTime() - p->blockCooldown < BLOCK_COOLDOWN_TIME) {
-        return true;
-    }
-    p->blockCooldown = glfwGetTime();
-    return false;
+    return glfwGetTime() < p->blockCooldown;
 }
 
 void player_init(player_t *p) {
@@ -67,6 +67,7 @@ void player_removeBlock(player_t *p, world_t *w) {
 
     if (raycastBlock.found) {
         world_removeBlock(w,(int)raycastBlock.blockPosition[0], (int)raycastBlock.blockPosition[1], (int)raycastBlock.blockPosition[2]);
+        setBlockCooldown(p);
     }
 }
 
@@ -95,6 +96,7 @@ void player_placeBlock(player_t *p, world_t *w, const block_t block) {
 
         if (!intersectsWithBlock(p->entity, newBlockPosition)) {
             world_placeBlock(w, newBlockPosition[0], newBlockPosition[1], newBlockPosition[2], block);
+            setBlockCooldown(p);
         }
    }
 }
