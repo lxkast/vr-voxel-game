@@ -4,11 +4,9 @@
 #include <stdlib.h>
 #include "chunk.h"
 #include "entity.h"
-#include "vertices.h"
 
 #define MAX_RAYCAST_DISTANCE 6.f
 #define RAYCAST_STEP_MAGNITUDE 0.1f
-
 
 /**
  * @brief Key for hash table
@@ -30,7 +28,7 @@ typedef struct {
 /**
  * @brief A cluster and also hashmap
  * @note A cluster is essentially a group of adjacent chunks
-*/
+ */
 typedef struct _s_cluster {
     /// The key to the hashmap entry
     clusterKey_t key;
@@ -131,54 +129,10 @@ static bool getBlockAddr(world_t *w, int x, int y, int z, block_t **block, chunk
 
 void world_init(world_t *w) {
     w->clusterTable = NULL;
-    float *chunkVertices = malloc(sizeof(float) * 6 * 17 * 3 * 3);
-    if (!chunkVertices) {
-        LOG_FATAL("chunkVertices malloc failed");
-    }
-    const int faceFloats = 6 * 3;
-    const int faceBytes = faceFloats * sizeof(float);
-    const int totalFaces = 17 * 3;
-    const int totalFloats = totalFaces * faceFloats;
-    const int totalBytes = totalFloats * sizeof(float);
-    // xz faces
-    for (int i = 0; i < 17; ++i) {
-        float *dest = chunkVertices + (i * faceFloats);
-        memcpy(dest, xzFace, faceBytes);
-        for (int k = 0; k < 6; ++k) {
-            dest[k * 3 + 1] = (float)i;
-        }
-    }
-    // yz faces
-    for (int i = 0; i < 17; ++i) {
-        int faceIndex = i + 17;
-        float *dest   = chunkVertices + (faceIndex * faceFloats);
-        memcpy(dest, yzFace, faceBytes);
-        for (int k = 0; k < 6; ++k) {
-            dest[k * 3 + 0] = (float)i;
-        }
-    }
-    // xy faces
-    for (int i = 0; i < 17; ++i) {
-        int faceIndex = i + 2 * 17;
-        float *dest   = chunkVertices + (faceIndex * faceFloats);
-        memcpy(dest, xyFace, faceBytes);
-        for (int k = 0; k < 6; ++k) {
-            dest[k * 3 + 2] = (float)i;
-        }
-    }
-    glGenVertexArrays(1, &w->chunkVao);
-    glGenBuffers(1, &w->chunkVbo);
-    glBindVertexArray(w->chunkVao);
-    glBindBuffer(GL_ARRAY_BUFFER, w->chunkVbo);
-    glBufferData(GL_ARRAY_BUFFER, totalBytes, chunkVertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    free(chunkVertices);
 }
 
 void world_draw(const world_t *w, const int modelLocation) {
     cluster_t *cluster, *tmp;
-    glBindVertexArray(w->chunkVao);
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
         for (int i = 0; i < C_T * C_T * C_T; i++)
             if (cluster->cells[i].chunk)

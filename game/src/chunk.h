@@ -15,12 +15,14 @@ typedef struct {
     int cx, cy, cz;
     /// The array of blocks in the chunk.
     block_t blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
-    /// The 3D array of blocks as a 3D texture
-    GLuint blockTexture;
+    /// The VBO that holds the mesh.
+    GLuint vbo;
+    /// The VAO that is used for drawing.
+    GLuint vao;
+    /// Number of vertices in the current mesh
+    int meshVertices;
     /// Holds whether the mesh needs to be regenerated.
     bool tainted;
-    /// Holds whether the chunk is made entirely of air blocks.
-    bool allAir;
 } chunk_t;
 
 /**
@@ -49,6 +51,6 @@ void chunk_generate(chunk_t *c, int cx, int cy, int cz);
  * @param c A pointer to a chunk
  * @param modelLocation The location of the model matrix in the shader program
  */
-void chunk_draw(chunk_t *c, const int modelLocation);
+void chunk_draw(chunk_t *c, int modelLocation);
 
 void chunk_free(const chunk_t *c);
