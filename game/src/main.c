@@ -24,27 +24,48 @@
 #define USING_RASPBERRY_PI false
 
 #define SPRINT_MULTIPLIER 1.3f
-#define ACCELERATION 9.f
+#define GROUND_ACCELERATION 9.f
+#define AIR_ACCELERATION 3.f
+
+#define GRAVITY_ACCELERATION (-10.f)
 
 static double previousMouse[2];
 
 static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
-    vec3 acceleration = { 0.f, -10.f, 0.f };
+    vec3 acceleration = { 0.f, GRAVITY_ACCELERATION, 0.f };
 
     const float sprintMultiplier = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? SPRINT_MULTIPLIER : 1.f ;
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        acceleration[2] += ACCELERATION * sprintMultiplier;  // Forward
+        if (player->entity.grounded) {
+            acceleration[2] += GROUND_ACCELERATION * sprintMultiplier;  // Forward
+        } else {
+            acceleration[2] += AIR_ACCELERATION * sprintMultiplier;  // Forward
+        }
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        acceleration[2] -= ACCELERATION * sprintMultiplier;  // Backward
+        if (player->entity.grounded) {
+            acceleration[2] -= GROUND_ACCELERATION * sprintMultiplier;  // Backward
+        } else {
+            acceleration[2] -= AIR_ACCELERATION * sprintMultiplier;  // Backward
+        }
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        acceleration[0] -= ACCELERATION * sprintMultiplier;  // Left
+        if (player->entity.grounded) {
+            acceleration[0] -= GROUND_ACCELERATION * sprintMultiplier;  // Left
+        } else {
+            acceleration[0] -= AIR_ACCELERATION * sprintMultiplier;  // Left
+        }
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        acceleration[0] += ACCELERATION * sprintMultiplier;  // Right
+        if (player->entity.grounded) {
+            acceleration[0] += GROUND_ACCELERATION * sprintMultiplier;  // Right
+        } else {
+            acceleration[0] += AIR_ACCELERATION * sprintMultiplier;  // Right
+        }
     }
+
+
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && player->entity.grounded) {
         player->entity.velocity[1] = 5;
         player->entity.grounded = false;

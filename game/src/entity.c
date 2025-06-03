@@ -2,8 +2,8 @@
 
 #define vec3_SIZE 12
 #define VELOCITY_CUTOFF 0.05f
-#define GROUND_FRICTION_CONSTANT 0.4f
-#define AIR_FRICTION_CONSTANT 0.8f
+#define GROUND_FRICTION_CONSTANT 0.5f
+#define AIR_FRICTION_CONSTANT 0.9f
 
 /**
  * @brief Determines if two bounding boxes intersect in the X-axis
