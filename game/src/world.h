@@ -11,6 +11,9 @@
 #define C_T 8
 #define LOG_C_T 3
 
+#define FOG_START 50.f
+#define FOG_END 75.f
+
 /**
  * @brief A struct that holds data about the world.
  */
@@ -53,8 +56,9 @@ typedef struct {
 /**
  * @brief Initialises a world struct.
  * @param w A pointer to a world
+ * @param program A shader program for setting effects
  */
-void world_init(world_t *w);
+void world_init(world_t *w, GLuint program);
 
 /**
  * @brief Draws the world.

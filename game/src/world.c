@@ -127,8 +127,16 @@ static bool getBlockAddr(world_t *w, int x, int y, int z, block_t **block, chunk
     return true;
 }
 
-void world_init(world_t *w) {
+static void fogInit(world_t *w, const GLuint program) {
+    glUseProgram(program);
+    glUniform1f(glGetUniformLocation(program, "fogStart"), FOG_START);
+    glUniform1f(glGetUniformLocation(program, "fogEnd"), FOG_END);
+    glUseProgram(0);
+}
+
+void world_init(world_t *w, const GLuint program) {
     w->clusterTable = NULL;
+    fogInit(w, program);
 }
 
 void world_draw(const world_t *w, const int modelLocation) {
