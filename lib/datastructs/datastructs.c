@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../logging/logging.h"
 
 #define RESIZE_UP_THRESHOLD 0.75
 #define RESIZE_DOWN_THRESHOLD 0.25
@@ -26,6 +27,9 @@ static void resize(hashmap *map, const int new_capacity) {
     hashmapElement **old = map->data;
     const int old_capacity = map->capacity;
     map->data = malloc(sizeof(hashmapElement *) * new_capacity);
+    if (!map->data) {
+        LOG_FATAL("Failed to malloc map data in resize");
+    }
     memset(map->data, 0, sizeof(hashmapElement *) * new_capacity);
     map->capacity = new_capacity;
 
@@ -85,6 +89,9 @@ bool hashmap_setElement(hashmap *hashmap, const char *name, void *data) {
     }
 
     hashmapElement *newElement = malloc(sizeof(hashmapElement));
+    if (!newElement) {
+        LOG_FATAL("Failed to malloc newElement in hashmap_setElement");
+    }
     newElement->name = strdup(name);
     newElement->data = data;
     newElement->next = NULL;
@@ -129,6 +136,9 @@ void hashmap_init(hashmap *hashmap, const int capacity) {
     hashmap->capacity = capacity;
     hashmap->size = 0;
     hashmap->data = malloc(sizeof(hashmapElement *) * capacity);
+    if (!hashmap->data) {
+        LOG_FATAL("Failed to mallloc hashmap data in hashmap_init");
+    }
     memset(hashmap->data, 0, sizeof(hashmapElement *) * capacity);
 }
 
@@ -136,6 +146,9 @@ void arraylist_init(resizingArrayList_t *arrList, const int capacity) {
     arrList->capacity = capacity;
     arrList->size = 0;
     arrList->data = malloc(sizeof(resizingArrayList_t *) * capacity);
+    if (!arrList->data) {
+        LOG_FATAL("Failed to mallloc arrayList data in arraylist_init");
+    }
 }
 
 void arraylist_free(resizingArrayList_t *arrList) {
@@ -143,9 +156,12 @@ void arraylist_free(resizingArrayList_t *arrList) {
     arrList->capacity = 0;
 }
 
-static void arraylist_resize(resizingArrayList_t *arrayList, int newCapacity) {
-    arrayList->data = realloc(arrayList->data, sizeof(resizingArrayList_t *) * newCapacity);
-    arrayList->capacity = newCapacity;
+static void arraylist_resize(resizingArrayList_t *arrList, const int newCapacity) {
+    arrList->data = realloc(arrList->data, sizeof(resizingArrayList_t *) * newCapacity);
+    if (!arrList->data) {
+        LOG_FATAL("Failed to realloc arrayList data in arraylist_resize");
+    }
+    arrList->capacity = newCapacity;
 }
 
 void arraylist_append(resizingArrayList_t *arrList, void *element) {
