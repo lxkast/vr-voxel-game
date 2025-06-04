@@ -22,14 +22,14 @@ static unsigned long hash_str(const char *str) {
     return hash;
 }
 
-static void resize(hashmap *map, int new_capacity) {
+static void resize(hashmap *map, const int new_capacity) {
     hashmapElement **old = map->data;
-    int old_capacity = map->capacity;
+    const int old_capacity = map->capacity;
     map->data = malloc(sizeof(hashmapElement *) * new_capacity);
     memset(map->data, 0, sizeof(hashmapElement *) * new_capacity);
     map->capacity = new_capacity;
 
-    for (uint32_t i = 0; i < old_capacity; i++) {
+    for (int i = 0; i < old_capacity; i++) {
         hashmapElement *current = old[i];
         while (current) {
             hashmap_setElement(map, current->name, current->data);
@@ -112,7 +112,7 @@ bool hashmap_removeElement(hashmap *hashmap, const char *name) {
     return false;
 }
 
-void hashmap_free(hashmap *hashmap) {
+void hashmap_free(const hashmap *hashmap) {
     for (int i = 0; i < hashmap->capacity; i++) {
         hashmapElement *current = hashmap->data[i];
         while (current) {
@@ -125,14 +125,14 @@ void hashmap_free(hashmap *hashmap) {
     free(hashmap->data);
 }
 
-void hashmap_init(hashmap *hashmap, int capacity) {
+void hashmap_init(hashmap *hashmap, const int capacity) {
     hashmap->capacity = capacity;
     hashmap->size = 0;
     hashmap->data = malloc(sizeof(hashmapElement *) * capacity);
     memset(hashmap->data, 0, sizeof(hashmapElement *) * capacity);
 }
 
-void arraylist_init(resizingArrayList_t *arrList, int capacity) {
+void arraylist_init(resizingArrayList_t *arrList, const int capacity) {
     arrList->capacity = capacity;
     arrList->size = 0;
     arrList->data = malloc(sizeof(resizingArrayList_t *) * capacity);
@@ -155,7 +155,7 @@ void arraylist_append(resizingArrayList_t *arrList, void *element) {
     arrList->data[arrList->size++] = element;
 }
 
-bool arraylist_remove(resizingArrayList_t *arrList, void *element) {
+bool arraylist_remove(resizingArrayList_t *arrList, const void *element) {
     int i = 0;
     while (i < arrList->size && arrList->data[i] != element) {
         i++;
@@ -171,13 +171,13 @@ bool arraylist_remove(resizingArrayList_t *arrList, void *element) {
     return true;
 }
 
-void *arraylist_get(resizingArrayList_t *arrList, int index) {
+void *arraylist_get(const resizingArrayList_t *arrList, const int index) {
     if (index >= arrList->size) {
         return NULL;
     }
     return arrList->data[index];
 }
 
-int arraylist_size(resizingArrayList_t *arrList) {
+int arraylist_size(const resizingArrayList_t *arrList) {
     return arrList->size;
 }
