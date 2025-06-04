@@ -69,6 +69,7 @@ static void chunk_createMesh(chunk_t *c) {
                         nextPtr[5 * n + 0] += (float)i;
                         nextPtr[5 * n + 1] += (float)j;
                         nextPtr[5 * n + 2] += (float)k;
+                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
                     }
                     nextPtr += faceVerticesSize / sizeof(float);
                 }
@@ -90,6 +91,7 @@ static void chunk_createMesh(chunk_t *c) {
                         nextPtr[5 * n + 0] += (float)i;
                         nextPtr[5 * n + 1] += (float)j;
                         nextPtr[5 * n + 2] += (float)k;
+                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
                     }
                     nextPtr += faceVerticesSize / sizeof(float);
                 }
@@ -111,6 +113,7 @@ static void chunk_createMesh(chunk_t *c) {
                         nextPtr[5 * n + 0] += (float)i;
                         nextPtr[5 * n + 1] += (float)j;
                         nextPtr[5 * n + 2] += (float)k;
+                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
                     }
                     nextPtr += faceVerticesSize / sizeof(float);
                 }
@@ -132,6 +135,7 @@ static void chunk_createMesh(chunk_t *c) {
                         nextPtr[5 * n + 0] += (float)i;
                         nextPtr[5 * n + 1] += (float)j;
                         nextPtr[5 * n + 2] += (float)k;
+                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
                     }
                     nextPtr += faceVerticesSize / sizeof(float);
                 }
@@ -153,6 +157,7 @@ static void chunk_createMesh(chunk_t *c) {
                         nextPtr[5 * n + 0] += (float)i;
                         nextPtr[5 * n + 1] += (float)j;
                         nextPtr[5 * n + 2] += (float)k;
+                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
                     }
                     nextPtr += faceVerticesSize / sizeof(float);
                 }
@@ -174,6 +179,7 @@ static void chunk_createMesh(chunk_t *c) {
                         nextPtr[5 * n + 0] += (float)i;
                         nextPtr[5 * n + 1] += (float)j;
                         nextPtr[5 * n + 2] += (float)k;
+                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
                     }
                     nextPtr += faceVerticesSize / sizeof(float);
                 }
