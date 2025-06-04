@@ -85,9 +85,7 @@ bool hashmap_setElement(hashmap *hashmap, const char *name, void *data) {
     }
 
     hashmapElement *newElement = malloc(sizeof(hashmapElement));
-    unsigned const long nameLen = strlen(name);
-    newElement->name = (char *)malloc(sizeof(char) * (nameLen + 1));
-    strcpy(newElement->name, name);
+    newElement->name = strdup(name);
     newElement->data = data;
     newElement->next = NULL;
     *current = newElement;
