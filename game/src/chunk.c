@@ -52,6 +52,13 @@ static void chunk_createMesh(chunk_t *c) {
                 int ni, nj, nk;
                 bool neighbourIsAir = false;
                 /*
+                    The below is tedious and repetitive, but I didn't
+                    give it its own function because it may change significantly
+                    when implementing greedy meshing.
+                */
+
+
+                /*
                     back face
                 */
                 ni = i;
