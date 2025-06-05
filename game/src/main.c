@@ -307,7 +307,7 @@ int main(void) {
 
         camera_setView(&camera, program);
         world_draw(&world, modelLocation);
-        world_highlightFace(&world, &camera, program);
+        world_highlightFace(&world, &camera, modelLocation);
 
         if (postProcessingEnabled) {
             postProcess_bindBuffer(&postProcess.rightFramebuffer);

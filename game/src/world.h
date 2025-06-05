@@ -26,6 +26,8 @@ typedef struct {
     } chunkLoaders[MAX_CHUNK_LOADERS];
     /// The hash table used keeping track of chunks
     struct _s_cluster *clusterTable;
+    GLuint highlightVao;
+    GLuint highlightVbo;
 } world_t;
 
 /**
@@ -184,6 +186,6 @@ bool world_save(world_t *w, const char *dir);
 * @brief Highlights the face the camera is looking at
 * @param w A pointer to a world
 * @param camera A pointer to a camera
-* @param program The shader program
+* @param modelLocation The model location
 */
-void world_highlightFace(world_t *w, camera_t *camera, GLuint program);
+void world_highlightFace(world_t *w, camera_t *camera, int modelLocation);
