@@ -2,6 +2,8 @@
 
 #include <glad/gl.h>
 #include <stdbool.h>
+#include <stdio.h>
+
 #include "block.h"
 
 #define CHUNK_SIZE 16
@@ -36,6 +38,8 @@ typedef struct {
  */
 void chunk_create(chunk_t *c, int cx, int cy, int cz, block_t block);
 
+void chunk_createDeserialise(chunk_t *c, FILE *fp);
+
 /**
  * @brief A function to generate a chunk
  * @param c A pointer to a chunk
@@ -54,3 +58,5 @@ void chunk_generate(chunk_t *c, int cx, int cy, int cz);
 void chunk_draw(chunk_t *c, int modelLocation);
 
 void chunk_free(const chunk_t *c);
+
+void chunk_serialise(chunk_t *c, FILE *fp);
