@@ -13,8 +13,8 @@
 
 #define CHUNK_LOAD_RADIUS 4
 
-#define FOG_START 16.f * (CHUNK_LOAD_RADIUS - 1)
-#define FOG_END 16.f * CHUNK_LOAD_RADIUS
+#define FOG_START 16.f * (CHUNK_LOAD_RADIUS - 2)
+#define FOG_END 16.f * (CHUNK_LOAD_RADIUS - 1)
 
 /**
  * @brief A struct that holds data about the world.
