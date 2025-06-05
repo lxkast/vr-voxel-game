@@ -309,7 +309,7 @@ int main(void) {
         camera_setView(&camera, program);
         vec3 camPos;
         glm_vec3_add(player.cameraOffset, player.entity.position,camPos);
-        world_draw(&world, modelLocation, camPos, player.lookVector);
+        world_draw(&world, modelLocation, &camera);
 
         if (postProcessingEnabled) {
             postProcess_bindBuffer(&postProcess.rightFramebuffer);
@@ -320,7 +320,7 @@ int main(void) {
         }
 
         camera_setView(&camera, program);
-        world_draw(&world, modelLocation, camPos, player.lookVector);
+        world_draw(&world, modelLocation, &camera);
 
         if (postProcessingEnabled) {
             postProcess_draw(&postProcess);

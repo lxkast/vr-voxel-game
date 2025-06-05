@@ -146,26 +146,26 @@ void world_init(world_t *w, const GLuint program) {
 vec3 chunkBounds = {15.f, 15.f, 15.f};
 
 // Note - we assume lookVector is normalised
-static bool isChunkInFrontOfCamera(vec3 camPos, vec3 lookVector, const chunk_t *chunk) {
+static bool isChunkInFrontOfCamera(camera_t *cam, const chunk_t *chunk) {
     vec3 chunkCenter;
     chunkCenter[0] = (float)(chunk->cx << 4) + 8.f;
     chunkCenter[1] = (float)(chunk->cy << 4) + 8.f;
     chunkCenter[2] = (float)(chunk->cz << 4) + 8.f;
 
     vec3 toChunk;
-    glm_vec3_sub(chunkCenter, camPos, toChunk);
+    glm_vec3_sub(chunkCenter, cam->eye, toChunk);
 
-    const float dot = glm_vec3_dot(toChunk, lookVector);
+    const float dot = glm_vec3_dot(toChunk, cam->ruf[2]);
 
     return dot < 16.f;
 }
 
-void world_draw(const world_t *w, const int modelLocation, vec3 camPos, vec3 lookVector) {
+void world_draw(const world_t *w, const int modelLocation, camera_t *cam) {
     cluster_t *cluster, *tmp;
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
         for (int i = 0; i < C_T * C_T * C_T; i++) {
             if (!cluster->cells[i].chunk) {continue;}
-            const bool renderingChunk = isChunkInFrontOfCamera(camPos, lookVector, cluster->cells[i].chunk);
+            const bool renderingChunk = isChunkInFrontOfCamera(cam, cluster->cells[i].chunk);
 
             if (cluster->cells[i].chunk && renderingChunk) {
                 chunk_draw(cluster->cells[i].chunk, modelLocation);

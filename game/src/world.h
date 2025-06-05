@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include "chunk.h"
 #include "uthash.h"
+#include "camera.h"
 
 #define MAX_CHUNKS 256
 #define MAX_CHUNK_LOADERS 8
@@ -67,7 +68,7 @@ void world_init(world_t *w, GLuint program);
  * @param w A pointer to a world
  * @param modelLocation The model matrix location in the shader program
  */
-void world_draw(const world_t *w, int modelLocation, vec3 camPos, vec3 lookVector);
+void world_draw(const world_t *w, int modelLocation, camera_t *cam);
 
 /**
  * @brief Frees the world.
