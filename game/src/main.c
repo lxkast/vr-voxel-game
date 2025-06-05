@@ -206,7 +206,7 @@ int main(void) {
     */
 
 
-    const GLuint texture = loadTextureRGBA("textures/textures.png", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
+    const GLuint texture = loadTextureRGBA("textures/atlas.png", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
 
 
     /*
@@ -216,7 +216,7 @@ int main(void) {
 
 
         mat4 projection;
-        glm_perspective(FOV_Y, (float)screenWidth / (float)screenHeight, 0.1f, 500.0f, projection);
+        glm_perspective(FOV_Y, (float)screenWidth / (float)screenHeight, 0.1f, 16.f * (CHUNK_LOAD_RADIUS + 1), projection);
 
         glUseProgram(program);
 
@@ -252,7 +252,7 @@ int main(void) {
 
     // World setup
     world_t world;
-    world_init(&world);
+    world_init(&world, program);
 
     unsigned int spawnLoader, cameraLoader;
     world_genChunkLoader(&world, &spawnLoader);
@@ -336,6 +336,8 @@ int main(void) {
         while ((err = glGetError()) != GL_NO_ERROR) {
             LOG_ERROR("OpenGL error: %d", err);
         }
+
+        // printf("FPS: %d\n", (int)(1/dt));
     }
 
     world_free(&world);

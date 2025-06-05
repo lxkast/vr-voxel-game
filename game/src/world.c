@@ -1,7 +1,11 @@
 #include "world.h"
+
+#include <errno.h>
 #include <cglm/cglm.h>
 #include <logging.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+
 #include "chunk.h"
 #include "entity.h"
 
@@ -127,8 +131,16 @@ static bool getBlockAddr(world_t *w, int x, int y, int z, block_t **block, chunk
     return true;
 }
 
-void world_init(world_t *w) {
+static void fogInit(world_t *w, const GLuint program) {
+    glUseProgram(program);
+    glUniform1f(glGetUniformLocation(program, "fogStart"), FOG_START);
+    glUniform1f(glGetUniformLocation(program, "fogEnd"), FOG_END);
+    glUseProgram(0);
+}
+
+void world_init(world_t *w, const GLuint program) {
     w->clusterTable = NULL;
+    fogInit(w, program);
 }
 
 vec3 chunkBounds = {15.f, 15.f, 15.f};
@@ -206,7 +218,6 @@ void world_doChunkLoading(world_t *w) {
         const int cy = w->chunkLoaders[i].y >> 4;
         const int cz = w->chunkLoaders[i].z >> 4;
 
-#define CHUNK_LOAD_RADIUS 4
         for (int x = -CHUNK_LOAD_RADIUS; x <= CHUNK_LOAD_RADIUS; x++) {
             for (int y = -CHUNK_LOAD_RADIUS; y <= CHUNK_LOAD_RADIUS; y++) {
                 for (int z = -CHUNK_LOAD_RADIUS; z <= CHUNK_LOAD_RADIUS; z++) {
@@ -319,6 +330,58 @@ bool world_placeBlock(world_t *w, int x, int y, int z, block_t block) {
 
     *bp = block;
     cp->tainted = true;
+}
+
+bool world_save(world_t *w, const char *dir) {
+    struct stat st = { 0 };
+    if (stat(dir, &st) == -1) {
+        LOG_INFO("World save does not exist, creating directory...");
+#if defined(_WIN32) || defined(_WIN64)
+        if (mkdir(dir) != 0) {
+#else
+        if (mkdir(dir, 0777) != 0) {
+#endif
+            LOG_ERROR("Failed to create world directory: %s", strerror(errno));
+            return false;
+        }
+    }
+
+    const size_t dirLen = strlen(dir);
+    char *nameBuf = (char *)malloc(dirLen + 64);
+    block_t *empty = (block_t *)malloc(sizeof(block_t) * CHUNK_SIZE_CUBED);
+
+    cluster_t *cluster, *tmp;
+    HASH_ITER(hh, w->clusterTable, cluster, tmp) {
+        sprintf(nameBuf, "%s%d %d %d.cluster", dir, cluster->key.x, cluster->key.y, cluster->key.z);
+
+        FILE *fp = fopen(nameBuf, "wb");
+        if (!fp) {
+            LOG_ERROR("Failed to open cluster file: %s", strerror(errno));
+            free(empty);
+            free(nameBuf);
+            return false;
+        }
+
+        static char valid = 0;
+        for (int i = 0; i < C_T * C_T * C_T; i++) {
+            chunk_t *chunk = cluster->cells[i].chunk;
+            if (!chunk) {
+                valid = 0;
+                fwrite(&valid, 1, 1, fp);
+                fwrite(empty, sizeof(block_t), CHUNK_SIZE_CUBED, fp);
+            } else {
+                valid = 1;
+                fwrite(&valid, 1, 1, fp);
+                chunk_serialise(chunk, fp);
+            }
+        }
+
+        fclose(fp);
+    }
+
+    free(empty);
+    free(nameBuf);
+    return true;
 }
 
 /**

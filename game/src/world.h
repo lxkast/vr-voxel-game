@@ -11,6 +11,11 @@
 #define C_T 8
 #define LOG_C_T 3
 
+#define CHUNK_LOAD_RADIUS 4
+
+#define FOG_START 16.f * (CHUNK_LOAD_RADIUS - 2)
+#define FOG_END 16.f * (CHUNK_LOAD_RADIUS - 1)
+
 /**
  * @brief A struct that holds data about the world.
  */
@@ -53,8 +58,9 @@ typedef struct {
 /**
  * @brief Initialises a world struct.
  * @param w A pointer to a world
+ * @param program A shader program for setting effects
  */
-void world_init(world_t *w);
+void world_init(world_t *w, GLuint program);
 
 /**
  * @brief Draws the world.
@@ -167,3 +173,10 @@ bool world_removeBlock(world_t *w, int x, int y, int z);
  * @return Whether the operation was successful
  */
 bool world_placeBlock(world_t *w, int x, int y, int z, block_t block);
+
+/**
+* @brief Saves the currently loaded world
+* @param w A pointer to a world
+* @param dir The name of the directory to save the file in
+*/
+bool world_save(world_t *w, const char *dir);
