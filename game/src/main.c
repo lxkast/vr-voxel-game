@@ -3,13 +3,14 @@
 #include <GLFW/glfw3.h>
 #include <logging.h>
 #include <stdio.h>
+#include "analytics.h"
 #include "camera.h"
+#include "entity.h"
+#include "player.h"
 #include "postprocess.h"
 #include "shaderutil.h"
 #include "texture.h"
 #include "world.h"
-#include "entity.h"
-#include "player.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #define MINOR_VERSION 2
@@ -263,12 +264,16 @@ int main(void) {
     player_t player;
     player_init(&player);
 
-    double prevTime = glfwGetTime();
-
     postProcess_t postProcess;
     postProcess_init(&postProcess, postProcessProgram, screenWidth, screenHeight);
 
+    analytics_t analytics;
+    analytics_init(&analytics);
+    double fpsDisplayAcc = 0;
+
+
     while (!glfwWindowShouldClose(window)) {
+        analytics_startFrame(&analytics);
         processInput(window);
         processPlayerInput(window, &player, &world);
         processCameraInput(window, &camera);
@@ -276,11 +281,7 @@ int main(void) {
 
         world_updateChunkLoader(&world, cameraLoader, camera.eye);
 
-        const double currentTime = glfwGetTime();
-        const double dt = currentTime - prevTime;
-        prevTime = currentTime;
-
-        processEntity(&world, &player.entity, dt);
+        processEntity(&world, &player.entity, analytics.dt);
         player_attachCamera(&player, &camera);
 
 
@@ -326,6 +327,11 @@ int main(void) {
 
         glUseProgram(0);
 
+        fpsDisplayAcc += analytics.dt;
+        if (fpsDisplayAcc > 1.0) {
+            LOG_INFO("%.0lf\n", analytics.fps);
+            fpsDisplayAcc = 0.0;
+        }
 
         glfwPollEvents();
         glfwSwapBuffers(window);
@@ -334,8 +340,6 @@ int main(void) {
         while ((err = glGetError()) != GL_NO_ERROR) {
             LOG_ERROR("OpenGL error: %d", err);
         }
-
-        // printf("FPS: %d\n", (int)(1/dt));
     }
 
     world_free(&world);
