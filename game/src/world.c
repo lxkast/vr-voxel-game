@@ -8,6 +8,8 @@
 
 #include "chunk.h"
 #include "entity.h"
+#include "uthash.h"
+#include "vertices.h"
 
 #define MAX_RAYCAST_DISTANCE 6.f
 #define RAYCAST_STEP_MAGNITUDE 0.1f
@@ -138,9 +140,22 @@ static void fogInit(world_t *w, const GLuint program) {
     glUseProgram(0);
 }
 
+static void highlightInit(world_t *w) {
+    glGenVertexArrays(1, &w->highlightVao);
+    glGenBuffers(1, &w->highlightVbo);
+    glBindVertexArray(w->highlightVao);
+    glBindBuffer(GL_ARRAY_BUFFER, w->highlightVbo);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
+}
+
 void world_init(world_t *w, const GLuint program) {
     w->clusterTable = NULL;
     fogInit(w, program);
+    highlightInit(w);
 }
 
 void world_draw(const world_t *w, const int modelLocation) {
@@ -461,3 +476,60 @@ raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection) {
         .found = false
     };
 }
+
+void world_highlightFace(world_t *w, camera_t *camera, int modelLocation) {
+    vec3 ray;
+    glm_vec3_scale(camera->ruf[2], -1.0f, ray);
+
+    raycast_t res = world_raycast(w, camera->eye, ray);
+    if (!res.found) {
+        return;
+    }
+    float *buffer = malloc(faceVerticesSize);
+
+    vec3 delta = { 0.f, 0.f, 0.f };
+    switch (res.face) {
+        case POS_X_FACE:
+            delta[0] += 0.01f;
+            memcpy(buffer, rightFaceVertices, faceVerticesSize);
+            break;
+        case NEG_X_FACE:
+            delta[0] -= 0.01f;
+            memcpy(buffer, leftFaceVertices, faceVerticesSize);
+            break;
+        case POS_Y_FACE:
+            delta[1] += 0.01f;
+            memcpy(buffer, topFaceVertices, faceVerticesSize);
+            break;
+        case NEG_Y_FACE:
+            delta[1] -= 0.01f;
+            memcpy(buffer, bottomFaceVertices, faceVerticesSize);
+            break;
+        case POS_Z_FACE:
+            delta[2] += 0.01f;
+            memcpy(buffer, frontFaceVertices, faceVerticesSize);
+            break;
+        case NEG_Z_FACE:
+            delta[2] -= 0.01f;
+            memcpy(buffer, backFaceVertices, faceVerticesSize);
+            break;
+        default: LOG_FATAL("invalid face type");
+    }
+    for (int i = 0; i < 6; ++i) {
+        buffer[5 * i + 3] *= (16.0f / 96.0f);
+    }
+
+    glm_vec3_add(res.blockPosition, delta, res.blockPosition);
+
+    mat4 model;
+    glm_translate_make(model, res.blockPosition);
+
+    glBindVertexArray(w->highlightVao);
+    glBindBuffer(GL_ARRAY_BUFFER, w->highlightVbo);
+    glBufferData(GL_ARRAY_BUFFER, faceVerticesSize, buffer, GL_STATIC_DRAW);
+    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
+    glDrawArrays(GL_TRIANGLES, 0, faceVerticesSize / (5 * sizeof(float)));
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+

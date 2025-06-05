@@ -303,22 +303,24 @@ int main(void) {
             camera_translateX(&camera, -EYE_OFFSET);
         }
         glEnable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         camera_setView(&camera, program);
         world_draw(&world, modelLocation);
+        world_highlightFace(&world, &camera, modelLocation);
 
         if (postProcessingEnabled) {
             postProcess_bindBuffer(&postProcess.rightFramebuffer);
-            glEnable(GL_DEPTH_TEST);
             glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             camera_translateX(&camera, 2 * EYE_OFFSET);
+            camera_setView(&camera, program);
+            world_draw(&world, modelLocation);
+            world_highlightFace(&world, &camera, modelLocation);
         }
-
-        camera_setView(&camera, program);
-        world_draw(&world, modelLocation);
 
         if (postProcessingEnabled) {
             postProcess_draw(&postProcess);
