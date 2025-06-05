@@ -482,10 +482,12 @@ void world_highlightFace(world_t *w, camera_t *camera, int modelLocation) {
     glm_vec3_scale(camera->ruf[2], -1.0f, ray);
 
     raycast_t res = world_raycast(w, camera->eye, ray);
+    if (!res.found) {
+        return;
+    }
     float *buffer = malloc(faceVerticesSize);
 
-
-     vec3 delta = { 0.f, 0.f, 0.f };
+    vec3 delta = { 0.f, 0.f, 0.f };
     switch (res.face) {
         case POS_X_FACE:
             delta[0] += 0.01f;
@@ -513,6 +515,10 @@ void world_highlightFace(world_t *w, camera_t *camera, int modelLocation) {
             break;
         default: LOG_FATAL("invalid face type");
     }
+    for (int i = 0; i < 6; ++i) {
+        buffer[5 * i + 3] *= (16.0f / 96.0f);
+    }
+
     glm_vec3_add(res.blockPosition, delta, res.blockPosition);
 
     mat4 model;
