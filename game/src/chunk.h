@@ -38,6 +38,11 @@ typedef struct {
  */
 void chunk_create(chunk_t *c, int cx, int cy, int cz, block_t block);
 
+/**
+* @brief A function to initialise a chunk by deserialising from a file
+* @param c A pointer to a chunk
+* @param fp A file pointer
+*/
 void chunk_createDeserialise(chunk_t *c, FILE *fp);
 
 /**
@@ -57,6 +62,15 @@ void chunk_generate(chunk_t *c, int cx, int cy, int cz);
  */
 void chunk_draw(chunk_t *c, int modelLocation);
 
+/**
+* @brief A function for freeing a chunk
+* @param c A pointer to a chunk
+*/
 void chunk_free(const chunk_t *c);
 
+/**
+* @brief A function to serialise a chunk to a file
+* @param c A pointer to a chunk
+* @param fp A file pointer
+*/
 void chunk_serialise(chunk_t *c, FILE *fp);
