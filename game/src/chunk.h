@@ -2,6 +2,8 @@
 
 #include <glad/gl.h>
 #include <stdbool.h>
+#include <stdio.h>
+
 #include "block.h"
 
 #define CHUNK_SIZE 16
@@ -37,6 +39,13 @@ typedef struct {
 void chunk_create(chunk_t *c, int cx, int cy, int cz, block_t block);
 
 /**
+* @brief A function to initialise a chunk by deserialising from a file
+* @param c A pointer to a chunk
+* @param fp A file pointer
+*/
+void chunk_createDeserialise(chunk_t *c, FILE *fp);
+
+/**
  * @brief A function to generate a chunk
  * @param c A pointer to a chunk
  * @param cx The chunk x coordinate
@@ -51,6 +60,17 @@ void chunk_generate(chunk_t *c, int cx, int cy, int cz);
  * @param c A pointer to a chunk
  * @param modelLocation The location of the model matrix in the shader program
  */
-void chunk_draw(const chunk_t *c, int modelLocation);
+void chunk_draw(chunk_t *c, int modelLocation);
 
+/**
+* @brief A function for freeing a chunk
+* @param c A pointer to a chunk
+*/
 void chunk_free(const chunk_t *c);
+
+/**
+* @brief A function to serialise a chunk to a file
+* @param c A pointer to a chunk
+* @param fp A file pointer
+*/
+void chunk_serialise(chunk_t *c, FILE *fp);

@@ -1,7 +1,16 @@
 #include "world.h"
+
+#include <errno.h>
+#include <cglm/cglm.h>
 #include <logging.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+
 #include "chunk.h"
+#include "entity.h"
+
+#define MAX_RAYCAST_DISTANCE 6.f
+#define RAYCAST_STEP_MAGNITUDE 0.1f
 
 /**
  * @brief Key for hash table
@@ -23,7 +32,7 @@ typedef struct {
 /**
  * @brief A cluster and also hashmap
  * @note A cluster is essentially a group of adjacent chunks
-*/
+ */
 typedef struct _s_cluster {
     /// The key to the hashmap entry
     clusterKey_t key;
@@ -67,7 +76,7 @@ static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int c
         if (!create) return 0;
 
         // Allocate space for the cluster
-        clusterPtr = (cluster_t *)calloc(1,sizeof(cluster_t));
+        clusterPtr = (cluster_t *)calloc(1, sizeof(cluster_t));
         // Allocate space for the cells array inside the cluster
         clusterPtr->cells = calloc(C_T * C_T * C_T, sizeof(chunkValue_t));
         clusterPtr->key = k;
@@ -77,8 +86,8 @@ static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int c
     // The direct access index of the chunk into the cluster
     *offset =
         (cz - (k.z << LOG_C_T)) * C_T * C_T +
-            (cy - (k.y << LOG_C_T)) * C_T +
-                (cx - (k.x << LOG_C_T));
+        (cy - (k.y << LOG_C_T)) * C_T +
+        (cx - (k.x << LOG_C_T));
     return clusterPtr;
 }
 
@@ -104,11 +113,34 @@ static void loadChunk(world_t *w, const int cx, const int cy, const int cz) {
     cv->reloaded = true;
 }
 
-void world_init(world_t *w) {
+static bool getBlockAddr(world_t *w, int x, int y, int z, block_t **block, chunk_t **chunk) {
+    const int cx = x >> 4;
+    const int cy = y >> 4;
+    const int cz = z >> 4;
+
+    size_t offset;
+    cluster_t *cluster = clusterGet(w, cx, cy, cz, false, &offset);
+    if (!cluster) return false;
+
+    const chunkValue_t cv = cluster->cells[offset];
+    if (!cv.chunk) return false;
+
+    *chunk = cv.chunk;
+    *block = &cv.chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)];
+
+    return true;
+}
+
+static void fogInit(world_t *w, const GLuint program) {
+    glUseProgram(program);
+    glUniform1f(glGetUniformLocation(program, "fogStart"), FOG_START);
+    glUniform1f(glGetUniformLocation(program, "fogEnd"), FOG_END);
+    glUseProgram(0);
+}
+
+void world_init(world_t *w, const GLuint program) {
     w->clusterTable = NULL;
-    for (int i = 0; i < MAX_CHUNK_LOADERS; i++) {
-        w->chunkLoaders[i].active = false;
-    }
+    fogInit(w, program);
 }
 
 void world_draw(const world_t *w, const int modelLocation) {
@@ -164,11 +196,10 @@ void world_doChunkLoading(world_t *w) {
         const int cy = w->chunkLoaders[i].y >> 4;
         const int cz = w->chunkLoaders[i].z >> 4;
 
-#define CHUNK_LOAD_RADIUS 2
         for (int x = -CHUNK_LOAD_RADIUS; x <= CHUNK_LOAD_RADIUS; x++) {
             for (int y = -CHUNK_LOAD_RADIUS; y <= CHUNK_LOAD_RADIUS; y++) {
                 for (int z = -CHUNK_LOAD_RADIUS; z <= CHUNK_LOAD_RADIUS; z++) {
-                    if (x*x + y*y + z*z <= CHUNK_LOAD_RADIUS * CHUNK_LOAD_RADIUS) {
+                    if (x * x + y * y + z * z <= CHUNK_LOAD_RADIUS * CHUNK_LOAD_RADIUS) {
                         loadChunk(w, cx + x, cy + y, cz + z);
                     }
                 }
@@ -196,4 +227,237 @@ void world_doChunkLoading(world_t *w) {
             }
         }
     }
+}
+
+bool world_getBlocki(world_t *w, int x, int y, int z, blockData_t *bd) {
+    block_t *block;
+    chunk_t *chunk;
+    if (!getBlockAddr(w, x, y, z, &block, &chunk)) return false;
+
+    bd->type = *block;
+    bd->x = x;
+    bd->y = y;
+    bd->z = z;
+
+    return true;
+}
+
+bool world_getBlock(world_t *w, vec3 pos, blockData_t *bd) {
+    const int x = (int)floorf(pos[0]);
+    const int y = (int)floorf(pos[1]);
+    const int z = (int)floorf(pos[2]);
+
+    return world_getBlocki(w, x, y, z, bd);
+}
+
+void world_getAdjacentBlocks(world_t *w, vec3 position, blockData_t *buf) {
+    int index = 0;
+    for (int dx = -1; dx <= 1; dx++) {
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                if (dx == 0 && dy == 0 && dz == 0) {
+                    continue;
+                }
+                vec3 delta = {(float)dx, (float)dy, (float)dz};
+                vec3 newBlockPosition;
+                glm_vec3_add(position, delta, newBlockPosition);
+
+                world_getBlock(w, newBlockPosition, &buf[index]);
+                index++;
+            }
+        }
+    }
+}
+
+void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, blockData_t *buf) {
+    int index = 0;
+
+    for (int dx = 0; dx < (int)(topRight[0] - bottomLeft[0]); dx++) {
+        for (int dy = 0; dy < (int)(topRight[1] - bottomLeft[1]); dy++) {
+            for (int dz = 0; dz < (int)(topRight[2] - bottomLeft[2]); dz++) {
+                vec3 delta = {(float)dx, (float)dy, (float)dz};
+
+                vec3 newBlockPosition;
+
+                glm_vec3_add(bottomLeft, delta, newBlockPosition);
+
+                world_getBlock(w, newBlockPosition, &buf[index]);
+                index++;
+            }
+        }
+    }
+}
+
+bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
+    block_t *bp;
+    chunk_t *cp;
+    if (!getBlockAddr(w, x, y, z, &bp, &cp)) return false;
+
+    if (*bp == BL_AIR) return false;
+
+    *bp = BL_AIR;
+    cp->tainted = true;
+}
+
+bool world_placeBlock(world_t *w, int x, int y, int z, block_t block) {
+    block_t *bp;
+    chunk_t *cp;
+    if (!getBlockAddr(w, x, y, z, &bp, &cp)) return false;
+
+    if (*bp != BL_AIR) return false;
+
+    *bp = block;
+    cp->tainted = true;
+}
+
+bool world_save(world_t *w, const char *dir) {
+    struct stat st = { 0 };
+    if (stat(dir, &st) == -1) {
+        LOG_INFO("World save does not exist, creating directory...");
+#if defined(_WIN32) || defined(_WIN64)
+        if (mkdir(dir) != 0) {
+#else
+        if (mkdir(dir, 0777) != 0) {
+#endif
+            LOG_ERROR("Failed to create world directory: %s", strerror(errno));
+            return false;
+        }
+    }
+
+    const size_t dirLen = strlen(dir);
+    char *nameBuf = (char *)malloc(dirLen + 64);
+    block_t *empty = (block_t *)malloc(sizeof(block_t) * CHUNK_SIZE_CUBED);
+
+    cluster_t *cluster, *tmp;
+    HASH_ITER(hh, w->clusterTable, cluster, tmp) {
+        sprintf(nameBuf, "%s%d %d %d.cluster", dir, cluster->key.x, cluster->key.y, cluster->key.z);
+
+        FILE *fp = fopen(nameBuf, "wb");
+        if (!fp) {
+            LOG_ERROR("Failed to open cluster file: %s", strerror(errno));
+            free(empty);
+            free(nameBuf);
+            return false;
+        }
+
+        static char valid = 0;
+        for (int i = 0; i < C_T * C_T * C_T; i++) {
+            chunk_t *chunk = cluster->cells[i].chunk;
+            if (!chunk) {
+                valid = 0;
+                fwrite(&valid, 1, 1, fp);
+                fwrite(empty, sizeof(block_t), CHUNK_SIZE_CUBED, fp);
+            } else {
+                valid = 1;
+                fwrite(&valid, 1, 1, fp);
+                chunk_serialise(chunk, fp);
+            }
+        }
+
+        fclose(fp);
+    }
+
+    free(empty);
+    free(nameBuf);
+    return true;
+}
+
+/**
+ * @brief Gets the type of a block at a chosen position
+ * @param w a pointer to the world
+ * @param position the position to get a block at
+ * @return The type of the block
+ */
+static block_t getBlockType(world_t *w, vec3 position) {
+    blockData_t bd;
+    world_getBlock(w, position, &bd);
+    return bd.type;
+}
+
+raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection) {
+    vec3 viewNormalised;
+    glm_vec3_copy(viewDirection, viewNormalised);
+    glm_normalize(viewNormalised);
+
+    vec3 currentBlock;
+    glm_vec3_floor(startPosition, currentBlock);
+
+    // stores the amount we must move along the ray to get to the next edge
+    // in each direction
+    vec3 axisMoveDelta;
+
+    axisMoveDelta[0] = (viewNormalised[0] == 0) ? 1e5f : fabsf(1 / viewNormalised[0]);
+    axisMoveDelta[1] = (viewNormalised[1] == 0) ? 1e5f : fabsf(1 / viewNormalised[1]);
+    axisMoveDelta[2] = (viewNormalised[2] == 0) ? 1e5f : fabsf(1 / viewNormalised[2]);
+
+    // calculates which direction we move in along each axis
+    vec3 stepDirection;
+    stepDirection[0] = viewNormalised[0] < 0 ? -1.0f : 1.0f;
+    stepDirection[1] = viewNormalised[1] < 0 ? -1.0f : 1.0f;
+    stepDirection[2] = viewNormalised[2] < 0 ? -1.0f : 1.0f;
+
+    // Calculating initial distances to next block
+    vec3 distToNextBlock;
+
+    distToNextBlock[0] = viewNormalised[0] < 0 ? startPosition[0] - currentBlock[0] : currentBlock[0] + 1 - startPosition[0];
+    distToNextBlock[1] = viewNormalised[1] < 0 ? startPosition[1] - currentBlock[1] : currentBlock[1] + 1 - startPosition[1];
+    distToNextBlock[2] = viewNormalised[2] < 0 ? startPosition[2] - currentBlock[2] : currentBlock[2] + 1 - startPosition[2];
+
+    distToNextBlock[0] *= axisMoveDelta[0];
+    distToNextBlock[1] *= axisMoveDelta[1];
+    distToNextBlock[2] *= axisMoveDelta[2];
+
+    float totalDistance = 0;
+
+    raycastFace_e currentFace = POS_X_FACE;
+
+    while (totalDistance < MAX_RAYCAST_DISTANCE) {
+        // checks for a solid block
+        if (getBlockType(w, currentBlock) != BL_AIR) {
+            return (raycast_t){
+                .blockPosition = {currentBlock[0], currentBlock[1], currentBlock[2]},
+                .face = currentFace,
+                .found = true
+            };
+        }
+
+        // steps to the next closest block
+        if (distToNextBlock[0] < distToNextBlock[1] && distToNextBlock[0] < distToNextBlock[2]) {
+            // Step in X direction
+            totalDistance = distToNextBlock[0];
+            distToNextBlock[0] += axisMoveDelta[0];
+            currentBlock[0] += stepDirection[0];
+            if (stepDirection[0] == 1) {
+                currentFace = NEG_X_FACE;
+            } else {
+                currentFace = POS_X_FACE;
+            }
+        } else if (distToNextBlock[1] < distToNextBlock[2]) {
+            // Step in Y direction
+            totalDistance = distToNextBlock[1];
+            distToNextBlock[1] += axisMoveDelta[1];
+            currentBlock[1] += stepDirection[1];
+            if (stepDirection[1] == 1) {
+                currentFace = NEG_Y_FACE;
+            } else {
+                currentFace = POS_Y_FACE;
+            }
+        } else {
+            // Step in Z direction
+            totalDistance = distToNextBlock[2];
+            distToNextBlock[2] += axisMoveDelta[2];
+            currentBlock[2] += stepDirection[2];
+            if (stepDirection[2] == 1) {
+                currentFace = NEG_Z_FACE;
+            } else {
+                currentFace = POS_Z_FACE;
+            }
+        }
+    }
+
+    return (raycast_t){
+        .blockPosition = {0, 0, 0},
+        .face = POS_X_FACE,
+        .found = false
+    };
 }

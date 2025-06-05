@@ -8,8 +8,13 @@ uniform mat4 view;
 uniform mat4 projection;
 
 out vec2 vTexCoord;
+out float vFogDepth;
 
 void main() {
-    gl_Position = projection * view * model * vec4(aPos, 1.0f);
+    vec4 eyePos = view * model * vec4(aPos, 1.0f);
+
+    vFogDepth = -eyePos.z;
+
+    gl_Position = projection * eyePos;
     vTexCoord = aTexCoord;
 }

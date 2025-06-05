@@ -9,6 +9,8 @@
 #include "texture.h"
 #include "world.h"
 #include "hardware/orientation.h"
+#include "entity.h"
+#include "player.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #define MINOR_VERSION 2
@@ -22,23 +24,68 @@
 #define FOV_Y 45.0f
 #define USING_RASPBERRY_PI false
 
+#define SPRINT_MULTIPLIER 1.3f
+#define GROUND_ACCELERATION 9.f
+#define AIR_ACCELERATION 3.f
+
+#define GRAVITY_ACCELERATION (-10.f)
+
 static double previousMouse[2];
+
+static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
+    vec3 acceleration = { 0.f, GRAVITY_ACCELERATION, 0.f };
+
+    const float sprintMultiplier = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? SPRINT_MULTIPLIER : 1.f ;
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        if (player->entity.grounded) {
+            acceleration[2] += GROUND_ACCELERATION * sprintMultiplier;  // Forward
+        } else {
+            acceleration[2] += AIR_ACCELERATION * sprintMultiplier;  // Forward
+        }
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        if (player->entity.grounded) {
+            acceleration[2] -= GROUND_ACCELERATION * sprintMultiplier;  // Backward
+        } else {
+            acceleration[2] -= AIR_ACCELERATION * sprintMultiplier;  // Backward
+        }
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        if (player->entity.grounded) {
+            acceleration[0] -= GROUND_ACCELERATION * sprintMultiplier;  // Left
+        } else {
+            acceleration[0] -= AIR_ACCELERATION * sprintMultiplier;  // Left
+        }
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        if (player->entity.grounded) {
+            acceleration[0] += GROUND_ACCELERATION * sprintMultiplier;  // Right
+        } else {
+            acceleration[0] += AIR_ACCELERATION * sprintMultiplier;  // Right
+        }
+    }
+
+
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && player->entity.grounded) {
+        player->entity.velocity[1] = 5;
+        player->entity.grounded = false;
+    }
+
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+        player_removeBlock(player, w);
+    } else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+        player_placeBlock(player, w, BL_GRASS);
+    }
+
+    changeRUFtoXYZ(acceleration, player->entity.yaw);
+
+    glm_vec3_copy(acceleration, player->entity.acceleration);
+}
 
 static void processCameraInput(GLFWwindow *window, camera_t *camera) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        camera_translateZ(camera, -0.15f);
-    }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        camera_translateZ(camera, 0.15f);
-    }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        camera_translateX(camera, -0.15f);
-    }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        camera_translateX(camera, 0.15f);
     }
 
     double currentMouse[2];
@@ -81,7 +128,7 @@ int main(void) {
 
     log_init(stdout);
 
-    startOrientationThread(); 
+    startOrientationThread();
 
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -162,7 +209,7 @@ int main(void) {
     */
 
 
-    const GLuint texture = loadTextureRGBA("textures/textures.png", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
+    const GLuint texture = loadTextureRGBA("textures/atlas.png", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
 
 
     /*
@@ -172,7 +219,7 @@ int main(void) {
 
 
         mat4 projection;
-        glm_perspective(FOV_Y, (float)screenWidth / (float)screenHeight, 0.1f, 500.0f, projection);
+        glm_perspective(FOV_Y, (float)screenWidth / (float)screenHeight, 0.1f, 16.f * (CHUNK_LOAD_RADIUS + 1), projection);
 
         glUseProgram(program);
 
@@ -203,12 +250,12 @@ int main(void) {
     // Camera setup
     camera_t camera;
     camera_init(&camera);
-    vec3 p = { 0.f, 18.f, 0.f };
+    vec3 p = { 0.f, 15.f, 0.f };
     camera_setPos(&camera, p);
 
     // World setup
     world_t world;
-    world_init(&world);
+    world_init(&world, program);
 
     unsigned int spawnLoader, cameraLoader;
     world_genChunkLoader(&world, &spawnLoader);
@@ -216,16 +263,34 @@ int main(void) {
     world_updateChunkLoader(&world, spawnLoader, GLM_VEC3_ZERO);
     world_updateChunkLoader(&world, cameraLoader, GLM_VEC3_ZERO);
 
+    player_t player;
+    player_init(&player);
+
+    double prevTime = glfwGetTime();
 
     postProcess_t postProcess;
     postProcess_init(&postProcess, postProcessProgram, screenWidth, screenHeight);
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
+        processPlayerInput(window, &player, &world);
         processCameraInput(window, &camera);
         world_doChunkLoading(&world);
 
         world_updateChunkLoader(&world, cameraLoader, camera.eye);
+
+        const double currentTime = glfwGetTime();
+        const double dt = currentTime - prevTime;
+        prevTime = currentTime;
+
+        processEntity(&world, &player.entity, dt);
+        player_attachCamera(&player, &camera);
+
+
+        glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT);
+
 
         glUseProgram(program);
         glActiveTexture(GL_TEXTURE0);
@@ -262,6 +327,8 @@ int main(void) {
             camera_translateX(&camera, -EYE_OFFSET);
         }
 
+        glUseProgram(0);
+
 
         glfwPollEvents();
         glfwSwapBuffers(window);
@@ -270,6 +337,8 @@ int main(void) {
         while ((err = glGetError()) != GL_NO_ERROR) {
             LOG_ERROR("OpenGL error: %d", err);
         }
+
+        // printf("FPS: %d\n", (int)(1/dt));
     }
 
     world_free(&world);
