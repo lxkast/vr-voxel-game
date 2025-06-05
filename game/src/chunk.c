@@ -227,6 +227,18 @@ void chunk_create(chunk_t *c, const int cx, const int cy, const int cz, const bl
     chunk_createMesh(c);
 }
 
+void chunk_createDeserialise(chunk_t *c, FILE *fp) {
+    fread(&c->cx, sizeof(float), 1, fp);
+    fread(&c->cy, sizeof(float), 1, fp);
+    fread(&c->cz, sizeof(float), 1, fp);
+
+    fread(&c->blocks, sizeof(int), CHUNK_SIZE_CUBED, fp);
+
+    glGenBuffers(1, &c->vbo);
+    glGenVertexArrays(1, &c->vao);
+    chunk_createMesh(c);
+}
+
 void chunk_generate(chunk_t *c, int cx, int cy, int cz) {
     c->cx = cx;
     c->cy = cy;
@@ -277,4 +289,12 @@ void chunk_draw(chunk_t *c, const int modelLocation) {
 void chunk_free(const chunk_t *c) {
     glDeleteVertexArrays(1, &c->vbo);
     glDeleteBuffers(1, &c->vao);
+}
+
+void chunk_serialise(chunk_t *c, FILE *fp) {
+    fwrite(&c->cx, sizeof(int), 1, fp);
+    fwrite(&c->cy, sizeof(int), 1, fp);
+    fwrite(&c->cz, sizeof(int), 1, fp);
+
+    fwrite(&c->blocks, sizeof(int), CHUNK_SIZE_CUBED, fp);
 }

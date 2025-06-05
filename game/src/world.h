@@ -167,3 +167,10 @@ bool world_removeBlock(world_t *w, int x, int y, int z);
  * @return Whether the operation was successful
  */
 bool world_placeBlock(world_t *w, int x, int y, int z, block_t block);
+
+/**
+* @brief Saves the currently loaded world
+* @param w A pointer to a world
+* @param dir The name of the directory to save the file in
+*/
+bool world_save(world_t *w, const char *dir);
