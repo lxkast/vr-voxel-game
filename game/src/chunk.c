@@ -46,22 +46,150 @@ static void chunk_createMesh(chunk_t *c) {
     for (int i = 0; i < CHUNK_SIZE; i++) {
         for (int j = 0; j < CHUNK_SIZE; j++) {
             for (int k = 0; k < CHUNK_SIZE; k++) {
-                switch (c->blocks[i][j][k]) {
-                    case BL_AIR:
-                        continue;;
-                    case BL_GRASS:
-                        memcpy(nextPtr, grassVertices, bytesPerBlock);
-                        break;
-                    default:
-                        LOG_WARN("Undefined block type, treating as air");
-                        continue;
+                if (c->blocks[i][j][k] == BL_AIR) {
+                    continue;
                 }
-                for (int l = 0; l < 36; l++) {
-                    nextPtr[5 * l] += 0.5f + i;
-                    nextPtr[5 * l + 1] += 0.5f + j;
-                    nextPtr[5 * l + 2] += 0.5f + k;
+                int ni, nj, nk;
+                bool neighbourIsAir = false;
+                /*
+                    The below is tedious and repetitive, but I didn't
+                    give it its own function because it may change significantly
+                    when implementing greedy meshing.
+                */
+
+
+                /*
+                    back face
+                */
+                ni = i;
+                nj = j;
+                nk = k - 1;
+                neighbourIsAir = false;
+                if (nk < 0) {
+                    neighbourIsAir = true;
+                } else {
+                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
                 }
-                nextPtr += bytesPerBlock / sizeof(float);
+                if (neighbourIsAir) {
+                    memcpy(nextPtr, backFaceVertices, faceVerticesSize);
+                    for (int n = 0; n < 6; n++) {
+                        nextPtr[5 * n + 0] += (float)i;
+                        nextPtr[5 * n + 1] += (float)j;
+                        nextPtr[5 * n + 2] += (float)k;
+                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
+                    }
+                    nextPtr += faceVerticesSize / sizeof(float);
+                }
+                /*
+                    front face
+                */
+                ni = i;
+                nj = j;
+                nk = k + 1;
+                neighbourIsAir = false;
+                if (nk >= CHUNK_SIZE) {
+                    neighbourIsAir = true;
+                } else {
+                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
+                }
+                if (neighbourIsAir) {
+                    memcpy(nextPtr, frontFaceVertices, faceVerticesSize);
+                    for (int n = 0; n < 6; n++) {
+                        nextPtr[5 * n + 0] += (float)i;
+                        nextPtr[5 * n + 1] += (float)j;
+                        nextPtr[5 * n + 2] += (float)k;
+                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
+                    }
+                    nextPtr += faceVerticesSize / sizeof(float);
+                }
+                /*
+                    left face
+                */
+                ni = i - 1;
+                nj = j;
+                nk = k;
+                neighbourIsAir = false;
+                if (ni < 0) {
+                    neighbourIsAir = true;
+                } else {
+                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
+                }
+                if (neighbourIsAir) {
+                    memcpy(nextPtr, leftFaceVertices, faceVerticesSize);
+                    for (int n = 0; n < 6; n++) {
+                        nextPtr[5 * n + 0] += (float)i;
+                        nextPtr[5 * n + 1] += (float)j;
+                        nextPtr[5 * n + 2] += (float)k;
+                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
+                    }
+                    nextPtr += faceVerticesSize / sizeof(float);
+                }
+                /*
+                    right face
+                */
+                ni = i + 1;
+                nj = j;
+                nk = k;
+                neighbourIsAir = false;
+                if (ni >= CHUNK_SIZE) {
+                    neighbourIsAir = true;
+                } else {
+                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
+                }
+                if (neighbourIsAir) {
+                    memcpy(nextPtr, rightFaceVertices, faceVerticesSize);
+                    for (int n = 0; n < 6; n++) {
+                        nextPtr[5 * n + 0] += (float)i;
+                        nextPtr[5 * n + 1] += (float)j;
+                        nextPtr[5 * n + 2] += (float)k;
+                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
+                    }
+                    nextPtr += faceVerticesSize / sizeof(float);
+                }
+                /*
+                    bottom face
+                */
+                ni = i;
+                nj = j - 1;
+                nk = k;
+                neighbourIsAir = false;
+                if (nj < 0) {
+                    neighbourIsAir = true;
+                } else {
+                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
+                }
+                if (neighbourIsAir) {
+                    memcpy(nextPtr, bottomFaceVertices, faceVerticesSize);
+                    for (int n = 0; n < 6; n++) {
+                        nextPtr[5 * n + 0] += (float)i;
+                        nextPtr[5 * n + 1] += (float)j;
+                        nextPtr[5 * n + 2] += (float)k;
+                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
+                    }
+                    nextPtr += faceVerticesSize / sizeof(float);
+                }
+                /*
+                    top face
+                */
+                ni = i;
+                nj = j + 1;
+                nk = k;
+                neighbourIsAir = false;
+                if (nj >= CHUNK_SIZE) {
+                    neighbourIsAir = true;
+                } else {
+                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
+                }
+                if (neighbourIsAir) {
+                    memcpy(nextPtr, topFaceVertices, faceVerticesSize);
+                    for (int n = 0; n < 6; n++) {
+                        nextPtr[5 * n + 0] += (float)i;
+                        nextPtr[5 * n + 1] += (float)j;
+                        nextPtr[5 * n + 2] += (float)k;
+                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
+                    }
+                    nextPtr += faceVerticesSize / sizeof(float);
+                }
             }
         }
     }
@@ -114,8 +242,11 @@ void chunk_generate(chunk_t *c, int cx, int cy, int cz) {
             float height = n * 20.f;
 
             for (int y = 0; y < CHUNK_SIZE; y++) {
-                if (cy * CHUNK_SIZE + y < height) {
+                if (c->cy * CHUNK_SIZE + y == (int)height) {
                     ptr[x][y][z] = BL_GRASS;
+                }
+                else if (cy * CHUNK_SIZE + y < height) {
+                    ptr[x][y][z] = BL_DIRT;
                 } else {
                     ptr[x][y][z] = BL_AIR;
                 }
