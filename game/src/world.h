@@ -11,8 +11,10 @@
 #define C_T 8
 #define LOG_C_T 3
 
-#define FOG_START 50.f
-#define FOG_END 75.f
+#define CHUNK_LOAD_RADIUS 4
+
+#define FOG_START 16.f * (CHUNK_LOAD_RADIUS - 1)
+#define FOG_END 16.f * CHUNK_LOAD_RADIUS
 
 /**
  * @brief A struct that holds data about the world.
