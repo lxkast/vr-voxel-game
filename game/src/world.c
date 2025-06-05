@@ -131,8 +131,16 @@ static bool getBlockAddr(world_t *w, int x, int y, int z, block_t **block, chunk
     return true;
 }
 
-void world_init(world_t *w) {
+static void fogInit(world_t *w, const GLuint program) {
+    glUseProgram(program);
+    glUniform1f(glGetUniformLocation(program, "fogStart"), FOG_START);
+    glUniform1f(glGetUniformLocation(program, "fogEnd"), FOG_END);
+    glUseProgram(0);
+}
+
+void world_init(world_t *w, const GLuint program) {
     w->clusterTable = NULL;
+    fogInit(w, program);
 }
 
 void world_draw(const world_t *w, const int modelLocation) {
@@ -188,7 +196,6 @@ void world_doChunkLoading(world_t *w) {
         const int cy = w->chunkLoaders[i].y >> 4;
         const int cz = w->chunkLoaders[i].z >> 4;
 
-#define CHUNK_LOAD_RADIUS 4
         for (int x = -CHUNK_LOAD_RADIUS; x <= CHUNK_LOAD_RADIUS; x++) {
             for (int y = -CHUNK_LOAD_RADIUS; y <= CHUNK_LOAD_RADIUS; y++) {
                 for (int z = -CHUNK_LOAD_RADIUS; z <= CHUNK_LOAD_RADIUS; z++) {
