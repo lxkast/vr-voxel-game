@@ -306,7 +306,9 @@ int main(void) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         camera_setView(&camera, program);
-        world_draw(&world, modelLocation);
+        vec3 camPos;
+        glm_vec3_add(player.cameraOffset, player.entity.position,camPos);
+        world_draw(&world, modelLocation, camPos, player.lookVector);
 
         if (postProcessingEnabled) {
             postProcess_bindBuffer(&postProcess.rightFramebuffer);
@@ -317,7 +319,7 @@ int main(void) {
         }
 
         camera_setView(&camera, program);
-        world_draw(&world, modelLocation);
+        world_draw(&world, modelLocation, camPos, player.lookVector);
 
         if (postProcessingEnabled) {
             postProcess_draw(&postProcess);

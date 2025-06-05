@@ -131,12 +131,41 @@ void world_init(world_t *w) {
     w->clusterTable = NULL;
 }
 
-void world_draw(const world_t *w, const int modelLocation) {
+vec3 chunkBounds = {15.f, 15.f, 15.f};
+
+// Note - we assume lookVector is normalised
+static bool isChunkInFrontOfCamera(vec3 camPos, vec3 lookVector, const chunk_t *chunk) {
+    vec3 chunkCoordsAdjusted;
+    chunkCoordsAdjusted[0] = (float)(chunk->cx << 4);
+    chunkCoordsAdjusted[1] = (float)(chunk->cy << 4);
+    chunkCoordsAdjusted[2] = (float)(chunk->cz << 4);
+
+    vec3 chunkCenter;
+    chunkCenter[0] = chunkCoordsAdjusted[0] + 8.f;
+    chunkCenter[1] = chunkCoordsAdjusted[1] + 8.f;
+    chunkCenter[2] = chunkCoordsAdjusted[2] + 8.f;
+
+    vec3 toChunk;
+    glm_vec3_sub(chunkCenter, camPos, toChunk);
+
+    const float dot = glm_vec3_dot(toChunk, lookVector);
+
+    return dot < 0;
+}
+
+void world_draw(const world_t *w, const int modelLocation, vec3 camPos, vec3 lookVector) {
     cluster_t *cluster, *tmp;
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
-        for (int i = 0; i < C_T * C_T * C_T; i++)
-            if (cluster->cells[i].chunk)
+        for (int i = 0; i < C_T * C_T * C_T; i++) {
+            if (!cluster->cells[i].chunk) {continue;}
+            const bool renderingChunk = isChunkInFrontOfCamera(camPos, lookVector, cluster->cells[i].chunk);
+            // if (!renderingChunk && i < 5) {
+            //     LOG_DEBUG("Not rendering chunk");
+            // }
+            if (cluster->cells[i].chunk && renderingChunk) {
                 chunk_draw(cluster->cells[i].chunk, modelLocation);
+            }
+        }
     }
 }
 

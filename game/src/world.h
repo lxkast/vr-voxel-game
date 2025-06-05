@@ -61,7 +61,7 @@ void world_init(world_t *w);
  * @param w A pointer to a world
  * @param modelLocation The model matrix location in the shader program
  */
-void world_draw(const world_t *w, int modelLocation);
+void world_draw(const world_t *w, int modelLocation, vec3 camPos, vec3 lookVector);
 
 /**
  * @brief Frees the world.
