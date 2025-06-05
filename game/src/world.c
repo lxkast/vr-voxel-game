@@ -1,7 +1,11 @@
 #include "world.h"
+
+#include <errno.h>
 #include <cglm/cglm.h>
 #include <logging.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+
 #include "chunk.h"
 #include "entity.h"
 
@@ -297,6 +301,42 @@ bool world_placeBlock(world_t *w, int x, int y, int z, block_t block) {
 
     *bp = block;
     cp->tainted = true;
+}
+
+bool world_save(world_t *w, const char *dir) {
+    struct stat st = { 0 };
+    if (stat(dir, &st) == -1) {
+        LOG_INFO("World save does not exist, creating directory...");
+        if (mkdir(dir, 0777) != 0) {
+            LOG_ERROR("Failed to create world directory: %s", strerror(errno));
+            return false;
+        }
+    }
+
+    const size_t dirLen = strlen(dir);
+    char *nameBuf = (char *)malloc(dirLen + 64);
+
+    cluster_t *cluster, *tmp;
+    HASH_ITER(hh, w->clusterTable, cluster, tmp) {
+        for (int i = 0; i < C_T * C_T * C_T; i++) {
+            chunk_t *chunk = cluster->cells[i].chunk;
+            if (!chunk) continue;
+
+            sprintf(nameBuf, "%s%d %d %d.chunk", dir, chunk->cx, chunk->cy, chunk->cz);
+
+            FILE *fp = fopen(nameBuf, "wb");
+            if (!fp) {
+                LOG_ERROR("Failed to open chunk file: %s", strerror(errno));
+                free(nameBuf);
+                return false;
+            }
+            chunk_serialise(chunk, fp);
+            fclose(fp);
+        }
+    }
+
+    free(nameBuf);
+    return true;
 }
 
 /**
