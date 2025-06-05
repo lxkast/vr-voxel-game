@@ -315,26 +315,38 @@ bool world_save(world_t *w, const char *dir) {
 
     const size_t dirLen = strlen(dir);
     char *nameBuf = (char *)malloc(dirLen + 64);
+    block_t *empty = (block_t *)malloc(sizeof(block_t) * CHUNK_SIZE_CUBED);
 
     cluster_t *cluster, *tmp;
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
+        sprintf(nameBuf, "%s%d %d %d.cluster", dir, cluster->key.x, cluster->key.y, cluster->key.z);
+
+        FILE *fp = fopen(nameBuf, "wb");
+        if (!fp) {
+            LOG_ERROR("Failed to open cluster file: %s", strerror(errno));
+            free(empty);
+            free(nameBuf);
+            return false;
+        }
+
+        static char valid = 0;
         for (int i = 0; i < C_T * C_T * C_T; i++) {
             chunk_t *chunk = cluster->cells[i].chunk;
-            if (!chunk) continue;
-
-            sprintf(nameBuf, "%s%d %d %d.chunk", dir, chunk->cx, chunk->cy, chunk->cz);
-
-            FILE *fp = fopen(nameBuf, "wb");
-            if (!fp) {
-                LOG_ERROR("Failed to open chunk file: %s", strerror(errno));
-                free(nameBuf);
-                return false;
+            if (!chunk) {
+                valid = 0;
+                fwrite(&valid, 1, 1, fp);
+                fwrite(empty, sizeof(block_t), CHUNK_SIZE_CUBED, fp);
+            } else {
+                valid = 1;
+                fwrite(&valid, 1, 1, fp);
+                chunk_serialise(chunk, fp);
             }
-            chunk_serialise(chunk, fp);
-            fclose(fp);
         }
+
+        fclose(fp);
     }
 
+    free(empty);
     free(nameBuf);
     return true;
 }
