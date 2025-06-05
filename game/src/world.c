@@ -307,7 +307,11 @@ bool world_save(world_t *w, const char *dir) {
     struct stat st = { 0 };
     if (stat(dir, &st) == -1) {
         LOG_INFO("World save does not exist, creating directory...");
+#if defined(_WIN32) || defined(_WIN64)
+        if (mkdir(dir) != 0) {
+#else
         if (mkdir(dir, 0777) != 0) {
+#endif
             LOG_ERROR("Failed to create world directory: %s", strerror(errno));
             return false;
         }
