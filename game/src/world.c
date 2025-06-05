@@ -8,6 +8,7 @@
 
 #include "chunk.h"
 #include "entity.h"
+#include "uthash.h"
 
 #define MAX_RAYCAST_DISTANCE 6.f
 #define RAYCAST_STEP_MAGNITUDE 0.1f
@@ -461,3 +462,11 @@ raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection) {
         .found = false
     };
 }
+
+void world_highlightFace(world_t *w, camera_t *camera, GLuint program) {
+    vec3 ray;
+    glm_vec3_scale(camera->ruf[2], -1.0f, ray);
+
+    raycast_t res = world_raycast(w, camera->eye, ray);
+}
+
