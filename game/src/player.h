@@ -15,6 +15,22 @@ typedef enum {
 } item_e;
 
 typedef struct {
+    char *displayName;
+    bool isPlaceable;
+    bool isWeapon;
+    int maxStackSize;
+    // Any other flags
+} itemProperties_t;
+
+static const itemProperties_t ITEM_PROPERTIES[] = {
+    [NOTHING]    = {"Empty",      false, false, 0},
+    [ITEM_DIRT]  = {"Dirt Block",       true,  false,  64},
+    [ITEM_GRASS] = {"Grass Block",      true,  false,  64},
+    [ITEM_STONE] = {"Stone Block",       true,  false,  64},
+    [ITEM_SWORD] = {"Sword Block",      false, true, 1},
+};
+
+typedef struct {
     item_e type;
     char count;
     // could add more members in the future, such as durability etc
