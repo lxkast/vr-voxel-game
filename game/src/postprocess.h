@@ -12,6 +12,8 @@ typedef struct {
     GLuint vbo;
     postProcess_buffer_t leftFramebuffer;
     postProcess_buffer_t rightFramebuffer;
+    int buffer_width;
+    int buffer_height;
     GLuint program;
 } postProcess_t;
 
