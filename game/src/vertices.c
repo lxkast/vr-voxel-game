@@ -1,10 +1,5 @@
 #include "vertices.h"
 
-#define ATLAS_LENGTH 96
-#define ATLAS_HEIGHT 64
-#define TEXTURE_LENGTH 16
-#define TEXTURE_HEIGHT 16
-
 const float backFaceVertices[] = {
     0.0f, 0.0f, 0.0f,  0.0f, 0.5f,  // U: 16/96, V: 0/16
     1.0f, 0.0f, 0.0f,  1.0f, 0.5f,  // U: 32/96, V: 0/16
