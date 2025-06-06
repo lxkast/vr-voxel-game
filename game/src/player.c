@@ -15,16 +15,32 @@ static bool onBlockCooldown(player_t *p) {
 void player_init(player_t *p) {
     *p = (player_t){
         .entity = {
-                   .position = {0.f, 15.f, 0.f},
-                   .velocity = {0.f, 0.f, 0.f},
-                   .size = {0.6f, 1.8f, 0.6f},
-                   .acceleration = {0.f, 0.f, 0.f},
-                   .grounded = false,
-                   .yaw = 0,
-                   },
+            .position = {0.f, 15.f, 0.f},
+            .velocity = {0.f, 0.f, 0.f},
+            .size = {0.6f, 1.8f, 0.6f},
+            .acceleration = {0.f, 0.f, 0.f},
+            .grounded = false,
+            .yaw = 0,
+        },
         .lookVector = { 0.f, 0.f, 0.f },
-        .cameraOffset = {0.3f, 1.6f, 0.3f}
+        .cameraOffset = {0.3f, 1.6f, 0.3f},
+        .hotbar = {
+            .slots = {
+                {ITEM_DIRT, 64},
+                {ITEM_GRASS, 32},
+                {ITEM_STONE, 16},
+                {NOTHING, 0},
+                {NOTHING, 0},
+                {NOTHING, 0},
+                {NOTHING, 0},
+                {NOTHING, 0},
+                {NOTHING, 0}
+            },
+            .currentSlotIndex = 0
+        }
     };
+
+    p->hotbar.currentSlot = &(p->hotbar.slots[0]);
 }
 
 void player_attachCamera(player_t *p, camera_t *camera) {

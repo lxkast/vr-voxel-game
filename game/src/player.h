@@ -24,7 +24,7 @@ typedef struct {
 
 typedef struct {
     hotbarItem_t slots[9];
-    hotbarItem_t currentSlot;
+    hotbarItem_t *currentSlot;
     char currentSlotIndex;
 } hotbar_t;
 
