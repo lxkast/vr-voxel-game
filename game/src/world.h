@@ -2,9 +2,8 @@
 
 #include <cglm/cglm.h>
 #include <glad/gl.h>
-#include <stddef.h>
 #include "chunk.h"
-#include "uthash.h"
+#include "camera.h"
 
 #define MAX_CHUNKS 256
 #define MAX_CHUNK_LOADERS 8
@@ -27,6 +26,8 @@ typedef struct {
     } chunkLoaders[MAX_CHUNK_LOADERS];
     /// The hash table used keeping track of chunks
     struct _s_cluster *clusterTable;
+    GLuint highlightVao;
+    GLuint highlightVbo;
 } world_t;
 
 /**
@@ -180,3 +181,11 @@ bool world_placeBlock(world_t *w, int x, int y, int z, block_t block);
 * @param dir The name of the directory to save the file in
 */
 bool world_save(world_t *w, const char *dir);
+
+/**
+* @brief Highlights the face the camera is looking at
+* @param w A pointer to a world
+* @param camera A pointer to a camera
+* @param modelLocation The model location
+*/
+void world_highlightFace(world_t *w, camera_t *camera, int modelLocation);

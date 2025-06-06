@@ -3,7 +3,10 @@
 #include <GLFW/glfw3.h>
 #include <logging.h>
 #include <stdio.h>
+#include "analytics.h"
 #include "camera.h"
+#include "entity.h"
+#include "player.h"
 #include "postprocess.h"
 #include "shaderutil.h"
 #include "texture.h"
@@ -25,8 +28,8 @@
 #define USING_RASPBERRY_PI false
 
 #define SPRINT_MULTIPLIER 1.3f
-#define GROUND_ACCELERATION 9.f
-#define AIR_ACCELERATION 3.f
+#define GROUND_ACCELERATION 35.f
+#define AIR_ACCELERATION 10.f
 
 #define GRAVITY_ACCELERATION (-10.f)
 
@@ -266,12 +269,16 @@ int main(void) {
     player_t player;
     player_init(&player);
 
-    double prevTime = glfwGetTime();
-
     postProcess_t postProcess;
     postProcess_init(&postProcess, postProcessProgram, screenWidth, screenHeight);
 
+    analytics_t analytics;
+    analytics_init(&analytics);
+    double fpsDisplayAcc = 0;
+
+
     while (!glfwWindowShouldClose(window)) {
+        analytics_startFrame(&analytics);
         processInput(window);
         processPlayerInput(window, &player, &world);
         processCameraInput(window, &camera);
@@ -279,11 +286,7 @@ int main(void) {
 
         world_updateChunkLoader(&world, cameraLoader, camera.eye);
 
-        const double currentTime = glfwGetTime();
-        const double dt = currentTime - prevTime;
-        prevTime = currentTime;
-
-        processEntity(&world, &player.entity, dt);
+        processEntity(&world, &player.entity, analytics.dt);
         player_attachCamera(&player, &camera);
 
 
@@ -305,22 +308,24 @@ int main(void) {
             camera_translateX(&camera, -EYE_OFFSET);
         }
         glEnable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         camera_setView(&camera, program);
         world_draw(&world, modelLocation);
+        world_highlightFace(&world, &camera, modelLocation);
 
         if (postProcessingEnabled) {
             postProcess_bindBuffer(&postProcess.rightFramebuffer);
-            glEnable(GL_DEPTH_TEST);
             glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             camera_translateX(&camera, 2 * EYE_OFFSET);
+            camera_setView(&camera, program);
+            world_draw(&world, modelLocation);
+            world_highlightFace(&world, &camera, modelLocation);
         }
-
-        camera_setView(&camera, program);
-        world_draw(&world, modelLocation);
 
         if (postProcessingEnabled) {
             postProcess_draw(&postProcess);
@@ -329,6 +334,11 @@ int main(void) {
 
         glUseProgram(0);
 
+        fpsDisplayAcc += analytics.dt;
+        if (fpsDisplayAcc > 1.0) {
+            LOG_INFO("%.0lf\n", analytics.fps);
+            fpsDisplayAcc = 0.0;
+        }
 
         glfwPollEvents();
         glfwSwapBuffers(window);
@@ -337,8 +347,6 @@ int main(void) {
         while ((err = glGetError()) != GL_NO_ERROR) {
             LOG_ERROR("OpenGL error: %d", err);
         }
-
-        // printf("FPS: %d\n", (int)(1/dt));
     }
 
     world_free(&world);
