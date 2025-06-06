@@ -7,6 +7,7 @@
 #define BLOCK_COOLDOWN_TIME 0.5
 
 typedef enum {
+    NOTHING,
     ITEM_DIRT,
     ITEM_GRASS,
     ITEM_STONE,
@@ -23,7 +24,8 @@ typedef struct {
 
 typedef struct {
     hotbarItem_t slots[9];
-    char currentSlot;
+    hotbarItem_t currentSlot;
+    char currentSlotIndex;
 } hotbar_t;
 
 /**

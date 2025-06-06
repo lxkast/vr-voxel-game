@@ -81,6 +81,16 @@ static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w)
     changeRUFtoXYZ(acceleration, player->entity.yaw);
 
     glm_vec3_copy(acceleration, player->entity.acceleration);
+
+    for (char i = 0; i <= 8; i++) {
+        if (glfwGetKey(window, GLFW_KEY_1 + i) == GLFW_PRESS) {
+            player->hotbar.currentSlotIndex = i;
+            player->hotbar.currentSlot = player->hotbar.slots[i];
+            //LOG_DEBUG("Current slot is %d", player->hotbar.currentSlot);
+            LOG_DEBUG("Current item in slot is %d", player->hotbar.currentSlot);
+            break;
+        }
+    }
 }
 
 static void processCameraInput(GLFWwindow *window, camera_t *camera) {
