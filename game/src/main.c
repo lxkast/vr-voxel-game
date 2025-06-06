@@ -271,7 +271,6 @@ int main(void) {
     analytics_init(&analytics);
     double fpsDisplayAcc = 0;
 
-
     while (!glfwWindowShouldClose(window)) {
         analytics_startFrame(&analytics);
         processInput(window);
@@ -297,7 +296,7 @@ int main(void) {
         const int modelLocation = glGetUniformLocation(program, "model");
         glPolygonMode(GL_FRONT_AND_BACK, wireframeView ? GL_LINE : GL_FILL);
         glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projection);
-
+        world_highlightFace(&world, &camera);
         if (postProcessingEnabled) {
             postProcess_bindBuffer(&postProcess.leftFramebuffer);
             camera_translateX(&camera, -EYE_OFFSET);
@@ -310,7 +309,7 @@ int main(void) {
 
         camera_setView(&camera, program);
         world_draw(&world, modelLocation);
-        world_highlightFace(&world, &camera, modelLocation);
+        world_drawHighlight(&world, modelLocation);
 
         if (postProcessingEnabled) {
             postProcess_bindBuffer(&postProcess.rightFramebuffer);
@@ -319,10 +318,7 @@ int main(void) {
             camera_translateX(&camera, 2 * EYE_OFFSET);
             camera_setView(&camera, program);
             world_draw(&world, modelLocation);
-            world_highlightFace(&world, &camera, modelLocation);
-        }
-
-        if (postProcessingEnabled) {
+            world_drawHighlight(&world, modelLocation);
             postProcess_draw(&postProcess);
             camera_translateX(&camera, -EYE_OFFSET);
         }
