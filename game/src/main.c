@@ -310,8 +310,8 @@ int main(void) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         camera_setView(&camera, program);
-        world_draw(&world, modelLocation);
         world_drawHighlight(&world, modelLocation);
+        world_draw(&world, modelLocation, &camera);
 
         if (postProcessingEnabled) {
             postProcess_bindBuffer(&postProcess.rightFramebuffer);
@@ -319,8 +319,8 @@ int main(void) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             camera_translateX(&camera, 2 * EYE_OFFSET);
             camera_setView(&camera, program);
-            world_draw(&world, modelLocation);
             world_drawHighlight(&world, modelLocation);
+            world_draw(&world, modelLocation, &camera);
 
             glViewport(0, 0, screenWidth, screenHeight);
             postProcess_draw(&postProcess);
