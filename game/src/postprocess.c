@@ -53,6 +53,8 @@ static void postProcess_initFramebuffer(postProcess_buffer_t *renderbuffer, int 
 */
 void postProcess_init(postProcess_t *postProcess, GLuint shaderProgram, int width, int height) {
     postProcess->program = shaderProgram;
+    postProcess->buffer_width = width / 2;
+    postProcess->buffer_height = height;
     postProcess_initFramebuffer(&postProcess->leftFramebuffer, width / 2, height);
     postProcess_initFramebuffer(&postProcess->rightFramebuffer, width / 2, height);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
