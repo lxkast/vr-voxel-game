@@ -528,6 +528,7 @@ void world_highlightFace(world_t *w, camera_t *camera) {
     glBufferData(GL_ARRAY_BUFFER, faceVerticesSize, buffer, GL_STATIC_DRAW);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    free(buffer);
 }
 
 void world_drawHighlight(world_t *w, int modelLocation) {
