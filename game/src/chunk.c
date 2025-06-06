@@ -16,7 +16,7 @@ static float ease(const float t) {
     return t * t * t * (t * (t * 6 - 15) + 10);
 }
 
-float smoothValueNoise(const float x, const float y) {
+static float smoothValueNoise(const float x, const float y) {
     const int x_int = (int)floorf(x);
     const int y_int = (int)floorf(y);
     const float x_frac = ease(x - (float)x_int);
@@ -31,6 +31,22 @@ float smoothValueNoise(const float x, const float y) {
     const float i1 = glm_lerp(v00, v10, x_frac);
     const float i2 = glm_lerp(v01, v11, x_frac);
     return glm_lerp(i1, i2, y_frac);
+}
+
+static float height(const int x, const int z) {
+    float totalHeight = 0.f;
+    float frequency = 0.01f;
+    float amplitude = 1.f;
+    float maxAmplitude = 0.f;
+
+    for (int octave = 0; octave < 4; octave++) {
+        totalHeight += smoothValueNoise((float)x * frequency, (float)z * frequency) * amplitude;
+        maxAmplitude += amplitude;
+        amplitude *= 0.5f;
+        frequency *= 2.f;
+    }
+
+    return totalHeight / maxAmplitude;
 }
 
 /**
@@ -247,11 +263,11 @@ void chunk_generate(chunk_t *c, int cx, int cy, int cz) {
     int (*ptr)[CHUNK_SIZE][CHUNK_SIZE] = (int (*)[CHUNK_SIZE][CHUNK_SIZE]) c->blocks;
     for (int x = 0; x < CHUNK_SIZE; x++) {
         for (int z = 0; z < CHUNK_SIZE; z++) {
-            float xf = (c->cx * CHUNK_SIZE + x) * 0.015f;
-            float zf = (c->cz * CHUNK_SIZE + z) * 0.015f;
+            const float xf = (c->cx * CHUNK_SIZE + x);
+            const float zf = (c->cz * CHUNK_SIZE + z);
 
-            float n = smoothValueNoise(xf, zf);
-            float height = n * 20.f;
+            const float n = height(xf, zf);
+            const float height = n * 20.f;
 
             for (int y = 0; y < CHUNK_SIZE; y++) {
                 if (c->cy * CHUNK_SIZE + y == (int)height) {
