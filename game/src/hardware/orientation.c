@@ -13,13 +13,21 @@ static pthread_t thread;
 
 static state_t currentState = {1, 0, 0, 0};
 
-void orientation_init(double accels[3]) {
-    static double expected[3] = {0, 0, -1};
+static double gravityDir[3] = {0, 0, -1};
+
+// TODO pick sensible values for the below
+static double P[4][4] = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
+static double Q[4][4] = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
+static double R[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+
+static const double I[4][4] = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
+
+static void orientation_init(double accels[3]) {
     // first normalise accels
     vec_normalise(accels, 3, accels);
-    double dot = dotProduct3(accels, expected);
+    double dot = dotProduct3(accels, gravityDir);
     currentState[0] = dot;
-    crossProduct3(expected, accels, currentState+1);
+    crossProduct3(gravityDir, accels, currentState+1);
     quat_normalise(currentState, currentState);
 }
 
@@ -27,12 +35,73 @@ void imu_getOrientation(quaternion res) {
     memcpy(res, currentState, 4 * sizeof(double));
 }
 
-void predict(double dt) {
+static void predict(double dt, double gyro[3]) {
     quaternion diff;
-    quat_fromEulers(&currentState[4], dt, diff);
+    quat_fromEulers(gyro, dt, diff);
     quaternion res;
     quat_multiply(currentState, diff, res);
     memcpy(currentState, res, 4 * sizeof(double));
+
+    // update covariance this is jacobian
+    double F[4][4] = {
+        {diff[0], -diff[1], -diff[2], -diff[3]},
+        {diff[1], diff[0], -diff[3], diff[2]},
+        {diff[2], diff[3], diff[0], -diff[1]},
+        {diff[3], -diff[2], diff[1], diff[0]}};
+
+    double Ft[4][4];
+    mat_transpose(F, 4, 4, Ft);
+
+    double temp[4][4];
+    matmul(F, P, 4, 4, 4, 4, temp);
+    matmul(temp, Ft, 4, 4, 4, 4, P);
+    mat_add(P, Q, 4, 4, P);
+}
+
+static void update(double accels[3]) {
+    vec_normalise(accels, 3, accels);
+    // predict measurements
+    double predicted[3];
+    quat_vecmul(currentState, gravityDir, predicted);
+
+    double yk[3] = {accels[0] - predicted[0], accels[1] - predicted[1], accels[2] - predicted[2]};
+    double H[3][4] = {
+        {currentState[2] * 2, currentState[3] * -2, currentState[0] * 2, currentState[1] * -2},
+        {currentState[1] * -2, currentState[0] * -2, currentState[3] * -2, currentState[2] * -2},
+        {-2 * currentState[0], 2 * currentState[1], 2 * currentState[2], -2 * currentState[3]}
+    };
+
+    double temp[3][4];
+    double Ht[4][3];
+    mat_transpose(H, 3, 4, Ht);
+
+    matmul(H, P, 3, 4, 4, 4, temp);
+    double S[3][3];
+    matmul(temp, Ht, 3, 4, 4, 3, S);
+    mat_add(S, R, 3, 3, S);
+
+    double SI[3][3];
+    inverse3x3(S, SI);
+
+    double temp2[4][3];
+    matmul(P, Ht, 4, 4, 4, 3, temp2);
+    double K[4][3];
+    matmul(temp2, SI, 4, 3, 3, 3, K);
+
+    double update[4];
+    matmul(K, yk, 4, 3, 3, 1, update);
+    mat_add(update, currentState, 4, 1, currentState);
+
+    double temp3[4][4];
+    matmul(K, H, 4, 3, 3, 4, temp3);
+
+    mat_sub(I, temp3, 4, 4, temp3);
+    double temp4[4][4];
+    matmul(temp3, P, 4, 4, 4, 4, temp4);
+    memcpy(P, temp4, 4 * 4 * sizeof(double));
+
+    (void) quat_normalise(currentState, currentState);
+    // mat_divs(P, 4, 4, mag * mag, P);
 }
 
 void *runOrientation(void *arg) {
@@ -43,6 +112,7 @@ void *runOrientation(void *arg) {
     FILE *fpt = fopen("output.csv", "w+");
 
     double lastTime = 0.0;
+    bool init = false;
 
     while (1) {
         usleep(10);
@@ -50,24 +120,18 @@ void *runOrientation(void *arg) {
             double deltaTime = res.timestamp - lastTime;
             lastTime = res.timestamp;
 
-            if (!res.accelValid) {
-                LOG_FATAL("Invalid accel");
+            if (res.gyroValid && init) {
+                predict(deltaTime, res.gyro);
             }
-            if (!res.gyroValid) {
-                LOG_FATAL("INvalid gyro");
-                continue;
-            } else {
-                // fprintf(fpt, "%f, %f, %f\n", res.gyro[0], res.gyro[1], res.gyro[2]);
-                // quaternion diff;
-                // quat_fromEulers(res.gyro, deltaTime, diff);
-                //
-                // quaternion qres;
-                // quat_multiply(currentState, diff, qres);
-                //
-                // memcpy(currentState, qres, 4 * sizeof(double));
-                orientation_init(res.accel);
 
-                // LOG_DEBUG("Current quaternion %f, %f, %f, %f", orientation[0], orientation[1], orientation[2], orientation[3]);
+            if (res.accelValid) {
+                if (!res.gyroValid) LOG_FATAL("Accel valid, but gyro isn't, out of sync, help");
+                if (!init) {
+                    orientation_init(res.accel);
+                    init = true;
+                } else {
+                    update(res.accel);
+                }
             }
         }
     }

@@ -1,6 +1,8 @@
 #include <logging.h>
 #include <math.h>
 #include "linalg.h"
+
+#include <string.h>
 /*
  * Assumes that the timestep is small
  */
@@ -34,10 +36,29 @@ void quat_multiply(quaternion r, quaternion q, quaternion res) {
     res[3] = r[0] * q[3] - r[1] * q[2] + r[2] * q[1] + r[3] * q[0];
 }
 
+void quat_conjugate(quaternion q, quaternion res) {
+    res[0] = q[0];
+    res[1] = -q[1];
+    res[2] = -q[2];
+    res[3] = -q[3];
+}
+
+void quat_vecmul(quaternion q, double vector[3], double res[3]) {
+    quaternion qp;
+    quat_conjugate(q, qp);
+    quaternion asq = {0, vector[0], vector[1], vector[2]};
+
+    quaternion tmp;
+    quat_multiply(q, asq, tmp);
+    quaternion qres;
+    quat_multiply(tmp, qp, qres);
+    memcpy(res, asq + 1, sizeof(double) * 3);
+}
+
 /*
  * Note this function can be used in place.
  */
-void quat_normalise(quaternion r, quaternion res) {
+double quat_normalise(quaternion r, quaternion res) {
     double magnitude = sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2] + r[3] * r[3]);
     if (magnitude == 0) { // this is a bit of an issue, return unit quaternion
         res[0] = 1;
@@ -50,22 +71,66 @@ void quat_normalise(quaternion r, quaternion res) {
         res[2] = r[2] / magnitude;
         res[3] = r[3] / magnitude;
     }
+    return magnitude;
 }
 
 /*
  * Multiplies two NxN matrices
  */
-void matmul(double *a, double *b, const unsigned int size, double *res) {
+void matmul(const double *a, const double *b,
+            unsigned int rows_a, unsigned int cols_a, unsigned int rows_b, unsigned int cols_b,
+            double *res) {
     if (res == a || res == b) {
         LOG_FATAL("Cannot multiply matrices in place");
     }
-    for (int x = 0; x < size; x++) {
-        for (int y = 0; y < size; y++) {
+
+    for (unsigned int i = 0; i < rows_a; i++) {
+        for (unsigned int j = 0; j < cols_b; j++) {
             double sum = 0.0;
-            for (int z = 0; z < size; z++) {
-                sum += a[x* size + z] * b[z* size + y];
+            for (unsigned int k = 0; k < cols_a; k++) {
+                sum += a[i * cols_a + k] * b[k * cols_b + j];
             }
+            res[i * cols_b + j] = sum;
         }
+    }
+}
+
+void mat_transpose(const double *a, unsigned int rows_a, unsigned int cols_a, double *res) {
+    if (*a == *res) {
+        LOG_FATAL("Cannot transpose matrix in place");
+    }
+    for (int i = 0; i < rows_a; i++) {
+        for (unsigned int j = 0; j < cols_a; j++) {
+            res[j * rows_a + i] = a[i * cols_a + j];
+        }
+    }
+}
+
+/*
+ * Note can be done in place
+ */
+void mat_add(const double *a, const double *b, int rows, int cols, double *res) {
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            res[i*cols + j] = a[i*cols + j] + b[i*cols + j];
+        }
+    }
+}
+
+void mat_sub(const double *a, const double *b, int rows, int cols, double *res) {
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            res[i*cols + j] = a[i*cols + j] - b[i*cols + j];
+        }
+    }
+}
+
+/*
+ *  Note this function can be called inline
+ */
+void mat_divs(const double *a, int rows, int cols, double factor, double *res) {
+    for (int i = 0; i < rows * cols; i++) {
+        res[i] = a[i] / factor;
     }
 }
 
@@ -110,6 +175,19 @@ void inverse4x4(double a[4][4], double res[4][4]) {
     res[3][1] = (a[0][0]*a[2][1]*a[3][2] - a[0][0]*a[2][2]*a[3][1] - a[0][1]*a[2][0]*a[3][2] + a[0][1]*a[2][2]*a[3][0] + a[0][2]*a[2][0]*a[3][1] - a[0][2]*a[2][1]*a[3][0]) / det;
     res[3][2] = (-a[0][0]*a[1][1]*a[3][2] + a[0][0]*a[1][2]*a[3][1] + a[0][1]*a[1][0]*a[3][2] - a[0][1]*a[1][2]*a[3][0] - a[0][2]*a[1][0]*a[3][1] + a[0][2]*a[1][1]*a[3][0]) / det;
     res[3][3] = (a[0][0]*a[1][1]*a[2][2] - a[0][0]*a[1][2]*a[2][1] - a[0][1]*a[1][0]*a[2][2] + a[0][1]*a[1][2]*a[2][0] + a[0][2]*a[1][0]*a[2][1] - a[0][2]*a[1][1]*a[2][0]) / det;
+}
+
+void inverse3x3(double a[3][3], double res[3][3]) {
+    double det = a[0][0]*a[1][1]*a[2][2] - a[0][0]*a[1][2]*a[2][1] - a[0][1]*a[1][0]*a[2][2] + a[0][1]*a[1][2]*a[2][0] + a[0][2]*a[1][0]*a[2][1] - a[0][2]*a[1][1]*a[2][0];
+    res[0][0] = (a[1][1]*a[2][2] - a[1][2]*a[2][1]) / det;
+    res[0][1] = (-a[0][1]*a[2][2] + a[0][2]*a[2][1]) / det;
+    res[0][2] = (a[0][1]*a[1][2] - a[0][2]*a[1][1]) / det;
+    res[1][0] = (-a[1][0]*a[2][2] + a[1][2]*a[2][0]) / det;
+    res[1][1] = (a[0][0]*a[2][2] - a[0][2]*a[2][0]) / det;
+    res[1][2] = (-a[0][0]*a[1][2] + a[0][2]*a[1][0]) / det;
+    res[2][0] = (a[1][0]*a[2][1] - a[1][1]*a[2][0]) / det;
+    res[2][1] = (-a[0][0]*a[2][1] + a[0][1]*a[2][0]) / det;
+    res[2][2] = (a[0][0]*a[1][1] - a[0][1]*a[1][0]) / det;
 }
 
 void crossProduct3(const double a[3], const double b[3], double res[3]) {

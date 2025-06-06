@@ -50,6 +50,7 @@
 #define REG_ACCEL_CONFIG0 (uint8_t) 0x50
 #define ACCEL_CONFIG0_FS_4G (uint8_t) 0x40
 #define ACCEL_CONFIG0_ODR_100HZ (uint8_t) 0x08
+#define ACCEL_CONFIG0_ODR_50HZ (uint8_t) 0x9
 
 #define REG_DEVICE_CONFIG (uint8_t) 0x11
 #define DEVICE_CONFIG_RESET (uint8_t) 0x1

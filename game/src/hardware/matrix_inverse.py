@@ -1,6 +1,6 @@
 import sympy as sp
 sp.init_printing(num_columns=0)
-N = 4
+N = 3
 A = sp.MatrixSymbol('A', N, N)
 M = sp.Matrix(N, N, lambda i, j: sp.Symbol(f'a[{i}][{j}]'))
 M_inv = M.inv()
