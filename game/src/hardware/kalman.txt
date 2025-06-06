@@ -1,5 +1,5 @@
 State modelled as 7 doubles, first 4 representing the current quaternion, last 3 representing the current euler rotational velocity.
-
+Initialised as {1, 0, 0, 0, 0, 0, 0}
 Predict step:
     Multiply quaternion state by new quat
     Leave rv constant

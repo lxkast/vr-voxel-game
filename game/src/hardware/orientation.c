@@ -9,15 +9,20 @@
 
 typedef double state_t[7];
 
-pthread_t thread;
+static pthread_t thread;
 
-state_t currentState = {1, 0, 0, 0, 0, 0, 0};
+static state_t currentState = {1, 0, 0, 0, 0, 0, 0};
 
 void imu_getOrientation(quaternion res) {
     memcpy(res, currentState, 4 * sizeof(double));
 }
 
-void predict() {
+void predict(double dt) {
+    quaternion diff;
+    quat_fromEulers(&currentState[4], dt, diff);
+    quaternion res;
+    quat_multiply(currentState, diff, res);
+    memcpy(currentState, res, 4 * sizeof(double));
 }
 
 void *runOrientation(void *arg) {
