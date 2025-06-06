@@ -266,16 +266,18 @@ void chunk_generate(chunk_t *c, int cx, int cy, int cz) {
             const float xf = (c->cx * CHUNK_SIZE + x);
             const float zf = (c->cz * CHUNK_SIZE + z);
 
+            const float biome = smoothValueNoise(xf * 0.005f, zf * 0.005f);
+
             const float n = height(xf, zf);
             const float height = n * 20.f;
 
             for (int y = 0; y < CHUNK_SIZE; y++) {
                 if (c->cy * CHUNK_SIZE + y == (int)height) {
-                    ptr[x][y][z] = BL_GRASS;
-                } else if (cy * CHUNK_SIZE + y < height - 20) {
+                    ptr[x][y][z] = biome < 0.5f ? BL_GRASS : BL_SAND;
+                } else if (cy * CHUNK_SIZE + y < height - 6) {
                     ptr[x][y][z] = BL_STONE;
                 } else if (cy * CHUNK_SIZE + y < height) {
-                    ptr[x][y][z] = BL_DIRT;
+                    ptr[x][y][z] = biome < 0.5f ? BL_DIRT : BL_SAND;
                 } else {
                     ptr[x][y][z] = BL_AIR;
                 }
