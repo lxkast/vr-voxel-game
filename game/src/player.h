@@ -12,22 +12,27 @@ typedef enum {
     ITEM_GRASS,
     ITEM_STONE,
     ITEM_SWORD,
+    ITEM_SHOVEL,
+    ITEM_PICKAXE,
 } item_e;
 
 typedef struct {
-    char *displayName;
+    char *displayName;  // the name displayed by the UI when interacting with the item
     bool isPlaceable;
-    bool isWeapon;
+    bool isTool;
     int maxStackSize;
+    int durability;    // -1 means N/A - otherwise decreases by 1 each time it is used
     // Any other flags
 } itemProperties_t;
 
 static const itemProperties_t ITEM_PROPERTIES[] = {
-    [NOTHING]    = {"Empty",      false, false, 0},
-    [ITEM_DIRT]  = {"Dirt Block",       true,  false,  64},
-    [ITEM_GRASS] = {"Grass Block",      true,  false,  64},
-    [ITEM_STONE] = {"Stone Block",       true,  false,  64},
-    [ITEM_SWORD] = {"Sword Block",      false, true, 1},
+    [NOTHING]    = {"Empty",      false, false, 0, -1},
+    [ITEM_DIRT]  = {"Dirt Block",       true,  false,  64, -1},
+    [ITEM_GRASS] = {"Grass Block",      true,  false,  64,-1},
+    [ITEM_STONE] = {"Stone Block",       true,  false,  64,-1},
+    [ITEM_SWORD] = {"Sword",      false, true, 1,200},
+    [ITEM_SHOVEL] = {"Shovel",      false, true, 1,200},
+    [ITEM_PICKAXE] = {"Pickaxe",      false, true, 1,200},
 };
 
 static const block_t ITEM_TO_BLOCK[] = {
