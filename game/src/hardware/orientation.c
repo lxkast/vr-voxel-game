@@ -7,13 +7,21 @@
 #include "icm42688.h"
 #include "orientation.h"
 
-#include "linalg.h"
-
-typedef double state_t[7];
+typedef double state_t[4];
 
 static pthread_t thread;
 
-static state_t currentState = {1, 0, 0, 0, 0, 0, 0};
+static state_t currentState = {1, 0, 0, 0};
+
+void orientation_init(double accels[3]) {
+    static double expected[3] = {0, 0, -1};
+    // first normalise accels
+    vec_normalise(accels, 3, accels);
+    double dot = dotProduct3(accels, expected);
+    currentState[0] = dot;
+    crossProduct3(expected, accels, currentState+1);
+    quat_normalise(currentState, currentState);
+}
 
 void imu_getOrientation(quaternion res) {
     memcpy(res, currentState, 4 * sizeof(double));
@@ -49,14 +57,15 @@ void *runOrientation(void *arg) {
                 LOG_FATAL("INvalid gyro");
                 continue;
             } else {
-                fprintf(fpt, "%f, %f, %f\n", res.gyro[0], res.gyro[1], res.gyro[2]);
-                quaternion diff;
-                quat_fromEulers(res.gyro, deltaTime, diff);
-
-                quaternion qres;
-                quat_multiply(currentState, diff, qres);
-
-                memcpy(currentState, qres, 4 * sizeof(double));
+                // fprintf(fpt, "%f, %f, %f\n", res.gyro[0], res.gyro[1], res.gyro[2]);
+                // quaternion diff;
+                // quat_fromEulers(res.gyro, deltaTime, diff);
+                //
+                // quaternion qres;
+                // quat_multiply(currentState, diff, qres);
+                //
+                // memcpy(currentState, qres, 4 * sizeof(double));
+                orientation_init(res.accel);
 
                 // LOG_DEBUG("Current quaternion %f, %f, %f, %f", orientation[0], orientation[1], orientation[2], orientation[3]);
             }
