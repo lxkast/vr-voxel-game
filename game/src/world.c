@@ -151,10 +151,8 @@ static void highlightInit(world_t *w) {
 }
 
 void world_init(world_t *w, const GLuint program) {
+    memset(w, 0, sizeof(world_t));
     w->clusterTable = NULL;
-    for (int i = 0; i < MAX_CHUNK_LOADERS; i++) {
-        w->chunkLoaders[i].active = false;
-    }
     fogInit(w, program);
     highlightInit(w);
 }
