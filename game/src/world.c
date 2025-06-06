@@ -477,11 +477,12 @@ raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection) {
     };
 }
 
-void world_highlightFace(world_t *w, camera_t *camera, int modelLocation) {
+void world_highlightFace(world_t *w, camera_t *camera) {
     vec3 ray;
     glm_vec3_scale(camera->ruf[2], -1.0f, ray);
 
     raycast_t res = world_raycast(w, camera->eye, ray);
+    w->highlightFound = res.found;
     if (!res.found) {
         return;
     }
@@ -521,15 +522,23 @@ void world_highlightFace(world_t *w, camera_t *camera, int modelLocation) {
 
     glm_vec3_add(res.blockPosition, delta, res.blockPosition);
 
-    mat4 model;
-    glm_translate_make(model, res.blockPosition);
+    glm_translate_make(w->highlightModel, res.blockPosition);
 
-    glBindVertexArray(w->highlightVao);
     glBindBuffer(GL_ARRAY_BUFFER, w->highlightVbo);
     glBufferData(GL_ARRAY_BUFFER, faceVerticesSize, buffer, GL_STATIC_DRAW);
-    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
-    glDrawArrays(GL_TRIANGLES, 0, faceVerticesSize / (5 * sizeof(float)));
-    glBindVertexArray(0);
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    free(buffer);
 }
 
+void world_drawHighlight(world_t *w, int modelLocation) {
+    if (!w->highlightFound) {
+        return;
+    }
+    glBindVertexArray(w->highlightVao);
+
+    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, w->highlightModel);
+
+    glDrawArrays(GL_TRIANGLES, 0, faceVerticesSize / (5 * sizeof(float)));
+    glBindVertexArray(0);
+}

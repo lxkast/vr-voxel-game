@@ -297,7 +297,7 @@ int main(void) {
         const int modelLocation = glGetUniformLocation(program, "model");
         glPolygonMode(GL_FRONT_AND_BACK, wireframeView ? GL_LINE : GL_FILL);
         glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projection);
-
+        world_highlightFace(&world, &camera);
         if (postProcessingEnabled) {
             glViewport(0, 0, postProcess.buffer_width, postProcess.buffer_height);
             postProcess_bindBuffer(&postProcess.leftFramebuffer);
@@ -311,20 +311,16 @@ int main(void) {
 
         camera_setView(&camera, program);
         world_draw(&world, modelLocation);
-        world_highlightFace(&world, &camera, modelLocation);
+        world_drawHighlight(&world, modelLocation);
 
         if (postProcessingEnabled) {
-            glViewport(0, 0, postProcess.buffer_width, postProcess.buffer_height);
             postProcess_bindBuffer(&postProcess.rightFramebuffer);
             glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             camera_translateX(&camera, 2 * EYE_OFFSET);
             camera_setView(&camera, program);
             world_draw(&world, modelLocation);
-            world_highlightFace(&world, &camera, modelLocation);
-        }
-
-        if (postProcessingEnabled) {
+            world_drawHighlight(&world, modelLocation);
 
             glViewport(0, 0, screenWidth, screenHeight);
             postProcess_draw(&postProcess);
