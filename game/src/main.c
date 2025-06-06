@@ -25,8 +25,8 @@
 #define USING_RASPBERRY_PI false
 
 #define SPRINT_MULTIPLIER 1.3f
-#define GROUND_ACCELERATION 9.f
-#define AIR_ACCELERATION 3.f
+#define GROUND_ACCELERATION 35.f
+#define AIR_ACCELERATION 10.f
 
 #define GRAVITY_ACCELERATION (-10.f)
 
@@ -297,32 +297,32 @@ int main(void) {
         const int modelLocation = glGetUniformLocation(program, "model");
         glPolygonMode(GL_FRONT_AND_BACK, wireframeView ? GL_LINE : GL_FILL);
         glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projection);
-
+        world_highlightFace(&world, &camera);
         if (postProcessingEnabled) {
+            glViewport(0, 0, postProcess.buffer_width, postProcess.buffer_height);
             postProcess_bindBuffer(&postProcess.leftFramebuffer);
             camera_translateX(&camera, -EYE_OFFSET);
         }
         glEnable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         camera_setView(&camera, program);
-        vec3 camPos;
-        glm_vec3_add(player.cameraOffset, player.entity.position,camPos);
+        world_drawHighlight(&world, modelLocation);
         world_draw(&world, modelLocation, &camera);
 
         if (postProcessingEnabled) {
             postProcess_bindBuffer(&postProcess.rightFramebuffer);
-            glEnable(GL_DEPTH_TEST);
             glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             camera_translateX(&camera, 2 * EYE_OFFSET);
-        }
+            camera_setView(&camera, program);
+            world_drawHighlight(&world, modelLocation);
+            world_draw(&world, modelLocation, &camera);
 
-        camera_setView(&camera, program);
-        world_draw(&world, modelLocation, &camera);
-
-        if (postProcessingEnabled) {
+            glViewport(0, 0, screenWidth, screenHeight);
             postProcess_draw(&postProcess);
             camera_translateX(&camera, -EYE_OFFSET);
         }
