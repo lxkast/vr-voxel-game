@@ -538,7 +538,7 @@ void world_highlightFace(world_t *w, camera_t *camera) {
         default: LOG_FATAL("invalid face type");
     }
     for (int i = 0; i < 6; ++i) {
-        buffer[5 * i + 3] *= (16.0f / 96.0f);
+        buffer[5 * i + 3] *= (TEXTURE_LENGTH / ATLAS_LENGTH);
     }
 
     glm_vec3_add(res.blockPosition, delta, res.blockPosition);

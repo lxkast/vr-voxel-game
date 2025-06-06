@@ -256,8 +256,9 @@ void chunk_generate(chunk_t *c, int cx, int cy, int cz) {
             for (int y = 0; y < CHUNK_SIZE; y++) {
                 if (c->cy * CHUNK_SIZE + y == (int)height) {
                     ptr[x][y][z] = BL_GRASS;
-                }
-                else if (cy * CHUNK_SIZE + y < height) {
+                } else if (cy * CHUNK_SIZE + y < height - 20) {
+                    ptr[x][y][z] = BL_STONE;
+                } else if (cy * CHUNK_SIZE + y < height) {
                     ptr[x][y][z] = BL_DIRT;
                 } else {
                     ptr[x][y][z] = BL_AIR;
