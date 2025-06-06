@@ -37,7 +37,7 @@ void quat_multiply(quaternion r, quaternion q, quaternion res) {
 /*
  * Multiplies two NxN matrices
  */
-void matmul(double **a, double **b, const unsigned int size, double **res) {
+/*void matmul(double *a, double *b, const unsigned int size, double *res) {
     if (res == a || res == b) {
         LOG_FATAL("Cannot multiply matrices in place");
     }
@@ -49,4 +49,4 @@ void matmul(double **a, double **b, const unsigned int size, double **res) {
             }
         }
     }
-}
+}*/

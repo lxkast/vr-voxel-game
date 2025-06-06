@@ -2,10 +2,11 @@
 #include <pthread.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include "icm42688.h"
 #include "orientation.h"
-#include "quaternion.h"
+#include "linalg.h"
 
 typedef double state_t[7];
 
@@ -35,6 +36,7 @@ void *runOrientation(void *arg) {
     double lastTime = 0.0;
 
     while (1) {
+        usleep(10);
         if (readFIFOData(&res)) {
             double deltaTime = res.timestamp - lastTime;
             lastTime = res.timestamp;
@@ -51,9 +53,9 @@ void *runOrientation(void *arg) {
                 quat_fromEulers(res.gyro, deltaTime, diff);
 
                 quaternion qres;
-                quat_multiply(orientation, diff, qres);
+                quat_multiply(currentState, diff, qres);
 
-                memcpy(orientation, qres, 4 * sizeof(double));
+                memcpy(currentState, qres, 4 * sizeof(double));
 
                 // LOG_DEBUG("Current quaternion %f, %f, %f, %f", orientation[0], orientation[1], orientation[2], orientation[3]);
             }

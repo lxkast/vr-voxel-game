@@ -19,7 +19,6 @@ void camera_init(camera_t *c) {
 }
 
 void update_ori(camera_t *c) {
-    LOG_DEBUG("Setting orientation");
     quaternion orientation;
     imu_getOrientation(orientation);
     c->ori[0] = orientation[1];

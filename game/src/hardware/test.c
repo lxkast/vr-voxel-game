@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 #include "icm42688.h"
-#include "quaternion.h"
+#include "linalg.h"
 #include "orientation.h"
 
 void main(void) {

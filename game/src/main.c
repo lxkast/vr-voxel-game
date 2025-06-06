@@ -166,7 +166,7 @@ int main(void) {
     }
 
     glEnable(GL_DEPTH_TEST);
-
+    glfwSwapInterval(0);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwGetCursorPos(window, previousMouse, previousMouse + 1);
 
