@@ -28,6 +28,8 @@ typedef struct {
     struct _s_cluster *clusterTable;
     GLuint highlightVao;
     GLuint highlightVbo;
+    mat4 highlightModel;
+    bool highlightFound;
 } world_t;
 
 /**
@@ -186,6 +188,12 @@ bool world_save(world_t *w, const char *dir);
 * @brief Highlights the face the camera is looking at
 * @param w A pointer to a world
 * @param camera A pointer to a camera
+*/
+void world_highlightFace(world_t *w, camera_t *camera);
+
+/**
+* @brief Draws the highlighted face
+* @param w A pointer to a world
 * @param modelLocation The model location
 */
-void world_highlightFace(world_t *w, camera_t *camera, int modelLocation);
+void world_drawHighlight(world_t *w, int modelLocation);
