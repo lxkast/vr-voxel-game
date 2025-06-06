@@ -5,7 +5,6 @@
 #include <string.h>
 #include "icm42688.h"
 #include "orientation.h"
-#include "quaternion.h"
 
 typedef double state_t[7];
 
