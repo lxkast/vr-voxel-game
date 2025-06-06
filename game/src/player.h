@@ -30,6 +30,11 @@ static const itemProperties_t ITEM_PROPERTIES[] = {
     [ITEM_SWORD] = {"Sword Block",      false, true, 1},
 };
 
+static const block_t ITEM_TO_BLOCK[] = {
+    [ITEM_DIRT]  = BL_DIRT,
+    [ITEM_GRASS] = BL_GRASS,
+};
+
 typedef struct {
     item_e type;
     char count;
@@ -75,4 +80,4 @@ void player_attachCamera(player_t *p, camera_t *camera);
 
 void player_removeBlock(player_t *p, world_t *w);
 
-void player_placeBlock(player_t *p, world_t *w, block_t block);
+void player_placeBlock(player_t *p, world_t *w);

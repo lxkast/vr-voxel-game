@@ -75,7 +75,7 @@ static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w)
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
         player_removeBlock(player, w);
     } else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-        player_placeBlock(player, w, BL_GRASS);
+        player_placeBlock(player, w);
     }
 
     changeRUFtoXYZ(acceleration, player->entity.yaw);

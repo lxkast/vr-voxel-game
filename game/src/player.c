@@ -87,8 +87,8 @@ void player_removeBlock(player_t *p, world_t *w) {
     }
 }
 
-void player_placeBlock(player_t *p, world_t *w, const block_t block) {
-    if (onBlockCooldown(p)) {
+void player_placeBlock(player_t *p, world_t *w) {
+    if (onBlockCooldown(p) || ITEM_PROPERTIES[p->hotbar.currentSlot->type].isPlaceable == false) {
         return;
     }
     vec3 camPos;
@@ -111,8 +111,12 @@ void player_placeBlock(player_t *p, world_t *w, const block_t block) {
         newBlockPosition[2] = (int)raycastBlock.blockPosition[2] - moveDelta[2];
 
         if (!intersectsWithBlock(p->entity, newBlockPosition)) {
-            world_placeBlock(w, newBlockPosition[0], newBlockPosition[1], newBlockPosition[2], block);
+            world_placeBlock(w, newBlockPosition[0], newBlockPosition[1], newBlockPosition[2], ITEM_TO_BLOCK[p->hotbar.currentSlot->type]);
             setBlockCooldown(p);
+            p->hotbar.currentSlot->count--;
+            if (p->hotbar.currentSlot->count == 0) {
+                p->hotbar.currentSlot->type = NOTHING;
+            }
         }
    }
 }
