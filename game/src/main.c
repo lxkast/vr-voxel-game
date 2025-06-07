@@ -216,7 +216,7 @@ int main(void) {
 
     mat4 projection;
     const int projectionLocation = glGetUniformLocation(program, "projection");
-    glm_perspective(FOV_Y, (float)SCREEN_WIDTH / (float)(SCREEN_HEIGHT), 0.1f, 16.f * (CHUNK_LOAD_RADIUS + 1), projection);
+    glm_perspective(FOV_Y, (float)SCREEN_WIDTH / (float)((postProcessingEnabled ? 2 : 1) * SCREEN_HEIGHT), 0.1f, 16.f * (CHUNK_LOAD_RADIUS + 1), projection);
     glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projection);
 
     glActiveTexture(GL_TEXTURE0);
