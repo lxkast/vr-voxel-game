@@ -97,12 +97,12 @@ static void processCameraInput(GLFWwindow *window, camera_t *camera) {
     camera_fromMouse(camera, -dX, -dY);
 }
 
-static bool wireframeView = false;
-static bool previousDownO = false;
 static bool postProcessingEnabled = true;
-static bool previousDownP = false;
+static bool wireframeView = false;
 
 static void processInput(GLFWwindow *window, mat4 projection, const int projectionLocation) {
+    static bool previousDownO = false;
+    static bool previousDownP = false;
     const int oKey = glfwGetKey(window, GLFW_KEY_O);
     if (oKey == GLFW_PRESS && !previousDownO) {
         wireframeView = !wireframeView;
