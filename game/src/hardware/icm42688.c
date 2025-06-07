@@ -162,9 +162,8 @@ bool readVec3(uint8_t *data, double scale, double *dest) {
     int16_t comp1 = ((int16_t) data[0] << 8) + data[1];
     int16_t comp2 = ((int16_t) data[2] << 8) + data[3];
     int16_t comp3 = ((int16_t) data[4] << 8) + data[5];
-    
     // check if only the first bit is set, in which case data is invalid
-    if (comp1 == 0x8000 || comp2 == 0x8000 || comp3 == 0x8000) {
+    if (comp1 == (int16_t) 0x8000 || comp2 == (int16_t) 0x8000 || comp3 == (int16_t) 0x8000) {
         return false;
     }
 
