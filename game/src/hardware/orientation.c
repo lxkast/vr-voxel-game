@@ -13,6 +13,9 @@ static pthread_t thread;
 
 static state_t currentState = {1, 0, 0, 0};
 
+static double accelSensorToLocal[3][3] = {{-1, 0, 0}, {0, 0, -1}, {0, -1, 0}};
+static double rotationSensorToLocal[3][3] = {{0, 0, 1}, {-1, 0, 0}, {0, -1, 0}};
+
 static double gravityDir[3] = {0, 0, -1};
 
 // TODO pick sensible values for the below
@@ -121,16 +124,22 @@ void *runOrientation(void *arg) {
             lastTime = res.timestamp;
 
             if (res.gyroValid && init) {
-                predict(deltaTime, res.gyro);
+
+                double gyroLocal[3];
+                matmul(rotationSensorToLocal, res.gyro, 3, 3, 3, 1, gyroLocal);
+                predict(deltaTime, gyroLocal);
             }
 
             if (res.accelValid) {
                 if (!res.gyroValid) LOG_FATAL("Accel valid, but gyro isn't, out of sync, help");
+
+                double accelsLocal[3];
+                matmul(accelSensorToLocal, res.accel, 3, 3, 3, 1, accelsLocal);
                 if (!init) {
-                    orientation_init(res.accel);
+                    orientation_init(accelsLocal);
                     init = true;
                 } else {
-                    update(res.accel);
+                    update(accelsLocal);
                 }
             }
         }

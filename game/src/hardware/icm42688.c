@@ -105,7 +105,7 @@ uint16_t read_uint16(uint8_t address1, uint8_t address2) {
 }
 
 void enableAccel() {
-    write_byte(REG_ACCEL_CONFIG0, ACCEL_CONFIG0_FS_4G | ACCEL_CONFIG0_ODR_100HZ);
+    write_byte(REG_ACCEL_CONFIG0, ACCEL_CONFIG0_FS_4G | ACCEL_CONFIG0_ODR_50HZ);
 
     uint8_t current = read_byte(REG_PWR_MGMT0);
     write_byte(REG_PWR_MGMT0, current | PWR_MGMT0_ACCEL_EN);
