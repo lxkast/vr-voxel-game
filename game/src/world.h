@@ -3,6 +3,7 @@
 #include <cglm/cglm.h>
 #include <glad/gl.h>
 #include "chunk.h"
+#include "uthash.h"
 #include "camera.h"
 
 #define MAX_CHUNKS 256
@@ -28,6 +29,8 @@ typedef struct {
     struct _s_cluster *clusterTable;
     GLuint highlightVao;
     GLuint highlightVbo;
+    mat4 highlightModel;
+    bool highlightFound;
 } world_t;
 
 /**
@@ -68,7 +71,7 @@ void world_init(world_t *w, GLuint program);
  * @param w A pointer to a world
  * @param modelLocation The model matrix location in the shader program
  */
-void world_draw(const world_t *w, int modelLocation);
+void world_draw(const world_t *w, int modelLocation, camera_t *cam);
 
 /**
  * @brief Frees the world.
@@ -186,6 +189,12 @@ bool world_save(world_t *w, const char *dir);
 * @brief Highlights the face the camera is looking at
 * @param w A pointer to a world
 * @param camera A pointer to a camera
+*/
+void world_highlightFace(world_t *w, camera_t *camera);
+
+/**
+* @brief Draws the highlighted face
+* @param w A pointer to a world
 * @param modelLocation The model location
 */
-void world_highlightFace(world_t *w, camera_t *camera, int modelLocation);
+void world_drawHighlight(world_t *w, int modelLocation);

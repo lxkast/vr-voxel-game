@@ -1,9 +1,11 @@
 #include "world.h"
-#include <cglm/cglm.h>
+
 #include <errno.h>
+#include <cglm/cglm.h>
 #include <logging.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+
 #include "chunk.h"
 #include "entity.h"
 #include "uthash.h"
@@ -159,12 +161,34 @@ void world_init(world_t *w, const GLuint program) {
     highlightInit(w);
 }
 
-void world_draw(const world_t *w, const int modelLocation) {
+vec3 chunkBounds = {15.f, 15.f, 15.f};
+
+// Note - we assume lookVector is normalised
+static bool isChunkInFrontOfCamera(camera_t *cam, const chunk_t *chunk) {
+    vec3 chunkCenter;
+    chunkCenter[0] = (float)(chunk->cx << 4) + 8.f;
+    chunkCenter[1] = (float)(chunk->cy << 4) + 8.f;
+    chunkCenter[2] = (float)(chunk->cz << 4) + 8.f;
+
+    vec3 toChunk;
+    glm_vec3_sub(chunkCenter, cam->eye, toChunk);
+
+    const float dot = glm_vec3_dot(toChunk, cam->ruf[2]);
+
+    return dot < 16.f;
+}
+
+void world_draw(const world_t *w, const int modelLocation, camera_t *cam) {
     cluster_t *cluster, *tmp;
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
-        for (int i = 0; i < C_T * C_T * C_T; i++)
-            if (cluster->cells[i].chunk)
+        for (int i = 0; i < C_T * C_T * C_T; i++) {
+            if (!cluster->cells[i].chunk) {continue;}
+            const bool renderingChunk = isChunkInFrontOfCamera(cam, cluster->cells[i].chunk);
+
+            if (cluster->cells[i].chunk && renderingChunk) {
                 chunk_draw(cluster->cells[i].chunk, modelLocation);
+            }
+        }
     }
 }
 
@@ -327,7 +351,7 @@ bool world_placeBlock(world_t *w, int x, int y, int z, block_t block) {
 }
 
 bool world_save(world_t *w, const char *dir) {
-    struct stat st = {0};
+    struct stat st = { 0 };
     if (stat(dir, &st) == -1) {
         LOG_INFO("World save does not exist, creating directory...");
 #if defined(_WIN32) || defined(_WIN64)
@@ -478,11 +502,12 @@ raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection) {
     };
 }
 
-void world_highlightFace(world_t *w, camera_t *camera, int modelLocation) {
+void world_highlightFace(world_t *w, camera_t *camera) {
     vec3 ray;
     glm_vec3_scale(camera->ruf[2], -1.0f, ray);
 
     raycast_t res = world_raycast(w, camera->eye, ray);
+    w->highlightFound = res.found;
     if (!res.found) {
         return;
     }
@@ -522,14 +547,23 @@ void world_highlightFace(world_t *w, camera_t *camera, int modelLocation) {
 
     glm_vec3_add(res.blockPosition, delta, res.blockPosition);
 
-    mat4 model;
-    glm_translate_make(model, res.blockPosition);
+    glm_translate_make(w->highlightModel, res.blockPosition);
 
-    glBindVertexArray(w->highlightVao);
     glBindBuffer(GL_ARRAY_BUFFER, w->highlightVbo);
     glBufferData(GL_ARRAY_BUFFER, faceVerticesSize, buffer, GL_STATIC_DRAW);
-    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    free(buffer);
+}
+
+void world_drawHighlight(world_t *w, int modelLocation) {
+    if (!w->highlightFound) {
+        return;
+    }
+    glBindVertexArray(w->highlightVao);
+
+    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, w->highlightModel);
+
     glDrawArrays(GL_TRIANGLES, 0, faceVerticesSize / (5 * sizeof(float)));
     glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
