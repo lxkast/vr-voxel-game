@@ -14,8 +14,8 @@ static pthread_t thread;
 
 static state_t currentState = {1, 0, 0, 0};
 
-static double accelSensorToLocal[3][3] = {{-1, 0, 0}, {0, 1, 0}, {0, 0, -1}};
-static double rotationSensorToLocal[3][3] = {{1, 0, 0}, {0, -1, 0}, {0, 0, 1}};
+static double accelSensorToLocal[3][3] = {{-1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+static double rotationSensorToLocal[3][3] = {{-1, 0, 0}, {0, -1, 0}, {0, 0, 1}};
 
 static double gravityDir[3] = {0, -1, 0};
 
@@ -40,10 +40,8 @@ static const double I[4][4] = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 
 
 static void orientation_init(double accels[3]) {
     // first normalise accels
-
     vec_normalise(accels, 3, accels);
     
-    LOG_DEBUG("%f, %f, %f", accels[0], accels[1], accels[2]);
     double angle = acos(dotProduct3(accels, gravityDir));
     currentState[0] = cos(angle/2);
     crossProduct3(gravityDir, accels, currentState+1);
@@ -51,8 +49,6 @@ static void orientation_init(double accels[3]) {
     currentState[2] *= sin(angle/2);
     currentState[3] *= sin(angle/2);
     quat_normalise(currentState, currentState);
-
-    LOG_DEBUG("%f, %f, %f, %f", currentState[0], currentState[1], currentState[2], currentState[3]);
 }
 
 void imu_getOrientation(quaternion res) {
@@ -87,7 +83,7 @@ static void update(double accels[3]) {
     // predict measurements
     double predicted[3];
     quat_vecmul(currentState, gravityDir, predicted);
-
+    
     double yk[3] = {accels[0] - predicted[0], accels[1] - predicted[1], accels[2] - predicted[2]};
     double H[3][4] = {
         {currentState[3] * 2, currentState[2] * -2, currentState[1] * -2, currentState[0] * 2},
@@ -158,7 +154,7 @@ void *runOrientation(void *arg) {
                 matmul(accelSensorToLocal, res.accel, 3, 3, 3, 1, accelsLocal);
                 if (!init) {
                     orientation_init(accelsLocal);
-                    //init = true;
+                    init = true;
                 } else {
                     update(accelsLocal);
                 }

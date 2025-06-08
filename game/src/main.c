@@ -25,7 +25,7 @@
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
 #define FOV_Y 45.0f
-#define USING_RASPBERRY_PI true
+#define USING_RASPBERRY_PI false
 
 #define SPRINT_MULTIPLIER 1.3f
 #define GROUND_ACCELERATION 35.f
@@ -102,7 +102,7 @@ static void processCameraInput(GLFWwindow *window, camera_t *camera) {
 
 static bool wireframeView = false;
 static bool previousDownO = false;
-static bool postProcessingEnabled = false;
+static bool postProcessingEnabled = true;
 static bool previousDownP = false;
 
 static void processInput(GLFWwindow *window) {
