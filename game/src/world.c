@@ -107,7 +107,8 @@ static void loadChunk(world_t *w, const int cx, const int cy, const int cz) {
 
     if (!cv->chunk) {
         cv->chunk = (chunk_t *)malloc(sizeof(chunk_t));
-        chunk_generate(cv->chunk, cx, cy, cz);
+        chunk_init(cv->chunk, cx, cy, cz);
+        chunk_generate(cv->chunk);
         cluster->n++;
     }
     cv->reloaded = true;

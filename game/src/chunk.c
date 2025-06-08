@@ -215,6 +215,20 @@ static void chunk_createMesh(chunk_t *c) {
 
     glBindBuffer(GL_ARRAY_BUFFER, c->vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeToWrite, buf, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    free(buf);
+}
+
+void chunk_init(chunk_t *c, int cx, int cy, int cz) {
+    c->cx = cx;
+    c->cy = cy;
+    c->cz = cz;
+
+    glGenBuffers(1, &c->vbo);
+    glGenVertexArrays(1, &c->vao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, c->vbo);
 
     glBindVertexArray(c->vao);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
@@ -224,23 +238,15 @@ static void chunk_createMesh(chunk_t *c) {
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
-
-    free(buf);
 }
 
-void chunk_create(chunk_t *c, const int cx, const int cy, const int cz, const block_t block) {
-    c->cx = cx;
-    c->cy = cy;
-    c->cz = cz;
-
+void chunk_fill(chunk_t *c, const block_t block) {
     int *ptr = c->blocks;
     for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE; i++) {
         ptr[i] = block;
     }
 
-    glGenBuffers(1, &c->vbo);
-    glGenVertexArrays(1, &c->vao);
-    chunk_createMesh(c);
+    c->tainted = true;
 }
 
 void chunk_createDeserialise(chunk_t *c, FILE *fp) {
@@ -250,16 +256,10 @@ void chunk_createDeserialise(chunk_t *c, FILE *fp) {
 
     fread(&c->blocks, sizeof(int), CHUNK_SIZE_CUBED, fp);
 
-    glGenBuffers(1, &c->vbo);
-    glGenVertexArrays(1, &c->vao);
-    chunk_createMesh(c);
+    c->tainted = true;
 }
 
-void chunk_generate(chunk_t *c, int cx, int cy, int cz) {
-    c->cx = cx;
-    c->cy = cy;
-    c->cz = cz;
-
+void chunk_generate(chunk_t *c) {
     int (*ptr)[CHUNK_SIZE][CHUNK_SIZE] = (int (*)[CHUNK_SIZE][CHUNK_SIZE]) c->blocks;
     for (int x = 0; x < CHUNK_SIZE; x++) {
         for (int z = 0; z < CHUNK_SIZE; z++) {
@@ -274,9 +274,9 @@ void chunk_generate(chunk_t *c, int cx, int cy, int cz) {
             for (int y = 0; y < CHUNK_SIZE; y++) {
                 if (c->cy * CHUNK_SIZE + y == (int)height) {
                     ptr[x][y][z] = biome < 0.5f ? BL_GRASS : BL_SAND;
-                } else if (cy * CHUNK_SIZE + y < height - 6) {
+                } else if (c->cy * CHUNK_SIZE + y < height - 6) {
                     ptr[x][y][z] = BL_STONE;
-                } else if (cy * CHUNK_SIZE + y < height) {
+                } else if (c->cy * CHUNK_SIZE + y < height) {
                     ptr[x][y][z] = biome < 0.5f ? BL_DIRT : BL_SAND;
                 } else {
                     ptr[x][y][z] = BL_AIR;
@@ -285,9 +285,7 @@ void chunk_generate(chunk_t *c, int cx, int cy, int cz) {
         }
     }
 
-    glGenBuffers(1, &c->vbo);
-    glGenVertexArrays(1, &c->vao);
-    chunk_createMesh(c);
+    c->tainted = true;
 }
 
 void chunk_draw(chunk_t *c, const int modelLocation) {
