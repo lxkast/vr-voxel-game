@@ -13,7 +13,7 @@ static pthread_t thread;
 
 static state_t currentState = {1, 0, 0, 0};
 
-static double accelSensorToLocal[3][3] = {{-1, 0, 0}, {0, 0, -1}, {0, -1, 0}};
+static double accelSensorToLocal[3][3] = {{-1, 0, 0}, {0, 0, -1}, {0, 1, 0}};
 static double rotationSensorToLocal[3][3] = {{0, 0, 1}, {-1, 0, 0}, {0, -1, 0}};
 
 static double gravityDir[3] = {0, 0, -1};
@@ -28,9 +28,9 @@ static double Q[4][4] =  {
 
 
 static double R[3][3] =  {
-    {1.67210076e-06, 2.52998759e-06, -4.20208835e-06},
-    {2.52998759e-06, 1.30791735e-05, -1.56091611e-05},
-    {-4.20208835e-06, -1.56091611e-05, 1.98112494e-05}
+    {1e-2, 0, 0},
+    {0, 1e-2, 0},
+    {0, 0, 1e-2}
 };
 
 
@@ -39,11 +39,19 @@ static const double I[4][4] = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 
 
 static void orientation_init(double accels[3]) {
     // first normalise accels
+
     vec_normalise(accels, 3, accels);
-    double dot = dotProduct3(accels, gravityDir);
-    currentState[0] = dot;
+    
+    LOG_DEBUG("%f, %f, %f", accels[0], accels[1], accels[2]);
+    double angle = acos(dotProduct3(accels, gravityDir));
+    currentState[0] = cos(angle/2);
     crossProduct3(gravityDir, accels, currentState+1);
+    currentState[1] *= sin(angle/2);
+    currentState[2] *= sin(angle/2);
+    currentState[3] *= sin(angle/2);
     quat_normalise(currentState, currentState);
+
+    LOG_DEBUG("%f, %f, %f, %f", currentState[0], currentState[1], currentState[2], currentState[3]);
 }
 
 void imu_getOrientation(quaternion res) {
@@ -143,13 +151,13 @@ void *runOrientation(void *arg) {
             }
 
             if (res.accelValid) {
-                if (!res.gyroValid) LOG_FATAL("Accel valid, but gyro isn't, out of sync, help");
+                if (!res.gyroValid) LOG_DEBUG("Accel valid, but gyro isn't, out of sync, help");
 
                 double accelsLocal[3];
                 matmul(accelSensorToLocal, res.accel, 3, 3, 3, 1, accelsLocal);
                 if (!init) {
                     orientation_init(accelsLocal);
-                    init = true;
+                    //init = true;
                 } else {
                     update(accelsLocal);
                 }

@@ -52,7 +52,7 @@ void quat_vecmul(quaternion q, double vector[3], double res[3]) {
     quat_multiply(q, asq, tmp);
     quaternion qres;
     quat_multiply(tmp, qp, qres);
-    memcpy(res, asq + 1, sizeof(double) * 3);
+    memcpy(res, qres + 1, sizeof(double) * 3);
 }
 
 /*
