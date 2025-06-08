@@ -145,9 +145,9 @@ static void highlightInit(world_t *w) {
     glGenBuffers(1, &w->highlightVbo);
     glBindVertexArray(w->highlightVao);
     glBindBuffer(GL_ARRAY_BUFFER, w->highlightVbo);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *) 0);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
+    glVertexAttribIPointer(1, 2, GL_INT, 4 * sizeof(float), (void *) (3 * sizeof(float)));
     glEnableVertexAttribArray(1);
     glBindVertexArray(0);
 }
@@ -508,38 +508,35 @@ void world_highlightFace(world_t *w, camera_t *camera) {
     if (!res.found) {
         return;
     }
-    float *buffer = malloc(faceVerticesSize);
+    vertex_t *buffer = malloc(faceVerticesSize);
 
     vec3 delta = { 0.f, 0.f, 0.f };
     switch (res.face) {
         case POS_X_FACE:
-            delta[0] += 0.01f;
+            delta[0] += 0.001f;
             memcpy(buffer, rightFaceVertices, faceVerticesSize);
             break;
         case NEG_X_FACE:
-            delta[0] -= 0.01f;
+            delta[0] -= 0.001f;
             memcpy(buffer, leftFaceVertices, faceVerticesSize);
             break;
         case POS_Y_FACE:
-            delta[1] += 0.01f;
+            delta[1] += 0.001f;
             memcpy(buffer, topFaceVertices, faceVerticesSize);
             break;
         case NEG_Y_FACE:
-            delta[1] -= 0.01f;
+            delta[1] -= 0.001f;
             memcpy(buffer, bottomFaceVertices, faceVerticesSize);
             break;
         case POS_Z_FACE:
-            delta[2] += 0.01f;
+            delta[2] += 0.001f;
             memcpy(buffer, frontFaceVertices, faceVerticesSize);
             break;
         case NEG_Z_FACE:
-            delta[2] -= 0.01f;
+            delta[2] -= 0.001f;
             memcpy(buffer, backFaceVertices, faceVerticesSize);
             break;
         default: LOG_FATAL("invalid face type");
-    }
-    for (int i = 0; i < 6; ++i) {
-        buffer[5 * i + 3] *= (16.0f / 96.0f);
     }
 
     glm_vec3_add(res.blockPosition, delta, res.blockPosition);
@@ -561,6 +558,6 @@ void world_drawHighlight(world_t *w, int modelLocation) {
 
     glUniformMatrix4fv(modelLocation, 1, GL_FALSE, w->highlightModel);
 
-    glDrawArrays(GL_TRIANGLES, 0, faceVerticesSize / (5 * sizeof(float)));
+    glDrawArrays(GL_TRIANGLES, 0, faceVerticesSize / (sizeof(vertex_t)));
     glBindVertexArray(0);
 }
