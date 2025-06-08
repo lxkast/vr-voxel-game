@@ -289,7 +289,7 @@ int main(void) {
         processEntity(&world, &player.entity, analytics.dt);
         player_attachCamera(&player, &camera);
 
-
+        camera_update();
         glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
         glClear(GL_DEPTH_BUFFER_BIT);
         glClear(GL_COLOR_BUFFER_BIT);

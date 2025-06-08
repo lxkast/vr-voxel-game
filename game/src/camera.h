@@ -96,3 +96,5 @@ void camera_setView(camera_t *c, GLuint program);
  * @param c A pointer to a camera
  */
 #define camera_right(c) c->ruf[0]
+
+void camera_update(void); // update the camera view from imu

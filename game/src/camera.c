@@ -18,13 +18,15 @@ void camera_init(camera_t *c) {
     camera_setRuf(c);
 }
 
-void update_ori(camera_t *c) {
+void camera_update(camera_t *c) {
     quaternion orientation;
     imu_getOrientation(orientation);
     c->ori[0] = orientation[1];
     c->ori[1] = orientation[2];
     c->ori[2] = orientation[3];
     c->ori[3] = orientation[0];
+
+    camera_setRuf(c);
 }
 
 void camera_createView(camera_t *c, mat4 dest) {
@@ -72,7 +74,6 @@ void camera_fromMouse(camera_t *c, const float dX, const float dY) {
 }
 
 void camera_setView(camera_t *c, GLuint program) {
-    update_ori(c);
     const int viewLocation = glGetUniformLocation(program, "view");
     mat4 view;
     camera_createView(c, view);
