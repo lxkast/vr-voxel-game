@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <math.h>
 #include "icm42688.h"
 #include "orientation.h"
 
@@ -13,10 +14,10 @@ static pthread_t thread;
 
 static state_t currentState = {1, 0, 0, 0};
 
-static double accelSensorToLocal[3][3] = {{-1, 0, 0}, {0, 0, -1}, {0, 1, 0}};
-static double rotationSensorToLocal[3][3] = {{0, 0, 1}, {-1, 0, 0}, {0, -1, 0}};
+static double accelSensorToLocal[3][3] = {{-1, 0, 0}, {0, 1, 0}, {0, 0, -1}};
+static double rotationSensorToLocal[3][3] = {{1, 0, 0}, {0, -1, 0}, {0, 0, 1}};
 
-static double gravityDir[3] = {0, 0, -1};
+static double gravityDir[3] = {0, -1, 0};
 
 static double P[4][4] = {{0.01, 0, 0, 0}, {0, 0.01, 0, 0}, {0, 0, 0.01, 0}, {0, 0, 0, 0.01}};
 static double Q[4][4] =  {
@@ -89,9 +90,9 @@ static void update(double accels[3]) {
 
     double yk[3] = {accels[0] - predicted[0], accels[1] - predicted[1], accels[2] - predicted[2]};
     double H[3][4] = {
-        {currentState[2] * 2, currentState[3] * -2, currentState[0] * 2, currentState[1] * -2},
-        {currentState[1] * -2, currentState[0] * -2, currentState[3] * -2, currentState[2] * -2},
-        {-2 * currentState[0], 2 * currentState[1], 2 * currentState[2], -2 * currentState[3]}
+        {currentState[3] * 2, currentState[2] * -2, currentState[1] * -2, currentState[0] * 2},
+        {currentState[0] * -2, currentState[1] * 2, currentState[2] * -2, currentState[3] * -2},
+        {-2 * currentState[1], -2 * currentState[0], -2 * currentState[3], -2 * currentState[2]}
     };
 
     double temp[3][4];

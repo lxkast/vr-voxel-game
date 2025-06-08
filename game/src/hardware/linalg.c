@@ -31,9 +31,9 @@ void quat_multiply(quaternion r, quaternion q, quaternion res) {
         LOG_FATAL("Cannot multiply quaternions in place");
     }
     res[0] = r[0] * q[0] - r[1] * q[1] - r[2] * q[2] - r[3] * q[3];
-    res[1] = r[0] * q[1] + r[1] * q[0] - r[2] * q[3] + r[3] * q[2];
-    res[2] = r[0] * q[2] + r[1] * q[3] + r[2] * q[0] - r[3] * q[1];
-    res[3] = r[0] * q[3] - r[1] * q[2] + r[2] * q[1] + r[3] * q[0];
+    res[1] = r[0] * q[1] + r[1] * q[0] + r[2] * q[3] - r[3] * q[2];
+    res[2] = r[0] * q[2] - r[1] * q[3] + r[2] * q[0] + r[3] * q[1];
+    res[3] = r[0] * q[3] + r[1] * q[2] - r[2] * q[1] + r[3] * q[0];
 }
 
 void quat_conjugate(quaternion q, quaternion res) {
