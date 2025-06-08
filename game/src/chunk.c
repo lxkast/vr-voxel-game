@@ -38,11 +38,11 @@ float smoothValueNoise(const float x, const float y) {
  * @param c A pointer to a chunk
  */
 static void chunk_createMesh(chunk_t *c) {
-    static const size_t bytesPerBlock = sizeof(float) * 36 * 5;
+    static const size_t bytesPerBlock = sizeof(vertex_t) * 36;
 
-    float *buf = (float *)malloc(CHUNK_SIZE_CUBED * bytesPerBlock);
+    vertex_t *buf = malloc(CHUNK_SIZE_CUBED * bytesPerBlock);
 
-    float *nextPtr = buf;
+    vertex_t *nextPtr = buf;
     for (int i = 0; i < CHUNK_SIZE; i++) {
         for (int j = 0; j < CHUNK_SIZE; j++) {
             for (int k = 0; k < CHUNK_SIZE; k++) {
@@ -73,12 +73,12 @@ static void chunk_createMesh(chunk_t *c) {
                 if (neighbourIsAir) {
                     memcpy(nextPtr, backFaceVertices, faceVerticesSize);
                     for (int n = 0; n < 6; n++) {
-                        nextPtr[5 * n + 0] += (float)i;
-                        nextPtr[5 * n + 1] += (float)j;
-                        nextPtr[5 * n + 2] += (float)k;
-                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
+                        nextPtr[n].x += (float)i;
+                        nextPtr[n].y += (float)j;
+                        nextPtr[n].z += (float)k;
+                        nextPtr[n].texIndex += 4 * (c->blocks[i][j][k]);
                     }
-                    nextPtr += faceVerticesSize / sizeof(float);
+                    nextPtr += faceVerticesSize / sizeof(vertex_t);
                 }
                 /*
                     front face
@@ -95,12 +95,12 @@ static void chunk_createMesh(chunk_t *c) {
                 if (neighbourIsAir) {
                     memcpy(nextPtr, frontFaceVertices, faceVerticesSize);
                     for (int n = 0; n < 6; n++) {
-                        nextPtr[5 * n + 0] += (float)i;
-                        nextPtr[5 * n + 1] += (float)j;
-                        nextPtr[5 * n + 2] += (float)k;
-                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
+                        nextPtr[n].x += (float)i;
+                        nextPtr[n].y += (float)j;
+                        nextPtr[n].z += (float)k;
+                        nextPtr[n].texIndex += 4 * (c->blocks[i][j][k]);
                     }
-                    nextPtr += faceVerticesSize / sizeof(float);
+                    nextPtr += faceVerticesSize / sizeof(vertex_t);
                 }
                 /*
                     left face
@@ -117,12 +117,12 @@ static void chunk_createMesh(chunk_t *c) {
                 if (neighbourIsAir) {
                     memcpy(nextPtr, leftFaceVertices, faceVerticesSize);
                     for (int n = 0; n < 6; n++) {
-                        nextPtr[5 * n + 0] += (float)i;
-                        nextPtr[5 * n + 1] += (float)j;
-                        nextPtr[5 * n + 2] += (float)k;
-                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
+                        nextPtr[n].x += (float)i;
+                        nextPtr[n].y += (float)j;
+                        nextPtr[n].z += (float)k;
+                        nextPtr[n].texIndex += 4 * (c->blocks[i][j][k]);
                     }
-                    nextPtr += faceVerticesSize / sizeof(float);
+                    nextPtr += faceVerticesSize / sizeof(vertex_t);
                 }
                 /*
                     right face
@@ -139,12 +139,12 @@ static void chunk_createMesh(chunk_t *c) {
                 if (neighbourIsAir) {
                     memcpy(nextPtr, rightFaceVertices, faceVerticesSize);
                     for (int n = 0; n < 6; n++) {
-                        nextPtr[5 * n + 0] += (float)i;
-                        nextPtr[5 * n + 1] += (float)j;
-                        nextPtr[5 * n + 2] += (float)k;
-                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
+                        nextPtr[n].x += (float)i;
+                        nextPtr[n].y += (float)j;
+                        nextPtr[n].z += (float)k;
+                        nextPtr[n].texIndex += 4 * (c->blocks[i][j][k]);
                     }
-                    nextPtr += faceVerticesSize / sizeof(float);
+                    nextPtr += faceVerticesSize / sizeof(vertex_t);
                 }
                 /*
                     bottom face
@@ -161,12 +161,12 @@ static void chunk_createMesh(chunk_t *c) {
                 if (neighbourIsAir) {
                     memcpy(nextPtr, bottomFaceVertices, faceVerticesSize);
                     for (int n = 0; n < 6; n++) {
-                        nextPtr[5 * n + 0] += (float)i;
-                        nextPtr[5 * n + 1] += (float)j;
-                        nextPtr[5 * n + 2] += (float)k;
-                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
+                        nextPtr[n].x += (float)i;
+                        nextPtr[n].y += (float)j;
+                        nextPtr[n].z += (float)k;
+                        nextPtr[n].texIndex += 4 * (c->blocks[i][j][k]);
                     }
-                    nextPtr += faceVerticesSize / sizeof(float);
+                    nextPtr += faceVerticesSize / sizeof(vertex_t);
                 }
                 /*
                     top face
@@ -183,27 +183,27 @@ static void chunk_createMesh(chunk_t *c) {
                 if (neighbourIsAir) {
                     memcpy(nextPtr, topFaceVertices, faceVerticesSize);
                     for (int n = 0; n < 6; n++) {
-                        nextPtr[5 * n + 0] += (float)i;
-                        nextPtr[5 * n + 1] += (float)j;
-                        nextPtr[5 * n + 2] += (float)k;
-                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
+                        nextPtr[n].x += (float)i;
+                        nextPtr[n].y += (float)j;
+                        nextPtr[n].z += (float)k;
+                        nextPtr[n].texIndex += 4 * (c->blocks[i][j][k]);
                     }
-                    nextPtr += faceVerticesSize / sizeof(float);
+                    nextPtr += faceVerticesSize / sizeof(vertex_t);
                 }
             }
         }
     }
 
-    const GLsizeiptr sizeToWrite = sizeof(float) * (nextPtr - buf);
-    c->meshVertices = sizeToWrite / (sizeof(float) * 5);
+    const GLsizeiptr sizeToWrite = sizeof(vertex_t) * (nextPtr - buf);
+    c->meshVertices = sizeToWrite / sizeof(vertex_t);
 
     glBindBuffer(GL_ARRAY_BUFFER, c->vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeToWrite, buf, GL_STATIC_DRAW);
 
     glBindVertexArray(c->vao);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *) 0);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
+    glVertexAttribIPointer(1, 1, GL_INT, 4 * sizeof(float), (void *) (3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
