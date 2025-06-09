@@ -117,6 +117,56 @@ void player_placeBlock(player_t *p, world_t *w) {
             if (p->hotbar.currentSlot->count == 0) {
                 p->hotbar.currentSlot->type = NOTHING;
             }
+
+            player_printHotbar(p);
         }
    }
+}
+
+static void repN(const char ch, const unsigned long long num) {
+    for (int i = 0; i < num; i++) {
+        putchar(ch);
+    }
+}
+
+/**
+ * @brief This displays the player's hotbar in the terminal. This is so
+ *        the code can be tested before we implement the hotbar visually.
+ * @param p the player whose hotbar we want to print
+ */
+void player_printHotbar(const player_t *p) {
+    char printStrings[9][30];
+
+    for (int i = 0; i < 9; i++) {
+        char *printStr = printStrings[i];
+        const hotbarItem_t item = p->hotbar.slots[i];
+        if (item.type != NOTHING) {
+            strcpy(printStr, ITEM_PROPERTIES[item.type].displayName);
+            strcat(printStr, " x");
+            char countStr[3];
+            snprintf(countStr, sizeof(countStr), "%d", item.count);
+            strcat(printStr, countStr);
+        } else {
+            strcpy(printStr, "   ");
+        }
+    }
+
+
+    putchar('+');
+    for (int i = 0; i < 9; i++) {
+        repN('-', 2 + strlen(printStrings[i]));
+        putchar('+');
+    }
+    printf("\n|");
+
+    for (int i = 0; i < 9; i++) {
+        printf(" %s |", printStrings[i]);
+    }
+
+    printf("\n+");
+    for (int i = 0; i < 9; i++) {
+        repN('-', 2 + strlen(printStrings[i]));
+        putchar('+');
+    }
+    printf("\n"); // Add final newline
 }

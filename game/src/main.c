@@ -87,6 +87,7 @@ static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w)
             player->hotbar.currentSlotIndex = i;
             player->hotbar.currentSlot = &(player->hotbar.slots[i]);
             LOG_DEBUG("Current item in slot is %d", player->hotbar.currentSlot->type);
+            player_printHotbar(player);
             break;
         }
     }
@@ -338,11 +339,11 @@ int main(void) {
 
         glUseProgram(0);
 
-        fpsDisplayAcc += analytics.dt;
-        if (fpsDisplayAcc > 1.0) {
-            LOG_INFO("%.0lf\n", analytics.fps);
-            fpsDisplayAcc = 0.0;
-        }
+        // fpsDisplayAcc += analytics.dt;
+        // if (fpsDisplayAcc > 1.0) {
+        //     LOG_INFO("%.0lf\n", analytics.fps);
+        //     fpsDisplayAcc = 0.0;
+        // }
 
         glfwPollEvents();
         glfwSwapBuffers(window);
