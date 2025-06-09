@@ -50,6 +50,9 @@ typedef enum {
     NEG_Z_FACE,
 } raycastFace_e;
 
+/**
+ * @brief Contains data about what stage of loading the chunk is
+ */
 typedef enum {
     LL_INIT = 0,
     LL_PARTIAL = 1,

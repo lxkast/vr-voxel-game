@@ -22,13 +22,22 @@ typedef struct {
 /**
  * @brief Value stored in hashmap entry array
  */
-typedef struct {
+typedef struct chunkValue_t {
     /// The pointer to a heap allocated chunk
     chunk_t *chunk;
-    /// Whether the chunk will be reloaded this iteration
-    bool reloaded;
     /// The current level of loading the chunk is in
     chunkLoadLevel_e ll;
+
+    struct {
+        enum {
+            REL_TOP_RELOAD,
+            REL_TOP_UNLOAD,
+            REL_CHILD
+        } reload;
+        size_t nChildren;
+        struct chunkValue_t *children[8];
+    } loadData;
+
 } chunkValue_t;
 
 /**
@@ -99,8 +108,9 @@ static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int c
  * @param cx Chunk x coordinate
  * @param cy Chunk y coordinate
  * @param cz Chunk z coordinate
+ * @param ll The load level to load to if the chunk doesn't exist
  */
-static void loadChunk(world_t *w, const int cx, const int cy, const int cz) {
+static void loadChunk(world_t *w, const int cx, const int cy, const int cz, const chunkLoadLevel_e ll) {
     size_t offset;
 
     cluster_t *cluster = clusterGet(w, cx, cy, cz, true, &offset);
@@ -109,16 +119,19 @@ static void loadChunk(world_t *w, const int cx, const int cy, const int cz) {
 
     if (!cv->chunk) {
         cv->chunk = (chunk_t *)malloc(sizeof(chunk_t));
-
         chunk_init(cv->chunk, cx, cy, cz);
-        cv->ll = LL_INIT;
 
-        chunk_generate(cv->chunk);
-        cv->ll = LL_TOTAL;
+        if (ll > LL_INIT) {
+            if (ll > LL_PARTIAL) {
+                chunk_generate(cv->chunk);
+            }
+        }
+
+        cv->ll = ll;
 
         cluster->n++;
     }
-    cv->reloaded = true;
+    cv->loadData.reload = REL_TOP_RELOAD;
 }
 
 static bool getBlockAddr(world_t *w, int x, int y, int z, block_t **block, chunk_t **chunk) {
@@ -244,7 +257,7 @@ void world_doChunkLoading(world_t *w) {
             for (int y = -CHUNK_LOAD_RADIUS; y <= CHUNK_LOAD_RADIUS; y++) {
                 for (int z = -CHUNK_LOAD_RADIUS; z <= CHUNK_LOAD_RADIUS; z++) {
                     if (x * x + y * y + z * z <= CHUNK_LOAD_RADIUS * CHUNK_LOAD_RADIUS) {
-                        loadChunk(w, cx + x, cy + y, cz + z);
+                        loadChunk(w, cx + x, cy + y, cz + z, LL_TOTAL);
                     }
                 }
             }
@@ -255,10 +268,12 @@ void world_doChunkLoading(world_t *w) {
     cluster_t *cluster, *tmp;
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
         for (int i = 0; i < C_T * C_T * C_T; i++) {
-            if (cluster->cells[i].chunk && !cluster->cells[i].reloaded) {
-                chunk_free(cluster->cells[i].chunk);
-                free(cluster->cells[i].chunk);
-                cluster->cells[i].chunk = NULL;
+            chunkValue_t *cv = &cluster->cells[i];
+            if (!cv->chunk) continue;
+            if (cv->loadData.reload == REL_TOP_UNLOAD) {
+                chunk_free(cv->chunk);
+                free(cv->chunk);
+                cv->chunk = NULL;
                 cluster->n--;
                 if (cluster->n <= 0) {
                     HASH_DEL(w->clusterTable, cluster);
@@ -266,8 +281,8 @@ void world_doChunkLoading(world_t *w) {
                     free(cluster);
                     break;
                 }
-            } else {
-                cluster->cells[i].reloaded = false;
+            } else if (cv->loadData.reload == REL_TOP_RELOAD) {
+                cv->loadData.reload = REL_TOP_UNLOAD;
             }
         }
     }
