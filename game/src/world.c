@@ -500,6 +500,7 @@ raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection) {
 }
 
 void world_highlightFace(world_t *w, camera_t *camera) {
+        return;
     vec3 ray;
     glm_vec3_scale(camera->ruf[2], -1.0f, ray);
 
@@ -511,33 +512,33 @@ void world_highlightFace(world_t *w, camera_t *camera) {
     vertex_t *buffer = malloc(faceVerticesSize);
 
     vec3 delta = { 0.f, 0.f, 0.f };
-    switch (res.face) {
-        case POS_X_FACE:
-            delta[0] += 0.001f;
-            memcpy(buffer, rightFaceVertices, faceVerticesSize);
-            break;
-        case NEG_X_FACE:
-            delta[0] -= 0.001f;
-            memcpy(buffer, leftFaceVertices, faceVerticesSize);
-            break;
-        case POS_Y_FACE:
-            delta[1] += 0.001f;
-            memcpy(buffer, topFaceVertices, faceVerticesSize);
-            break;
-        case NEG_Y_FACE:
-            delta[1] -= 0.001f;
-            memcpy(buffer, bottomFaceVertices, faceVerticesSize);
-            break;
-        case POS_Z_FACE:
-            delta[2] += 0.001f;
-            memcpy(buffer, frontFaceVertices, faceVerticesSize);
-            break;
-        case NEG_Z_FACE:
-            delta[2] -= 0.001f;
-            memcpy(buffer, backFaceVertices, faceVerticesSize);
-            break;
-        default: LOG_FATAL("invalid face type");
-    }
+    // switch (res.face) {
+    //     case POS_X_FACE:
+    //         delta[0] += 0.001f;
+    //         memcpy(buffer, rightFaceVertices, faceVerticesSize);
+    //         break;
+    //     case NEG_X_FACE:
+    //         delta[0] -= 0.001f;
+    //         memcpy(buffer, leftFaceVertices, faceVerticesSize);
+    //         break;
+    //     case POS_Y_FACE:
+    //         delta[1] += 0.001f;
+    //         memcpy(buffer, topFaceVertices, faceVerticesSize);
+    //         break;
+    //     case NEG_Y_FACE:
+    //         delta[1] -= 0.001f;
+    //         memcpy(buffer, bottomFaceVertices, faceVerticesSize);
+    //         break;
+    //     case POS_Z_FACE:
+    //         delta[2] += 0.001f;
+    //         memcpy(buffer, frontFaceVertices, faceVerticesSize);
+    //         break;
+    //     case NEG_Z_FACE:
+    //         delta[2] -= 0.001f;
+    //         memcpy(buffer, backFaceVertices, faceVerticesSize);
+    //         break;
+    //     default: LOG_FATAL("invalid face type");
+    // }
 
     glm_vec3_add(res.blockPosition, delta, res.blockPosition);
 
@@ -551,6 +552,7 @@ void world_highlightFace(world_t *w, camera_t *camera) {
 }
 
 void world_drawHighlight(world_t *w, int modelLocation) {
+        return;
     if (!w->highlightFound) {
         return;
     }

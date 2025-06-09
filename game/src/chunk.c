@@ -33,163 +33,90 @@ float smoothValueNoise(const float x, const float y) {
     return glm_lerp(i1, i2, y_frac);
 }
 
+static bool faceIsVisible(chunk_t *c, ivec3 blockPos, direction_e dir) {
+    ivec3 dirVec;
+    memcpy(&dirVec, &directions[dir], sizeof(ivec3));
+    ivec3 neighbourPos;
+    glm_ivec3_add(blockPos, dirVec, neighbourPos);
+    for (int i = 0; i < 3; i++) {
+        if (neighbourPos[i] < 0 || neighbourPos[i] >= CHUNK_SIZE) {
+            return true;
+        }
+    }
+    return c->blocks[neighbourPos[0]][neighbourPos[1]][neighbourPos[2]] == BL_AIR;
+}
+
+// writes vertices of a face specified by buf
+// returns pointer to next free position in the buffer
+static vertex_t *writeVertex(vertex_t *buf, ivec3 blockPos, direction_e dir, int width, int height, int type) {
+    ivec3 dirVec;
+    memcpy(&dirVec, &directions[dir], sizeof(ivec3));
+    int texIndex = type * 4;
+    memcpy(buf, blockVertices[dir], faceVerticesSize);
+    if (dir == DIR_PLUSZ) {
+        for (int i = 0; i < 6; ++i) {
+            buf[i].x *= width;
+            buf[i].y *= height;
+            buf[i].texIndex += texIndex;
+        }
+    }
+    return buf + 6;
+}
+
 /**
  * @brief Creates the mesh from a chunk
  * @param c A pointer to a chunk
  */
 static void chunk_createMesh(chunk_t *c) {
-    static const size_t bytesPerBlock = sizeof(vertex_t) * 36;
+    const size_t bytesPerBlock = sizeof(vertex_t) * 36;
+    bool seen[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE] = {0};
 
     vertex_t *buf = malloc(CHUNK_SIZE_CUBED * bytesPerBlock);
-
     vertex_t *nextPtr = buf;
     for (int i = 0; i < CHUNK_SIZE; i++) {
         for (int j = 0; j < CHUNK_SIZE; j++) {
             for (int k = 0; k < CHUNK_SIZE; k++) {
-                if (c->blocks[i][j][k] == BL_AIR) {
+                block_t type = c->blocks[i][j][k];
+                if (seen[i][j][k]) {
                     continue;
                 }
-                int ni, nj, nk;
-                bool neighbourIsAir = false;
-                /*
-                    The below is tedious and repetitive, but I didn't
-                    give it its own function because it may change significantly
-                    when implementing greedy meshing.
-                */
-
-
-                /*
-                    back face
-                */
-                ni = i;
-                nj = j;
-                nk = k - 1;
-                neighbourIsAir = false;
-                if (nk < 0) {
-                    neighbourIsAir = true;
-                } else {
-                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
+                if (type == BL_AIR) {
+                    continue;
                 }
-                if (neighbourIsAir) {
-                    memcpy(nextPtr, backFaceVertices, faceVerticesSize);
-                    for (int n = 0; n < 6; n++) {
-                        nextPtr[n].x += (float)i;
-                        nextPtr[n].y += (float)j;
-                        nextPtr[n].z += (float)k;
-                        nextPtr[n].texIndex += 4 * (c->blocks[i][j][k]);
+                direction_e up = DIR_PLUSZ;
+                if (!faceIsVisible(c, (ivec3){i, j, k}, up)) {
+                    continue;
+                }
+                seen[i][j][k] = true;
+                int width = 1;
+                int height = 1;
+                while ( i + width < CHUNK_SIZE
+                        && faceIsVisible(c, (ivec3){i + width, j, k}, up)
+                        && !seen[i + width][j][k]
+                        && c->blocks[i + width][j][k] == type) {
+                    seen[i + width][j][k] = true;
+                    width++;
+                }
+                for (int areaHeight = j + 1; areaHeight < CHUNK_SIZE; areaHeight++) {
+                    bool validSpace = true;
+                    for (int x = i; x < i + width; ++x) {
+                        if (seen[x][areaHeight][k]
+                            || !faceIsVisible(c, (ivec3){x, areaHeight, j}, up)
+                            || c->blocks[i + width][areaHeight][k] != type) {
+                            validSpace = false;
+                            break;
+                        }
                     }
-                    nextPtr += faceVerticesSize / sizeof(vertex_t);
-                }
-                /*
-                    front face
-                */
-                ni = i;
-                nj = j;
-                nk = k + 1;
-                neighbourIsAir = false;
-                if (nk >= CHUNK_SIZE) {
-                    neighbourIsAir = true;
-                } else {
-                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
-                }
-                if (neighbourIsAir) {
-                    memcpy(nextPtr, frontFaceVertices, faceVerticesSize);
-                    for (int n = 0; n < 6; n++) {
-                        nextPtr[n].x += (float)i;
-                        nextPtr[n].y += (float)j;
-                        nextPtr[n].z += (float)k;
-                        nextPtr[n].texIndex += 4 * (c->blocks[i][j][k]);
+                    if (validSpace) {
+                        height++;
+                        for (int x = i; x < i + width; ++x) {
+                            seen[x][areaHeight][k] = true;
+                        }
+                    } else {
+                        break;
                     }
-                    nextPtr += faceVerticesSize / sizeof(vertex_t);
                 }
-                /*
-                    left face
-                */
-                ni = i - 1;
-                nj = j;
-                nk = k;
-                neighbourIsAir = false;
-                if (ni < 0) {
-                    neighbourIsAir = true;
-                } else {
-                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
-                }
-                if (neighbourIsAir) {
-                    memcpy(nextPtr, leftFaceVertices, faceVerticesSize);
-                    for (int n = 0; n < 6; n++) {
-                        nextPtr[n].x += (float)i;
-                        nextPtr[n].y += (float)j;
-                        nextPtr[n].z += (float)k;
-                        nextPtr[n].texIndex += 4 * (c->blocks[i][j][k]);
-                    }
-                    nextPtr += faceVerticesSize / sizeof(vertex_t);
-                }
-                /*
-                    right face
-                */
-                ni = i + 1;
-                nj = j;
-                nk = k;
-                neighbourIsAir = false;
-                if (ni >= CHUNK_SIZE) {
-                    neighbourIsAir = true;
-                } else {
-                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
-                }
-                if (neighbourIsAir) {
-                    memcpy(nextPtr, rightFaceVertices, faceVerticesSize);
-                    for (int n = 0; n < 6; n++) {
-                        nextPtr[n].x += (float)i;
-                        nextPtr[n].y += (float)j;
-                        nextPtr[n].z += (float)k;
-                        nextPtr[n].texIndex += 4 * (c->blocks[i][j][k]);
-                    }
-                    nextPtr += faceVerticesSize / sizeof(vertex_t);
-                }
-                /*
-                    bottom face
-                */
-                ni = i;
-                nj = j - 1;
-                nk = k;
-                neighbourIsAir = false;
-                if (nj < 0) {
-                    neighbourIsAir = true;
-                } else {
-                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
-                }
-                if (neighbourIsAir) {
-                    memcpy(nextPtr, bottomFaceVertices, faceVerticesSize);
-                    for (int n = 0; n < 6; n++) {
-                        nextPtr[n].x += (float)i;
-                        nextPtr[n].y += (float)j;
-                        nextPtr[n].z += (float)k;
-                        nextPtr[n].texIndex += 4 * (c->blocks[i][j][k]);
-                    }
-                    nextPtr += faceVerticesSize / sizeof(vertex_t);
-                }
-                /*
-                    top face
-                */
-                ni = i;
-                nj = j + 1;
-                nk = k;
-                neighbourIsAir = false;
-                if (nj >= CHUNK_SIZE) {
-                    neighbourIsAir = true;
-                } else {
-                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
-                }
-                if (neighbourIsAir) {
-                    memcpy(nextPtr, topFaceVertices, faceVerticesSize);
-                    for (int n = 0; n < 6; n++) {
-                        nextPtr[n].x += (float)i;
-                        nextPtr[n].y += (float)j;
-                        nextPtr[n].z += (float)k;
-                        nextPtr[n].texIndex += 4 * (c->blocks[i][j][k]);
-                    }
-                    nextPtr += faceVerticesSize / sizeof(vertex_t);
-                }
+                nextPtr = writeVertex(nextPtr, (ivec3){i, j, k}, up, width, height, type);
             }
         }
     }
