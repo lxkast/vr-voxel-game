@@ -1,11 +1,9 @@
 #include "world.h"
-
-#include <errno.h>
 #include <cglm/cglm.h>
+#include <errno.h>
 #include <logging.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-
 #include "chunk.h"
 #include "entity.h"
 #include "uthash.h"
@@ -145,14 +143,15 @@ static void highlightInit(world_t *w) {
     glGenBuffers(1, &w->highlightVbo);
     glBindVertexArray(w->highlightVao);
     glBindBuffer(GL_ARRAY_BUFFER, w->highlightVbo);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
     glBindVertexArray(0);
 }
 
 void world_init(world_t *w, const GLuint program) {
+    memset(w, 0, sizeof(world_t));
     w->clusterTable = NULL;
     fogInit(w, program);
     highlightInit(w);
@@ -348,7 +347,7 @@ bool world_placeBlock(world_t *w, int x, int y, int z, block_t block) {
 }
 
 bool world_save(world_t *w, const char *dir) {
-    struct stat st = { 0 };
+    struct stat st = {0};
     if (stat(dir, &st) == -1) {
         LOG_INFO("World save does not exist, creating directory...");
 #if defined(_WIN32) || defined(_WIN64)
@@ -510,7 +509,7 @@ void world_highlightFace(world_t *w, camera_t *camera) {
     }
     float *buffer = malloc(faceVerticesSize);
 
-    vec3 delta = { 0.f, 0.f, 0.f };
+    vec3 delta = {0.f, 0.f, 0.f};
     switch (res.face) {
         case POS_X_FACE:
             delta[0] += 0.01f;
