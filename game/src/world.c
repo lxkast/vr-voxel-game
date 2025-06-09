@@ -27,6 +27,8 @@ typedef struct {
     chunk_t *chunk;
     /// Whether the chunk will be reloaded this iteration
     bool reloaded;
+    /// The current level of loading the chunk is in
+    chunkLoadLevel_e ll;
 } chunkValue_t;
 
 /**
@@ -107,8 +109,13 @@ static void loadChunk(world_t *w, const int cx, const int cy, const int cz) {
 
     if (!cv->chunk) {
         cv->chunk = (chunk_t *)malloc(sizeof(chunk_t));
+
         chunk_init(cv->chunk, cx, cy, cz);
+        cv->ll = LL_INIT;
+
         chunk_generate(cv->chunk);
+        cv->ll = LL_TOTAL;
+
         cluster->n++;
     }
     cv->reloaded = true;
@@ -179,7 +186,7 @@ void world_draw(const world_t *w, const int modelLocation, camera_t *cam) {
     cluster_t *cluster, *tmp;
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
         for (int i = 0; i < C_T * C_T * C_T; i++) {
-            if (!cluster->cells[i].chunk) {continue;}
+            if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
             const bool renderingChunk = isChunkInFrontOfCamera(cam, cluster->cells[i].chunk);
 
             if (cluster->cells[i].chunk && renderingChunk) {

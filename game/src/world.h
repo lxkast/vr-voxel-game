@@ -50,6 +50,12 @@ typedef enum {
     NEG_Z_FACE,
 } raycastFace_e;
 
+typedef enum {
+    LL_INIT = 0,
+    LL_PARTIAL = 1,
+    LL_TOTAL = 2,
+} chunkLoadLevel_e;
+
 /**
  * @brief Struct that holds data about the result of a raycast
  */
