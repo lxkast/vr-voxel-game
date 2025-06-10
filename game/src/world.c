@@ -159,6 +159,7 @@ void world_init(world_t *w, const GLuint program) {
         world_entity_t newEntity;
         newEntity.type = NONE;
         newEntity.entity = NULL;
+        newEntity.itemType = NONE;
         w->entities[i] = newEntity;
     }
 }
@@ -330,6 +331,30 @@ void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, bl
     }
 }
 
+static world_entity_t createItemEntity(world_t *w, const vec3 pos, const item_e item) {
+    world_entity_t newWorldEntity;
+    newWorldEntity.type = ITEM;
+    entity_t *newEntity = malloc(sizeof(entity_t));
+    newEntity->position[0] = pos[0];
+    newEntity->position[1] = pos[1];
+    newEntity->position[2] = pos[2];
+    newEntity->acceleration[0] = 0;
+    newEntity->acceleration[1] = 0;
+    newEntity->acceleration[2] = 0;
+    newEntity->velocity[0] = 0;
+    newEntity->velocity[1] = 0;
+    newEntity->velocity[2] = 0;
+    newEntity->grounded = false;
+    newEntity->size[0] = 0.25f;
+    newEntity->size[0] = 0.25f;
+    newEntity->size[0] = 0.25f;
+    newEntity->yaw = 0.f;
+
+    newWorldEntity.entity = newEntity;
+    newWorldEntity.itemType = item;
+    return newWorldEntity;
+}
+
 bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
     block_t *bp;
     chunk_t *cp;
@@ -337,8 +362,13 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
 
     if (*bp == BL_AIR) return false;
 
+    world_entity_t entity = createItemEntity(w, vec3((float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f), BLOCK_TO_ITEM[*bp]);
+    // must implement dynarray before this will be completed
+
     *bp = BL_AIR;
     cp->tainted = true;
+
+    return true;
 }
 
 bool world_placeBlock(world_t *w, int x, int y, int z, block_t block) {
@@ -350,6 +380,8 @@ bool world_placeBlock(world_t *w, int x, int y, int z, block_t block) {
 
     *bp = block;
     cp->tainted = true;
+
+    return true;
 }
 
 bool world_save(world_t *w, const char *dir) {

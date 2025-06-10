@@ -2,10 +2,10 @@
 
 #include <cglm/cglm.h>
 #include <glad/gl.h>
-#include "chunk.h"
-#include "uthash.h"
 #include "camera.h"
-#include "analytics.h"
+#include "chunk.h"
+#include "item.h"
+#include "uthash.h"
 
 #define MAX_CHUNKS 256
 #define MAX_CHUNK_LOADERS 8
@@ -31,6 +31,8 @@ typedef enum {
 typedef struct {
     world_entity_e type;
     entity_t *entity;
+    /// This is only checked if 'type' is ITEM
+    item_e itemType;
 } world_entity_t;
 
 /**
@@ -49,6 +51,7 @@ typedef struct world_t {
     mat4 highlightModel;
     bool highlightFound;
     world_entity_t entities[INITIAL_ENTITY_ARRAY_SIZE];
+    int numEntities;
 } world_t;
 
 /**
