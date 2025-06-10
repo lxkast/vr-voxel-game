@@ -339,11 +339,11 @@ int main(void) {
 
         glUseProgram(0);
 
-        // fpsDisplayAcc += analytics.dt;
-        // if (fpsDisplayAcc > 1.0) {
-        //     LOG_INFO("%.0lf\n", analytics.fps);
-        //     fpsDisplayAcc = 0.0;
-        // }
+        fpsDisplayAcc += analytics.dt;
+        if (fpsDisplayAcc > 1.0) {
+            LOG_INFO("%.0lf\n", analytics.fps);
+            fpsDisplayAcc = 0.0;
+        }
 
         glfwPollEvents();
         glfwSwapBuffers(window);
