@@ -42,12 +42,12 @@ typedef struct {
 } blockData_t;
 
 typedef enum {
-    POS_Z_FACE,
-    NEG_Z_FACE,
-    POS_Y_FACE,
-    NEG_Y_FACE,
     POS_X_FACE,
     NEG_X_FACE,
+    POS_Y_FACE,
+    NEG_Y_FACE,
+    POS_Z_FACE,
+    NEG_Z_FACE,
 } raycastFace_e;
 
 /**

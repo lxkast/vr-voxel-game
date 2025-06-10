@@ -9,12 +9,12 @@ typedef struct {
 extern ivec3 directions[6];
 
 typedef enum {
-    DIR_PLUSZ,
-    DIR_MINUSZ,
+    DIR_PLUSX,
+    DIR_MINUSX,
     DIR_PLUSY,
     DIR_MINUSY,
-    DIR_PLUSX,
-    DIR_MINUSX
+    DIR_PLUSZ,
+    DIR_MINUSZ,
 } direction_e;
 
 extern const float cubeVertices[];
