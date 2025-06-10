@@ -57,6 +57,34 @@ typedef struct world_t {
 } world_t;
 
 /**
+ * @brief Contains data about what stage of loading the chunk is
+ */
+typedef enum {
+    LL_INIT = 0,
+    LL_PARTIAL = 1,
+    LL_TOTAL = 2,
+} chunkLoadLevel_e;
+
+/**
+ * @brief Contains data about the reload style of a chunk
+ */
+typedef enum {
+    REL_TOP_RELOAD = 0,
+    REL_CHILD = 2,
+    REL_TOP_UNLOAD = 3,
+    REL_TOMBSTONE = 3
+} reloadData_e;
+
+/**
+ * @brief Struct that holds data about the result of a raycast
+ */
+typedef struct {
+    vec3 blockPosition;
+    raycastFace_e face;
+    bool found;
+} raycast_t;
+
+/**
  * @brief Initialises a world struct.
  * @param w A pointer to a world
  * @param program A shader program for setting effects

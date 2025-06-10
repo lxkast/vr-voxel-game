@@ -84,7 +84,6 @@ static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w)
         if (glfwGetKey(window, GLFW_KEY_1 + i) == GLFW_PRESS) {
             player->hotbar.currentSlotIndex = i;
             player->hotbar.currentSlot = &(player->hotbar.slots[i]);
-            LOG_DEBUG("Current item in slot is %d", player->hotbar.currentSlot->type);
             player_printHotbar(player);
             break;
         }
@@ -105,12 +104,12 @@ static void processCameraInput(GLFWwindow *window, camera_t *camera) {
     camera_fromMouse(camera, -dX, -dY);
 }
 
-static bool wireframeView = false;
-static bool previousDownO = false;
 static bool postProcessingEnabled = true;
-static bool previousDownP = false;
+static bool wireframeView = false;
 
-static void processInput(GLFWwindow *window) {
+static void processInput(GLFWwindow *window, mat4 projection, const int projectionLocation) {
+    static bool previousDownO = false;
+    static bool previousDownP = false;
     const int oKey = glfwGetKey(window, GLFW_KEY_O);
     if (oKey == GLFW_PRESS && !previousDownO) {
         wireframeView = !wireframeView;
@@ -122,6 +121,9 @@ static void processInput(GLFWwindow *window) {
     const int pKey = glfwGetKey(window, GLFW_KEY_P);
     if (pKey == GLFW_PRESS && !previousDownP) {
         postProcessingEnabled = !postProcessingEnabled;
+        glm_perspective(FOV_Y, (float)SCREEN_WIDTH / (float)((postProcessingEnabled ? 2 : 1) * SCREEN_HEIGHT), 0.1f, 16.f * (CHUNK_LOAD_RADIUS + 1), projection);
+
+        glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projection);
         previousDownP = true;
     }
     if (pKey == GLFW_RELEASE) {
@@ -217,35 +219,19 @@ int main(void) {
 
     const GLuint texture = loadTextureRGBA("textures/atlas.png", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
 
+    glUseProgram(program);
 
-    /*
-        Set up projection matrix
-    */
+    mat4 projection;
+    const int projectionLocation = glGetUniformLocation(program, "projection");
+    glm_perspective(FOV_Y, (float)SCREEN_WIDTH / (float)((postProcessingEnabled ? 2 : 1) * SCREEN_HEIGHT), 0.1f, 16.f * (CHUNK_LOAD_RADIUS + 1), projection);
+    glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projection);
 
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glUniform1i(glGetUniformLocation(program, "uTextureAtlas"), 0);
 
+    glUseProgram(0);
 
-        mat4 projection;
-        glm_perspective(FOV_Y, (float)screenWidth / (float)screenHeight, 0.1f, 16.f * (CHUNK_LOAD_RADIUS + 1), projection);
-
-        glUseProgram(program);
-
-        const int projectionLocation = glGetUniformLocation(program, "projection");
-
-        glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projection);
-
-        glUseProgram(0);
-
-
-    // set texture unit
-    {
-        glUseProgram(program);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glUniform1i(glGetUniformLocation(program, "uTextureAtlas"), 0);
-
-        glUseProgram(0);
-    }
 
 
     /*
@@ -281,10 +267,10 @@ int main(void) {
     analytics_init(&analytics);
     double fpsDisplayAcc = 0;
 
-
     while (!glfwWindowShouldClose(window)) {
         analytics_startFrame(&analytics);
-        processInput(window);
+        glUseProgram(program);
+        processInput(window, projection, projectionLocation);
         processPlayerInput(window, &player, &world);
         processCameraInput(window, &camera);
         world_doChunkLoading(&world);
@@ -303,7 +289,6 @@ int main(void) {
         glClear(GL_COLOR_BUFFER_BIT);
 
 
-        glUseProgram(program);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
         glUniform1i(glGetUniformLocation(program, "uTextureAtlas"), 0);
@@ -335,18 +320,22 @@ int main(void) {
             world_draw(&world, modelLocation, &camera);
             world_drawHighlight(&world, modelLocation);
 
-            glViewport(0, 0, screenWidth, screenHeight);
+            {
+                static int width, height;
+                glfwGetFramebufferSize(window, &width, &height);
+                glViewport(0, 0, width, height);
+            }
             postProcess_draw(&postProcess);
             camera_translateX(&camera, -EYE_OFFSET);
         }
 
         glUseProgram(0);
 
-        // fpsDisplayAcc += analytics.dt;
-        // if (fpsDisplayAcc > 1.0) {
-        //     LOG_INFO("%.0lf\n", analytics.fps);
-        //     fpsDisplayAcc = 0.0;
-        // }
+        fpsDisplayAcc += analytics.dt;
+        if (fpsDisplayAcc > 1.0) {
+            LOG_INFO("%.0lf\n", analytics.fps);
+            fpsDisplayAcc = 0.0;
+        }
 
         glfwPollEvents();
         glfwSwapBuffers(window);
