@@ -76,15 +76,6 @@ typedef enum {
 } reloadData_e;
 
 /**
- * @brief Struct that holds data about the result of a raycast
- */
-typedef struct {
-    vec3 blockPosition;
-    raycastFace_e face;
-    bool found;
-} raycast_t;
-
-/**
  * @brief Initialises a world struct.
  * @param w A pointer to a world
  * @param program A shader program for setting effects
