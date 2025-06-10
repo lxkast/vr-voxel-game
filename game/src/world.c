@@ -1,11 +1,9 @@
 #include "world.h"
-
-#include <errno.h>
 #include <cglm/cglm.h>
+#include <errno.h>
 #include <logging.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-
 #include "chunk.h"
 #include "entity.h"
 #include "uthash.h"
@@ -24,11 +22,18 @@ typedef struct {
 /**
  * @brief Value stored in hashmap entry array
  */
-typedef struct {
+typedef struct chunkValue_t {
     /// The pointer to a heap allocated chunk
     chunk_t *chunk;
-    /// Whether the chunk will be reloaded this iteration
-    bool reloaded;
+    /// The current level of loading the chunk is in
+    chunkLoadLevel_e ll;
+
+    struct {
+        reloadData_e reload;
+        size_t nChildren;
+        struct chunkValue_t *children[8];
+    } loadData;
+
 } chunkValue_t;
 
 /**
@@ -93,14 +98,23 @@ static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int c
     return clusterPtr;
 }
 
+static void world_decorateChunk(world_t *w, chunkValue_t *cv);
+
 /**
  * @brief Loads a chunk.
  * @param w A pointer to a world
  * @param cx Chunk x coordinate
  * @param cy Chunk y coordinate
  * @param cz Chunk z coordinate
+ * @param ll The load level to load to if the chunk doesn't exist
+ * @param r The reload style of the chunk
  */
-static void loadChunk(world_t *w, const int cx, const int cy, const int cz) {
+static chunkValue_t *world_loadChunk(world_t *w,
+                     const int cx,
+                     const int cy,
+                     const int cz,
+                     const chunkLoadLevel_e ll,
+                     const reloadData_e r) {
     size_t offset;
 
     cluster_t *cluster = clusterGet(w, cx, cy, cz, true, &offset);
@@ -108,11 +122,32 @@ static void loadChunk(world_t *w, const int cx, const int cy, const int cz) {
     chunkValue_t *cv = &cluster->cells[offset];
 
     if (!cv->chunk) {
-        cv->chunk = (chunk_t *)malloc(sizeof(chunk_t));
-        chunk_generate(cv->chunk, cx, cy, cz);
+        cv->chunk = (chunk_t *)calloc(1, sizeof(chunk_t));
+        chunk_init(cv->chunk, cx, cy, cz);
+        cv->ll = LL_INIT;
+        cv->loadData.reload = REL_TOMBSTONE;
+
         cluster->n++;
     }
-    cv->reloaded = true;
+
+    if (ll > cv->ll) {
+        if (ll > LL_PARTIAL) {
+            chunk_generate(cv->chunk);
+            world_decorateChunk(w, cv);
+        }
+    }
+    cv->ll = ll;
+
+    if (r < cv->loadData.reload) cv->loadData.reload = r;
+
+    return cv;
+}
+
+static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
+    int (*ptr)[CHUNK_SIZE][CHUNK_SIZE] = (int (*)[CHUNK_SIZE][CHUNK_SIZE]) cv->chunk->blocks;
+
+    // chunkValue_t *above = world_loadChunk(w, cv->chunk->cx, cv->chunk->cy + 1, cv->chunk->cz, LL_INIT, REL_CHILD);
+    // cv->loadData.children[cv->loadData.nChildren++] = above;
 }
 
 static bool getBlockAddr(world_t *w, int x, int y, int z, block_t **block, chunk_t **chunk) {
@@ -153,6 +188,7 @@ static void highlightInit(world_t *w) {
 }
 
 void world_init(world_t *w, const GLuint program) {
+    memset(w, 0, sizeof(world_t));
     w->clusterTable = NULL;
     fogInit(w, program);
     highlightInit(w);
@@ -179,7 +215,7 @@ void world_draw(const world_t *w, const int modelLocation, camera_t *cam) {
     cluster_t *cluster, *tmp;
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
         for (int i = 0; i < C_T * C_T * C_T; i++) {
-            if (!cluster->cells[i].chunk) {continue;}
+            if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
             const bool renderingChunk = isChunkInFrontOfCamera(cam, cluster->cells[i].chunk);
 
             if (cluster->cells[i].chunk && renderingChunk) {
@@ -224,6 +260,27 @@ void world_delChunkLoader(world_t *w, const unsigned int id) {
     w->chunkLoaders[id].active = false;
 }
 
+static bool freeCv(world_t *w, cluster_t *cluster, const int i) {
+    chunkValue_t *cv = &cluster->cells[i];
+
+    for (int j = 0; j < cv->loadData.nChildren; j++) {
+        reloadData_e *r = &cv->loadData.children[j]->loadData.reload;
+        if (*r == REL_CHILD) *r = REL_TOMBSTONE;
+    }
+
+    chunk_free(cv->chunk);
+    free(cv->chunk);
+    cv->chunk = NULL;
+    cluster->n--;
+    if (cluster->n <= 0) {
+        HASH_DEL(w->clusterTable, cluster);
+        free(cluster->cells);
+        free(cluster);
+        return false;
+    }
+    return true;
+}
+
 void world_doChunkLoading(world_t *w) {
     // Iterate through chunk loaders, loading any chunk in their radius
     for (int i = 0; i < MAX_CHUNK_LOADERS; i++) {
@@ -237,7 +294,7 @@ void world_doChunkLoading(world_t *w) {
             for (int y = -CHUNK_LOAD_RADIUS; y <= CHUNK_LOAD_RADIUS; y++) {
                 for (int z = -CHUNK_LOAD_RADIUS; z <= CHUNK_LOAD_RADIUS; z++) {
                     if (x * x + y * y + z * z <= CHUNK_LOAD_RADIUS * CHUNK_LOAD_RADIUS) {
-                        loadChunk(w, cx + x, cy + y, cz + z);
+                        world_loadChunk(w, cx + x, cy + y, cz + z, LL_TOTAL, REL_TOP_RELOAD);
                     }
                 }
             }
@@ -248,19 +305,12 @@ void world_doChunkLoading(world_t *w) {
     cluster_t *cluster, *tmp;
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
         for (int i = 0; i < C_T * C_T * C_T; i++) {
-            if (cluster->cells[i].chunk && !cluster->cells[i].reloaded) {
-                chunk_free(cluster->cells[i].chunk);
-                free(cluster->cells[i].chunk);
-                cluster->cells[i].chunk = NULL;
-                cluster->n--;
-                if (cluster->n <= 0) {
-                    HASH_DEL(w->clusterTable, cluster);
-                    free(cluster->cells);
-                    free(cluster);
-                    break;
-                }
-            } else {
-                cluster->cells[i].reloaded = false;
+            chunkValue_t *cv = &cluster->cells[i];
+            if (!cv->chunk) continue;
+            if (cv->loadData.reload == REL_TOP_UNLOAD || cv->loadData.reload == REL_TOMBSTONE) {
+                if (!freeCv(w, cluster, i)) break;
+            } else if (cv->loadData.reload == REL_TOP_RELOAD) {
+                cv->loadData.reload = REL_TOP_UNLOAD;
             }
         }
     }
@@ -348,7 +398,7 @@ bool world_placeBlock(world_t *w, int x, int y, int z, block_t block) {
 }
 
 bool world_save(world_t *w, const char *dir) {
-    struct stat st = { 0 };
+    struct stat st = {0};
     if (stat(dir, &st) == -1) {
         LOG_INFO("World save does not exist, creating directory...");
 #if defined(_WIN32) || defined(_WIN64)

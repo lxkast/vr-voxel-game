@@ -44,7 +44,7 @@ unsigned int futil_fileSize(futil_file_t *fp);
     Reads maximum n 32 bit chunks.
     Returns the number of 32 bit chunks read.
 */
-unsigned int futil_readBinary(futil_file_t *fp, uint32_t *buf, int n);
+unsigned int futil_readBinary(futil_file_t *fp, uint32_t *buf, unsigned int n);
 
 /*
     Writes bytes from a buffer of uint32_t to the file.

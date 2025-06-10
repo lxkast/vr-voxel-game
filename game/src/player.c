@@ -15,16 +15,32 @@ static bool onBlockCooldown(player_t *p) {
 void player_init(player_t *p) {
     *p = (player_t){
         .entity = {
-                   .position = {0.f, 15.f, 0.f},
-                   .velocity = {0.f, 0.f, 0.f},
-                   .size = {0.6f, 1.8f, 0.6f},
-                   .acceleration = {0.f, 0.f, 0.f},
-                   .grounded = false,
-                   .yaw = 0,
-                   },
+            .position = {0.f, 15.f, 0.f},
+            .velocity = {0.f, 0.f, 0.f},
+            .size = {0.6f, 1.8f, 0.6f},
+            .acceleration = {0.f, 0.f, 0.f},
+            .grounded = false,
+            .yaw = 0,
+        },
         .lookVector = { 0.f, 0.f, 0.f },
-        .cameraOffset = {0.3f, 1.6f, 0.3f}
+        .cameraOffset = {0.3f, 1.6f, 0.3f},
+        .hotbar = {
+            .slots = {
+                {ITEM_DIRT, 64},
+                {ITEM_GRASS, 32},
+                {ITEM_STONE, 16},
+                {NOTHING, 0},
+                {NOTHING, 0},
+                {NOTHING, 0},
+                {NOTHING, 0},
+                {NOTHING, 0},
+                {NOTHING, 0}
+            },
+            .currentSlotIndex = 0
+        }
     };
+
+    p->hotbar.currentSlot = &(p->hotbar.slots[0]);
 }
 
 void player_attachCamera(player_t *p, camera_t *camera) {
@@ -71,8 +87,8 @@ void player_removeBlock(player_t *p, world_t *w) {
     }
 }
 
-void player_placeBlock(player_t *p, world_t *w, const block_t block) {
-    if (onBlockCooldown(p)) {
+void player_placeBlock(player_t *p, world_t *w) {
+    if (onBlockCooldown(p) || ITEM_PROPERTIES[p->hotbar.currentSlot->type].isPlaceable == false) {
         return;
     }
     vec3 camPos;
@@ -95,8 +111,62 @@ void player_placeBlock(player_t *p, world_t *w, const block_t block) {
         newBlockPosition[2] = (int)raycastBlock.blockPosition[2] - moveDelta[2];
 
         if (!intersectsWithBlock(p->entity, newBlockPosition)) {
-            world_placeBlock(w, newBlockPosition[0], newBlockPosition[1], newBlockPosition[2], block);
+            world_placeBlock(w, newBlockPosition[0], newBlockPosition[1], newBlockPosition[2], ITEM_TO_BLOCK[p->hotbar.currentSlot->type]);
             setBlockCooldown(p);
+            p->hotbar.currentSlot->count--;
+            if (p->hotbar.currentSlot->count == 0) {
+                p->hotbar.currentSlot->type = NOTHING;
+            }
+
+            player_printHotbar(p);
         }
    }
+}
+
+static void repN(const char ch, const unsigned long long num) {
+    for (int i = 0; i < num; i++) {
+        putchar(ch);
+    }
+}
+
+/**
+ * @brief This displays the player's hotbar in the terminal. This is so
+ *        the code can be tested before we implement the hotbar visually.
+ * @param p the player whose hotbar we want to print
+ */
+void player_printHotbar(const player_t *p) {
+    char printStrings[9][30];
+
+    for (int i = 0; i < 9; i++) {
+        char *printStr = printStrings[i];
+        const hotbarItem_t item = p->hotbar.slots[i];
+        if (item.type != NOTHING) {
+            strcpy(printStr, ITEM_PROPERTIES[item.type].displayName);
+            strcat(printStr, " x");
+            char countStr[3];
+            snprintf(countStr, sizeof(countStr), "%d", item.count);
+            strcat(printStr, countStr);
+        } else {
+            strcpy(printStr, "   ");
+        }
+    }
+
+
+    putchar('+');
+    for (int i = 0; i < 9; i++) {
+        repN('-', 2 + strlen(printStrings[i]));
+        putchar('+');
+    }
+    printf("\n|");
+
+    for (int i = 0; i < 9; i++) {
+        printf(" %s |", printStrings[i]);
+    }
+
+    printf("\n+");
+    for (int i = 0; i < 9; i++) {
+        repN('-', 2 + strlen(printStrings[i]));
+        putchar('+');
+    }
+    printf("\n"); // Add final newline
 }

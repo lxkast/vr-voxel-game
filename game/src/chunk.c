@@ -17,7 +17,7 @@ static float ease(const float t) {
     return t * t * t * (t * (t * 6 - 15) + 10);
 }
 
-float smoothValueNoise(const float x, const float y) {
+static float smoothValueNoise(const float x, const float y) {
     const int x_int = (int)floorf(x);
     const int y_int = (int)floorf(y);
     const float x_frac = ease(x - (float)x_int);
@@ -34,19 +34,49 @@ float smoothValueNoise(const float x, const float y) {
     return glm_lerp(i1, i2, y_frac);
 }
 
-void chunk_create(chunk_t *c, const int cx, const int cy, const int cz, const block_t block) {
+static float height(const int x, const int z) {
+    float totalHeight = 0.f;
+    float frequency = 0.01f;
+    float amplitude = 1.f;
+    float maxAmplitude = 0.f;
+
+    for (int octave = 0; octave < 4; octave++) {
+        totalHeight += smoothValueNoise((float)x * frequency, (float)z * frequency) * amplitude;
+        maxAmplitude += amplitude;
+        amplitude *= 0.5f;
+        frequency *= 2.f;
+    }
+
+    return totalHeight / maxAmplitude;
+}
+
+void chunk_init(chunk_t *c, int cx, int cy, int cz) {
     c->cx = cx;
     c->cy = cy;
     c->cz = cz;
 
+    glGenBuffers(1, &c->vbo);
+    glGenVertexArrays(1, &c->vao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, c->vbo);
+
+    glBindVertexArray(c->vao);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+}
+
+void chunk_fill(chunk_t *c, const block_t block) {
     int *ptr = c->blocks;
     for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE; i++) {
         ptr[i] = block;
     }
 
-    glGenBuffers(1, &c->vbo);
-    glGenVertexArrays(1, &c->vao);
-    chunk_createMesh(c);
+    c->tainted = true;
 }
 
 void chunk_createDeserialise(chunk_t *c, FILE *fp) {
@@ -56,41 +86,34 @@ void chunk_createDeserialise(chunk_t *c, FILE *fp) {
 
     fread(&c->blocks, sizeof(int), CHUNK_SIZE_CUBED, fp);
 
-    glGenBuffers(1, &c->vbo);
-    glGenVertexArrays(1, &c->vao);
-    chunk_createMesh(c);
+    c->tainted = true;
 }
 
-void chunk_generate(chunk_t *c, int cx, int cy, int cz) {
-    c->cx = cx;
-    c->cy = cy;
-    c->cz = cz;
-
+void chunk_generate(chunk_t *c) {
     int (*ptr)[CHUNK_SIZE][CHUNK_SIZE] = (int (*)[CHUNK_SIZE][CHUNK_SIZE]) c->blocks;
     for (int x = 0; x < CHUNK_SIZE; x++) {
         for (int z = 0; z < CHUNK_SIZE; z++) {
-            float xf = (c->cx * CHUNK_SIZE + x) * 0.015f;
-            float zf = (c->cz * CHUNK_SIZE + z) * 0.015f;
+            const float xf = (c->cx * CHUNK_SIZE + x);
+            const float zf = (c->cz * CHUNK_SIZE + z);
 
-            float n = smoothValueNoise(xf, zf);
-            float height = n * 20.f;
+            const float biome = smoothValueNoise(xf * 0.005f, zf * 0.005f);
+
+            const float n = height(xf, zf);
+            const float height = n * 20.f;
 
             for (int y = 0; y < CHUNK_SIZE; y++) {
                 if (c->cy * CHUNK_SIZE + y == (int)height) {
-                    ptr[x][y][z] = BL_GRASS;
-                }
-                else if (cy * CHUNK_SIZE + y < height) {
-                    ptr[x][y][z] = BL_DIRT;
-                } else {
-                    ptr[x][y][z] = BL_AIR;
+                    ptr[x][y][z] = biome < 0.5f ? BL_GRASS : BL_SAND;
+                } else if (c->cy * CHUNK_SIZE + y < height - 6) {
+                    ptr[x][y][z] = BL_STONE;
+                } else if (c->cy * CHUNK_SIZE + y < height) {
+                    ptr[x][y][z] = biome < 0.5f ? BL_DIRT : BL_SAND;
                 }
             }
         }
     }
 
-    glGenBuffers(1, &c->vbo);
-    glGenVertexArrays(1, &c->vao);
-    chunk_createMesh(c);
+    c->tainted = true;
 }
 
 void chunk_draw(chunk_t *c, const int modelLocation) {

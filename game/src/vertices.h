@@ -17,6 +17,12 @@ typedef enum {
     DIR_MINUSZ,
 } direction_e;
 
+#define ATLAS_LENGTH 128
+#define ATLAS_HEIGHT 64
+#define TEXTURE_LENGTH 16
+#define TEXTURE_HEIGHT 16
+
+
 extern const float cubeVertices[];
 extern const unsigned int cubeVerticesSize;
 
