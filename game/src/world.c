@@ -137,7 +137,6 @@ static chunkValue_t *world_loadChunk(world_t *w,
         }
         cv->ll = ll;
     }
-    cv->ll = ll;
 
     if (r < cv->loadData.reload) cv->loadData.reload = r;
 
@@ -146,7 +145,7 @@ static chunkValue_t *world_loadChunk(world_t *w,
 
 struct decorator {
     int cacheN;
-    chunkValue_t *cache[8];
+    chunkValue_t *cache[3][3][3];
 
     chunkValue_t *origin;
     int ox, oy, oz;
@@ -155,6 +154,8 @@ struct decorator {
 static void decorator_init(struct decorator *d, chunkValue_t *origin, const int x, const int y, const int z) {
     d->cacheN = 0;
     d->origin = origin;
+    memset(d->cache, 0, 27 * sizeof(chunkValue_t *));
+    d->cache[1][1][1] = origin;
     d->ox = x;
     d->oy = y;
     d->oz = z;
@@ -173,11 +174,32 @@ static bool decorator_initSurface(struct decorator *d, chunkValue_t *origin, con
 }
 
 static void decorator_placeBlock(struct decorator *d,
-                                 const int x,
-                                 const int y,
-                                 const int z,
+                                 world_t *world,
+                                 int x,
+                                 int y,
+                                 int z,
                                  const block_t block) {
-    d->origin->chunk->blocks[d->ox + x][d->oy + y][d->oz + z] = block;
+    x = d->ox + x;
+    y = d->oy + y;
+    z = d->ox + z;
+
+    const int cx = x >> 4;
+    const int cy = y >> 4;
+    const int cz = z >> 4;
+
+    if (-1 <= cx && cx <= 1 && -1 <= cy && cy <= 1 && -1 <= cz && cz <= 1) {
+        if (!d->cache[cx + 1][cy + 1][cz + 1]) {
+            d->cache[cx + 1][cy + 1][cz + 1] = world_loadChunk(world,
+                                                   d->origin->chunk->cx + cx,
+                                                   d->origin->chunk->cy + cy,
+                                                   d->origin->chunk->cz + cz,
+                                                   LL_INIT,
+                                                   REL_CHILD);
+            d->origin->loadData.children[d->origin->loadData.nChildren++] = d->cache[cx + 1][cy + 1][cz + 1];
+        }
+
+        d->cache[cx + 1][cy + 1][cz + 1]->chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)] = block;
+    }
 }
 
 static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
@@ -185,11 +207,10 @@ static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
 
     struct decorator d;
     if (decorator_initSurface(&d, cv, 15, 15)) {
-        decorator_placeBlock(&d, 0, 0, 0, BL_STONE);
+        decorator_placeBlock(&d, w, 0, 0, 0, BL_STONE);
+        decorator_placeBlock(&d, w, 0, 1, 0, BL_STONE);
+        decorator_placeBlock(&d, w, 0, 2, 0, BL_STONE);
     }
-
-    // chunkValue_t *above = world_loadChunk(w, cv->chunk->cx, cv->chunk->cy + 1, cv->chunk->cz, LL_INIT, REL_CHILD);
-    // cv->loadData.children[cv->loadData.nChildren++] = above;
 }
 
 static bool getBlockAddr(world_t *w, int x, int y, int z, block_t **block, chunk_t **chunk) {
