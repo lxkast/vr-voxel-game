@@ -86,7 +86,6 @@ static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w)
         if (glfwGetKey(window, GLFW_KEY_1 + i) == GLFW_PRESS) {
             player->hotbar.currentSlotIndex = i;
             player->hotbar.currentSlot = &(player->hotbar.slots[i]);
-            LOG_DEBUG("Current item in slot is %d", player->hotbar.currentSlot->type);
             player_printHotbar(player);
             break;
         }
