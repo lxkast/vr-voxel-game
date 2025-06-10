@@ -322,7 +322,11 @@ int main(void) {
             world_draw(&world, modelLocation, &camera);
             world_drawHighlight(&world, modelLocation);
 
-            glViewport(0, 0, screenWidth, screenHeight);
+            {
+                static int width, height;
+                glfwGetFramebufferSize(window, &width, &height);
+                glViewport(0, 0, width, height);
+            }
             postProcess_draw(&postProcess);
             camera_translateX(&camera, -EYE_OFFSET);
         }
