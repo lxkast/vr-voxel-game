@@ -126,6 +126,7 @@ static chunkValue_t *world_loadChunk(world_t *w,
         chunk_init(cv->chunk, cx, cy, cz);
         cv->ll = LL_INIT;
         cv->loadData.reload = REL_TOMBSTONE;
+        cv->loadData.nChildren = 0;
 
         cluster->n++;
     }
@@ -161,10 +162,10 @@ static void decorator_init(struct decorator *d, chunkValue_t *origin, const int 
     d->oz = z;
 }
 
-static bool decorator_initSurface(struct decorator *d, chunkValue_t *origin, const int x, const int z) {
+static bool decorator_initSurface(struct decorator *d, chunkValue_t *origin, const int x, const int z, const block_t block) {
     int y;
     for (y = CHUNK_SIZE - 1; y > 0; y--) {
-        if (origin->chunk->blocks[x][y][z] != BL_AIR) {
+        if (origin->chunk->blocks[x][y][z] == block) {
             y++;
             break;
         }
@@ -195,21 +196,35 @@ static void decorator_placeBlock(struct decorator *d,
                                                    d->origin->chunk->cz + cz,
                                                    LL_INIT,
                                                    REL_CHILD);
+            if (d->origin->loadData.nChildren > 7) {
+                LOG_FATAL("it's so over");
+            }
             d->origin->loadData.children[d->origin->loadData.nChildren++] = d->cache[cx + 1][cy + 1][cz + 1];
         }
 
         d->cache[cx + 1][cy + 1][cz + 1]->chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)] = block;
+        d->cache[cx + 1][cy + 1][cz + 1]->chunk->tainted = true;
     }
 }
 
 static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
-    int (*ptr)[CHUNK_SIZE][CHUNK_SIZE] = (int (*)[CHUNK_SIZE][CHUNK_SIZE]) cv->chunk->blocks;
-
     struct decorator d;
-    if (decorator_initSurface(&d, cv, 15, 15)) {
+    if (decorator_initSurface(&d, cv, 15, 15, BL_GRASS)) {
         decorator_placeBlock(&d, w, 0, 0, 0, BL_STONE);
         decorator_placeBlock(&d, w, 0, 1, 0, BL_STONE);
         decorator_placeBlock(&d, w, 0, 2, 0, BL_STONE);
+        decorator_placeBlock(&d, w, 0, 3, 0, BL_STONE);
+        decorator_placeBlock(&d, w, 0, 4, 0, BL_STONE);
+
+        decorator_placeBlock(&d, w, 1, 3, 0, BL_STONE);
+        decorator_placeBlock(&d, w, 2, 3, 0, BL_STONE);
+        decorator_placeBlock(&d, w, -1, 3, 0, BL_STONE);
+        decorator_placeBlock(&d, w, -2, 3, 0, BL_STONE);
+
+        decorator_placeBlock(&d, w, 0, 3, 1, BL_STONE);
+        decorator_placeBlock(&d, w, 0, 3, 2, BL_STONE);
+        decorator_placeBlock(&d, w, 0, 3, -1, BL_STONE);
+        decorator_placeBlock(&d, w, 0, 3, -2, BL_STONE);
     }
 }
 
