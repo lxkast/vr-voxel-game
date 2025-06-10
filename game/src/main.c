@@ -294,6 +294,9 @@ int main(void) {
         world_updateChunkLoader(&world, cameraLoader, camera.eye);
 
         world_processAllEntities(&world, analytics.dt);
+
+        player_pickUpItemsCheck(&player, &world);
+
         player_attachCamera(&player, &camera);
 
 

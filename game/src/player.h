@@ -51,3 +51,5 @@ void player_removeBlock(player_t *p, world_t *w);
 void player_placeBlock(player_t *p, world_t *w);
 
 void player_printHotbar(const player_t *p);
+
+void player_pickUpItemsCheck(player_t *p, world_t *w);

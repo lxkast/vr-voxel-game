@@ -170,3 +170,33 @@ void player_printHotbar(const player_t *p) {
     }
     printf("\n"); // Add final newline
 }
+
+void player_pickUpItemsCheck(player_t *p, world_t *w) {
+    for (int i = 0; i < w->numEntities; i++) {
+        const world_entity_t worldEntity = w->entities[i];
+        if (worldEntity.type == ITEM && entitiesIntersect(p->entity, *worldEntity.entity)) {
+            // checking if player already has those items
+            for (int j = 0; j < 9; j++) {
+                hotbarItem_t *slot = &p->hotbar.slots[j];
+                if (slot->type == worldEntity.itemType && slot->count < ITEM_PROPERTIES[slot->type].maxStackSize) {
+                    slot->count++;
+                    player_printHotbar(p);
+                    world_removeEntity(w, i);
+                    return;
+                }
+            }
+
+            // if player does not already have matching item, assign to first empty slot
+            for (int j = 0; j < 9; j++) {
+                hotbarItem_t *slot = &p->hotbar.slots[j];
+                if (slot->type == NOTHING) {
+                    slot->type = worldEntity.itemType;
+                    slot->count = 1;
+                    player_printHotbar(p);
+                    world_removeEntity(w, i);
+                    return;
+                }
+            }
+        }
+    }
+}
