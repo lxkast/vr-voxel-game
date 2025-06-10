@@ -68,23 +68,5 @@ unit-test-job:   # This job runs in the test stage.
         - assembler-emulator/**/*
         - .gitlab-ci.yml
 
-#clang-format-check:
-#  stage: format
-#  before_script:
-#    - apk add --no-cache clang clang-extra-tools git
-#  script:
-#    # Run clang-format and check for differences
-#    - find . \( -name "*.c" -o -name "*.h" \) | xargs clang-format -i
-#    - |
-#      if ! git diff --quiet; then
-#        echo "Code formatting issues detected"
-#        echo "The following files need formatting:"
-#        git diff --name-only
-#        echo ""
-#        echo "Please run 'find . \\( -name \"*.c\" -o -name \"*.h\" \\) | xargs clang-format -i' "
-#        exit 1
-#      else
-#        echo "All code is properly formatted"
-#      fi
-#  rules:
-#    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+
