@@ -24,13 +24,34 @@ static vertex_t *writeVertex(vertex_t *buf, ivec3 blockPos, direction_e dir, int
     memcpy(&dirVec, &directions[dir], sizeof(ivec3));
     int texIndex = type * 4;
     memcpy(buf, blockVertices[dir], faceVerticesSize);
-    if (dir == DIR_PLUSZ) {
-        for (int i = 0; i < 6; ++i) {
-            buf[i].x = buf[i].x * width + blockPos[0];
-            buf[i].y = buf[i].y * height + blockPos[1];
-            buf[i].z += blockPos[2];
-            buf[i].texIndex += texIndex;
-        }
+    switch (dir) {
+        case DIR_PLUSZ:
+        case DIR_MINUSZ:
+            for (int i = 0; i < 6; ++i) {
+                buf[i].x = buf[i].x * width + blockPos[0];
+                buf[i].y = buf[i].y * height + blockPos[1];
+                buf[i].z += blockPos[2];
+                buf[i].texIndex += texIndex;
+            }
+            break;
+        case DIR_PLUSY:
+        case DIR_MINUSY:
+            for (int i = 0; i < 6; ++i) {
+                buf[i].x = buf[i].x * width + blockPos[0];
+                buf[i].y += blockPos[1];
+                buf[i].z = buf[i].z * height + blockPos[2];
+                buf[i].texIndex += texIndex;
+            }
+            break;
+        case DIR_PLUSX:
+        case DIR_MINUSX:
+            for (int i = 0; i < 6; ++i) {
+                buf[i].x += blockPos[0];
+                buf[i].y = buf[i].y * width + blockPos[1];
+                buf[i].z = buf[i].z * height + blockPos[2];
+                buf[i].texIndex += texIndex;
+            }
+            break;
     }
     return buf + 6;
 }
@@ -45,6 +66,9 @@ void chunk_createMesh(chunk_t *c) {
 
     vertex_t *buf = malloc(CHUNK_SIZE_CUBED * bytesPerBlock);
     vertex_t *nextPtr = buf;
+    direction_e dir;
+    // positive Z
+    dir = DIR_PLUSZ;
     for (int i = 0; i < CHUNK_SIZE; i++) {
         for (int j = 0; j < CHUNK_SIZE; j++) {
             for (int k = 0; k < CHUNK_SIZE; k++) {
@@ -55,15 +79,15 @@ void chunk_createMesh(chunk_t *c) {
                 if (type == BL_AIR) {
                     continue;
                 }
-                direction_e up = DIR_PLUSZ;
-                if (!faceIsVisible(c, (ivec3){i, j, k}, up)) {
+
+                if (!faceIsVisible(c, (ivec3){i, j, k}, dir)) {
                     continue;
                 }
                 seen[i][j][k] = true;
                 int width = 1;
                 int height = 1;
                 while ( i + width < CHUNK_SIZE
-                        && faceIsVisible(c, (ivec3){i + width, j, k}, up)
+                        && faceIsVisible(c, (ivec3){i + width, j, k}, dir)
                         && !seen[i + width][j][k]
                         && c->blocks[i + width][j][k] == type) {
                     seen[i + width][j][k] = true;
@@ -73,7 +97,7 @@ void chunk_createMesh(chunk_t *c) {
                     bool validSpace = true;
                     for (int x = i; x < i + width; ++x) {
                         if (seen[x][areaHeight][k]
-                            || !faceIsVisible(c, (ivec3){x, areaHeight, k}, up)
+                            || !faceIsVisible(c, (ivec3){x, areaHeight, k}, dir)
                             || c->blocks[x][areaHeight][k] != type) {
                             validSpace = false;
                             break;
@@ -88,11 +112,257 @@ void chunk_createMesh(chunk_t *c) {
                         break;
                     }
                 }
-                nextPtr = writeVertex(nextPtr, (ivec3){i, j, k}, up, width, height, type);
+                nextPtr = writeVertex(nextPtr, (ivec3){i, j, k}, dir, width, height, type);
             }
         }
     }
+    memset(seen, false, sizeof(seen));
+    // negative Z
+    dir = DIR_MINUSZ;
+    for (int i = 0; i < CHUNK_SIZE; i++) {
+        for (int j = 0; j < CHUNK_SIZE; j++) {
+            for (int k = 0; k < CHUNK_SIZE; k++) {
+                block_t type = c->blocks[i][j][k];
+                if (seen[i][j][k]) {
+                    continue;
+                }
+                if (type == BL_AIR) {
+                    continue;
+                }
 
+                if (!faceIsVisible(c, (ivec3){i, j, k}, dir)) {
+                    continue;
+                }
+                seen[i][j][k] = true;
+                int width = 1;
+                int height = 1;
+                while ( i + width < CHUNK_SIZE
+                        && faceIsVisible(c, (ivec3){i + width, j, k}, dir)
+                        && !seen[i + width][j][k]
+                        && c->blocks[i + width][j][k] == type) {
+                    seen[i + width][j][k] = true;
+                    width++;
+                        }
+                for (int areaHeight = j + 1; areaHeight < CHUNK_SIZE; areaHeight++) {
+                    bool validSpace = true;
+                    for (int x = i; x < i + width; ++x) {
+                        if (seen[x][areaHeight][k]
+                            || !faceIsVisible(c, (ivec3){x, areaHeight, k}, dir)
+                            || c->blocks[x][areaHeight][k] != type) {
+                            validSpace = false;
+                            break;
+                            }
+                    }
+                    if (validSpace) {
+                        height++;
+                        for (int x = i; x < i + width; ++x) {
+                            seen[x][areaHeight][k] = true;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                nextPtr = writeVertex(nextPtr, (ivec3){i, j, k}, dir, width, height, type);
+            }
+        }
+    }
+    memset(seen, false, sizeof(seen));
+    // positive Y
+    dir = DIR_PLUSY;
+    for (int i = 0; i < CHUNK_SIZE; i++) {
+        for (int j = 0; j < CHUNK_SIZE; j++) {
+            for (int k = 0; k < CHUNK_SIZE; k++) {
+                block_t type = c->blocks[i][j][k];
+                if (seen[i][j][k]) {
+                    continue;
+                }
+                if (type == BL_AIR) {
+                    continue;
+                }
+
+                if (!faceIsVisible(c, (ivec3){i, j, k}, dir)) {
+                    continue;
+                }
+                seen[i][j][k] = true;
+                int width = 1;
+                int height = 1;
+                while ( i + width < CHUNK_SIZE
+                        && faceIsVisible(c, (ivec3){i + width, j, k}, dir)
+                        && !seen[i + width][j][k]
+                        && c->blocks[i + width][j][k] == type) {
+                    seen[i + width][j][k] = true;
+                    width++;
+                        }
+                for (int areaHeight = k + 1; areaHeight < CHUNK_SIZE; areaHeight++) {
+                    bool validSpace = true;
+                    for (int x = i; x < i + width; ++x) {
+                        if (seen[x][j][areaHeight]
+                            || !faceIsVisible(c, (ivec3){x, j, areaHeight}, dir)
+                            || c->blocks[x][j][areaHeight] != type) {
+                            validSpace = false;
+                            break;
+                            }
+                    }
+                    if (validSpace) {
+                        height++;
+                        for (int x = i; x < i + width; ++x) {
+                            seen[x][j][areaHeight] = true;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                nextPtr = writeVertex(nextPtr, (ivec3){i, j, k}, dir, width, height, type);
+            }
+        }
+    }
+    memset(seen, false, sizeof(seen));
+    dir = DIR_MINUSY;
+    for (int i = 0; i < CHUNK_SIZE; i++) {
+        for (int j = 0; j < CHUNK_SIZE; j++) {
+            for (int k = 0; k < CHUNK_SIZE; k++) {
+                block_t type = c->blocks[i][j][k];
+                if (seen[i][j][k]) {
+                    continue;
+                }
+                if (type == BL_AIR) {
+                    continue;
+                }
+
+                if (!faceIsVisible(c, (ivec3){i, j, k}, dir)) {
+                    continue;
+                }
+                seen[i][j][k] = true;
+                int width = 1;
+                int height = 1;
+                while ( i + width < CHUNK_SIZE
+                        && faceIsVisible(c, (ivec3){i + width, j, k}, dir)
+                        && !seen[i + width][j][k]
+                        && c->blocks[i + width][j][k] == type) {
+                    seen[i + width][j][k] = true;
+                    width++;
+                        }
+                for (int areaHeight = k + 1; areaHeight < CHUNK_SIZE; areaHeight++) {
+                    bool validSpace = true;
+                    for (int x = i; x < i + width; ++x) {
+                        if (seen[x][j][areaHeight]
+                            || !faceIsVisible(c, (ivec3){x, j, areaHeight}, dir)
+                            || c->blocks[x][j][areaHeight] != type) {
+                            validSpace = false;
+                            break;
+                            }
+                    }
+                    if (validSpace) {
+                        height++;
+                        for (int x = i; x < i + width; ++x) {
+                            seen[x][j][areaHeight] = true;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                nextPtr = writeVertex(nextPtr, (ivec3){i, j, k}, dir, width, height, type);
+            }
+        }
+    }
+    memset(seen, false, sizeof(seen));
+    dir = DIR_PLUSX;
+    for (int i = 0; i < CHUNK_SIZE; i++) {
+        for (int j = 0; j < CHUNK_SIZE; j++) {
+            for (int k = 0; k < CHUNK_SIZE; k++) {
+                block_t type = c->blocks[i][j][k];
+                if (seen[i][j][k]) {
+                    continue;
+                }
+                if (type == BL_AIR) {
+                    continue;
+                }
+
+                if (!faceIsVisible(c, (ivec3){i, j, k}, dir)) {
+                    continue;
+                }
+                seen[i][j][k] = true;
+                int width = 1;
+                int height = 1;
+                while ( j + width < CHUNK_SIZE
+                        && faceIsVisible(c, (ivec3){i, j + width, k}, dir)
+                        && !seen[i][j + width][k]
+                        && c->blocks[i][j + width][k] == type) {
+                    seen[i][j + width][k] = true;
+                    width++;
+                        }
+                for (int areaHeight = k + 1; areaHeight < CHUNK_SIZE; areaHeight++) {
+                    bool validSpace = true;
+                    for (int y = j; y < j + width; ++y) {
+                        if (seen[i][y][areaHeight]
+                            || !faceIsVisible(c, (ivec3){i, y, areaHeight}, dir)
+                            || c->blocks[i][y][areaHeight] != type) {
+                            validSpace = false;
+                            break;
+                            }
+                    }
+                    if (validSpace) {
+                        height++;
+                        for (int y = j; y < j + width; ++y) {
+                            seen[i][y][areaHeight] = true;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                nextPtr = writeVertex(nextPtr, (ivec3){i, j, k}, dir, width, height, type);
+            }
+        }
+    }
+    memset(seen, false, sizeof(seen));
+    dir = DIR_MINUSX;
+    for (int i = 0; i < CHUNK_SIZE; i++) {
+        for (int j = 0; j < CHUNK_SIZE; j++) {
+            for (int k = 0; k < CHUNK_SIZE; k++) {
+                block_t type = c->blocks[i][j][k];
+                if (seen[i][j][k]) {
+                    continue;
+                }
+                if (type == BL_AIR) {
+                    continue;
+                }
+
+                if (!faceIsVisible(c, (ivec3){i, j, k}, dir)) {
+                    continue;
+                }
+                seen[i][j][k] = true;
+                int width = 1;
+                int height = 1;
+                while ( j + width < CHUNK_SIZE
+                        && faceIsVisible(c, (ivec3){i, j + width, k}, dir)
+                        && !seen[i][j + width][k]
+                        && c->blocks[i][j + width][k] == type) {
+                    seen[i][j + width][k] = true;
+                    width++;
+                        }
+                for (int areaHeight = k + 1; areaHeight < CHUNK_SIZE; areaHeight++) {
+                    bool validSpace = true;
+                    for (int y = j; y < j + width; ++y) {
+                        if (seen[i][y][areaHeight]
+                            || !faceIsVisible(c, (ivec3){i, y, areaHeight}, dir)
+                            || c->blocks[i][y][areaHeight] != type) {
+                            validSpace = false;
+                            break;
+                            }
+                    }
+                    if (validSpace) {
+                        height++;
+                        for (int y = j; y < j + width; ++y) {
+                            seen[i][y][areaHeight] = true;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                nextPtr = writeVertex(nextPtr, (ivec3){i, j, k}, dir, width, height, type);
+            }
+        }
+    }
     const GLsizeiptr sizeToWrite = sizeof(vertex_t) * (nextPtr - buf);
     c->meshVertices = sizeToWrite / sizeof(vertex_t);
 

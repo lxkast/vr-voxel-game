@@ -3,7 +3,6 @@
 #include <logging.h>
 #include <string.h>
 #include <math.h>
-#include "vertices.h"
 
 extern void chunk_createMesh(chunk_t *c);
 
