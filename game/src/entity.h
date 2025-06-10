@@ -2,9 +2,11 @@
 
 #include <cglm/cglm.h>
 #include <stdbool.h>
-#include "world.h"
+#include "block.h"
 
-typedef struct {
+typedef struct world_t world_t;
+
+typedef struct entity_t {
     vec3 position;
     vec3 velocity;
     vec3 size;

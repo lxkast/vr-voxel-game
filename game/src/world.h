@@ -16,10 +16,23 @@
 #define FOG_START 16.f * (CHUNK_LOAD_RADIUS - 2)
 #define FOG_END 16.f * (CHUNK_LOAD_RADIUS - 1)
 
+typedef struct entity_t entity_t;
+
+typedef enum {
+    PLAYER,
+    ITEM,
+    // MOB,   (Not implemented yet)
+} world_entity_e;
+
+typedef struct {
+    world_entity_e type;
+    entity_t *entity;
+} world_entity_t;
+
 /**
  * @brief A struct that holds data about the world.
  */
-typedef struct {
+typedef struct world_t {
     /// The array of chunk loaders present
     struct {
         bool active;
@@ -31,33 +44,8 @@ typedef struct {
     GLuint highlightVbo;
     mat4 highlightModel;
     bool highlightFound;
+    world_entity_t entity[16];
 } world_t;
-
-/**
- * @brief Struct that holds data about a single block.
- */
-typedef struct {
-    int x, y, z;
-    block_t type;
-} blockData_t;
-
-typedef enum {
-    POS_X_FACE,
-    NEG_X_FACE,
-    POS_Y_FACE,
-    NEG_Y_FACE,
-    POS_Z_FACE,
-    NEG_Z_FACE,
-} raycastFace_e;
-
-/**
- * @brief Struct that holds data about the result of a raycast
- */
-typedef struct {
-    vec3 blockPosition;
-    raycastFace_e face;
-    bool found;
-} raycast_t;
 
 /**
  * @brief Initialises a world struct.
