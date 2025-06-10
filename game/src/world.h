@@ -2,9 +2,10 @@
 
 #include <cglm/cglm.h>
 #include <glad/gl.h>
-#include "chunk.h"
-#include "uthash.h"
 #include "camera.h"
+#include "chunk.h"
+#include "item.h"
+#include "uthash.h"
 
 #define MAX_CHUNKS 256
 #define MAX_CHUNK_LOADERS 8
@@ -16,10 +17,30 @@
 #define FOG_START 16.f * (CHUNK_LOAD_RADIUS - 2)
 #define FOG_END 16.f * (CHUNK_LOAD_RADIUS - 1)
 
+#define GRAVITY_ACCELERATION (-10.f)
+
+#define MAX_NUM_ENTITIES 64
+
+typedef struct entity_t entity_t;
+
+typedef enum {
+    NONE,
+    PLAYER,
+    ITEM,
+    // MOB,   (Not implemented yet)
+} world_entity_e;
+
+typedef struct {
+    world_entity_e type;
+    entity_t *entity;
+    /// This is only checked if 'type' is ITEM
+    item_e itemType;
+} world_entity_t;
+
 /**
  * @brief A struct that holds data about the world.
  */
-typedef struct {
+typedef struct world_t {
     /// The array of chunk loaders present
     struct {
         bool active;
@@ -31,24 +52,9 @@ typedef struct {
     GLuint highlightVbo;
     mat4 highlightModel;
     bool highlightFound;
+    int numEntities;
+    world_entity_t entities[MAX_NUM_ENTITIES];
 } world_t;
-
-/**
- * @brief Struct that holds data about a single block.
- */
-typedef struct {
-    int x, y, z;
-    block_t type;
-} blockData_t;
-
-typedef enum {
-    POS_X_FACE,
-    NEG_X_FACE,
-    POS_Y_FACE,
-    NEG_Y_FACE,
-    POS_Z_FACE,
-    NEG_Z_FACE,
-} raycastFace_e;
 
 /**
  * @brief Contains data about what stage of loading the chunk is
@@ -217,3 +223,9 @@ void world_highlightFace(world_t *w, camera_t *camera);
 * @param modelLocation The model location
 */
 void world_drawHighlight(world_t *w, int modelLocation);
+
+void world_processAllEntities(world_t *w, double dt);
+
+void world_addEntity(world_t *w, world_entity_e type, entity_t *entity, item_e itemType);
+
+void world_removeEntity(world_t *w, int entityIndex);

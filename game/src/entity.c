@@ -251,3 +251,9 @@ void processEntity(world_t *w, entity_t *entity, const double dt) {
 
     moveEntity(w, entity, deltaP);
 }
+
+bool entitiesIntersect(entity_t entity1, entity_t entity2) {
+    const aabb_t entity1aabb = makeAABB(entity1.position, entity1.size);
+    const aabb_t entity2aabb = makeAABB(entity2.position, entity1.size);
+    return intersects(entity1aabb, entity2aabb);
+}
