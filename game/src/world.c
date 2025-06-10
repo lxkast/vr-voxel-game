@@ -143,8 +143,49 @@ static chunkValue_t *world_loadChunk(world_t *w,
     return cv;
 }
 
+struct decorator {
+    int cacheN;
+    chunkValue_t *cache[8];
+
+    chunkValue_t *origin;
+    int ox, oy, oz;
+};
+
+static void decorator_init(struct decorator *d, chunkValue_t *origin, const int x, const int y, const int z) {
+    d->cacheN = 0;
+    d->origin = origin;
+    d->ox = x;
+    d->oy = y;
+    d->oz = z;
+}
+
+static bool decorator_initSurface(struct decorator *d, chunkValue_t *origin, const int x, const int z) {
+    int y;
+    for (y = CHUNK_SIZE - 1; y > 0; y--) {
+        if (origin->chunk->blocks[x][y][z] != BL_AIR) {
+            y++;
+            break;
+        }
+    }
+    decorator_init(d, origin, x, y, z);
+    return y != 0;
+}
+
+static void decorator_placeBlock(struct decorator *d,
+                                 const int x,
+                                 const int y,
+                                 const int z,
+                                 const block_t block) {
+    d->origin->chunk->blocks[d->ox + x][d->oy + y][d->oz + z] = block;
+}
+
 static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
     int (*ptr)[CHUNK_SIZE][CHUNK_SIZE] = (int (*)[CHUNK_SIZE][CHUNK_SIZE]) cv->chunk->blocks;
+
+    struct decorator d;
+    if (decorator_initSurface(&d, cv, 15, 15)) {
+        decorator_placeBlock(&d, 0, 0, 0, BL_STONE);
+    }
 
     // chunkValue_t *above = world_loadChunk(w, cv->chunk->cx, cv->chunk->cy + 1, cv->chunk->cz, LL_INIT, REL_CHILD);
     // cv->loadData.children[cv->loadData.nChildren++] = above;
