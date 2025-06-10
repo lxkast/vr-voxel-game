@@ -98,6 +98,10 @@ static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int c
     return clusterPtr;
 }
 
+static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
+    int (*ptr)[CHUNK_SIZE][CHUNK_SIZE] = (int (*)[CHUNK_SIZE][CHUNK_SIZE]) cv->chunk->blocks;
+}
+
 /**
  * @brief Loads a chunk.
  * @param w A pointer to a world
@@ -107,7 +111,7 @@ static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int c
  * @param ll The load level to load to if the chunk doesn't exist
  * @param r The reload style of the chunk
  */
-void world_loadChunk(world_t *w,
+static chunkValue_t *world_loadChunk(world_t *w,
                      const int cx,
                      const int cy,
                      const int cz,
@@ -130,11 +134,14 @@ void world_loadChunk(world_t *w,
     if (ll > cv->ll) {
         if (ll > LL_PARTIAL) {
             chunk_generate(cv->chunk);
+            world_decorateChunk(w, cv);
         }
     }
     cv->ll = ll;
 
     if (r < cv->loadData.reload) cv->loadData.reload = r;
+
+    return cv;
 }
 
 static bool getBlockAddr(world_t *w, int x, int y, int z, block_t **block, chunk_t **chunk) {
