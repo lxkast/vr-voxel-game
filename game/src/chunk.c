@@ -278,8 +278,6 @@ void chunk_generate(chunk_t *c) {
                     ptr[x][y][z] = BL_STONE;
                 } else if (c->cy * CHUNK_SIZE + y < height) {
                     ptr[x][y][z] = biome < 0.5f ? BL_DIRT : BL_SAND;
-                } else {
-                    ptr[x][y][z] = BL_AIR;
                 }
             }
         }

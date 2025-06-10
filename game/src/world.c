@@ -98,9 +98,7 @@ static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int c
     return clusterPtr;
 }
 
-static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
-    int (*ptr)[CHUNK_SIZE][CHUNK_SIZE] = (int (*)[CHUNK_SIZE][CHUNK_SIZE]) cv->chunk->blocks;
-}
+static void world_decorateChunk(world_t *w, chunkValue_t *cv);
 
 /**
  * @brief Loads a chunk.
@@ -124,9 +122,10 @@ static chunkValue_t *world_loadChunk(world_t *w,
     chunkValue_t *cv = &cluster->cells[offset];
 
     if (!cv->chunk) {
-        cv->chunk = (chunk_t *)malloc(sizeof(chunk_t));
+        cv->chunk = (chunk_t *)calloc(1, sizeof(chunk_t));
         chunk_init(cv->chunk, cx, cy, cz);
         cv->ll = LL_INIT;
+        cv->loadData.reload = REL_TOMBSTONE;
 
         cluster->n++;
     }
@@ -142,6 +141,13 @@ static chunkValue_t *world_loadChunk(world_t *w,
     if (r < cv->loadData.reload) cv->loadData.reload = r;
 
     return cv;
+}
+
+static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
+    int (*ptr)[CHUNK_SIZE][CHUNK_SIZE] = (int (*)[CHUNK_SIZE][CHUNK_SIZE]) cv->chunk->blocks;
+
+    // chunkValue_t *above = world_loadChunk(w, cv->chunk->cx, cv->chunk->cy + 1, cv->chunk->cz, LL_INIT, REL_CHILD);
+    // cv->loadData.children[cv->loadData.nChildren++] = above;
 }
 
 static bool getBlockAddr(world_t *w, int x, int y, int z, block_t **block, chunk_t **chunk) {
@@ -258,7 +264,8 @@ static bool freeCv(world_t *w, cluster_t *cluster, const int i) {
     chunkValue_t *cv = &cluster->cells[i];
 
     for (int j = 0; j < cv->loadData.nChildren; j++) {
-        cv->loadData.children[j]->loadData.reload = REL_TOMBSTONE;
+        reloadData_e *r = &cv->loadData.children[j]->loadData.reload;
+        if (*r == REL_CHILD) *r = REL_TOMBSTONE;
     }
 
     chunk_free(cv->chunk);
