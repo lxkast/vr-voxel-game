@@ -135,6 +135,7 @@ static chunkValue_t *world_loadChunk(world_t *w,
             chunk_generate(cv->chunk);
             world_decorateChunk(w, cv);
         }
+        cv->ll = ll;
     }
     cv->ll = ll;
 
