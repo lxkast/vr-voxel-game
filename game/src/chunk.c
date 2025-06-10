@@ -3,7 +3,8 @@
 #include <logging.h>
 #include <string.h>
 #include <math.h>
-#include "vertices.h"
+
+extern void chunk_createMesh(chunk_t *c);
 
 static float valueNoise(const int x, const int y) {
     int n = x + y * 57;
@@ -49,177 +50,6 @@ static float height(const int x, const int z) {
     return totalHeight / maxAmplitude;
 }
 
-/**
- * @brief Creates the mesh from a chunk
- * @param c A pointer to a chunk
- */
-static void chunk_createMesh(chunk_t *c) {
-    static const size_t bytesPerBlock = sizeof(float) * 36 * 5;
-
-    float *buf = (float *)malloc(CHUNK_SIZE_CUBED * bytesPerBlock);
-
-    float *nextPtr = buf;
-    for (int i = 0; i < CHUNK_SIZE; i++) {
-        for (int j = 0; j < CHUNK_SIZE; j++) {
-            for (int k = 0; k < CHUNK_SIZE; k++) {
-                if (c->blocks[i][j][k] == BL_AIR) {
-                    continue;
-                }
-                int ni, nj, nk;
-                bool neighbourIsAir = false;
-                /*
-                    The below is tedious and repetitive, but I didn't
-                    give it its own function because it may change significantly
-                    when implementing greedy meshing.
-                */
-
-
-                /*
-                    back face
-                */
-                ni = i;
-                nj = j;
-                nk = k - 1;
-                neighbourIsAir = false;
-                if (nk < 0) {
-                    neighbourIsAir = true;
-                } else {
-                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
-                }
-                if (neighbourIsAir) {
-                    memcpy(nextPtr, backFaceVertices, faceVerticesSize);
-                    for (int n = 0; n < 6; n++) {
-                        nextPtr[5 * n + 0] += (float)i;
-                        nextPtr[5 * n + 1] += (float)j;
-                        nextPtr[5 * n + 2] += (float)k;
-                        nextPtr[5 * n + 3] = TEXTURE_LENGTH * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / ATLAS_LENGTH;
-                    }
-                    nextPtr += faceVerticesSize / sizeof(float);
-                }
-                /*
-                    front face
-                */
-                ni = i;
-                nj = j;
-                nk = k + 1;
-                neighbourIsAir = false;
-                if (nk >= CHUNK_SIZE) {
-                    neighbourIsAir = true;
-                } else {
-                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
-                }
-                if (neighbourIsAir) {
-                    memcpy(nextPtr, frontFaceVertices, faceVerticesSize);
-                    for (int n = 0; n < 6; n++) {
-                        nextPtr[5 * n + 0] += (float)i;
-                        nextPtr[5 * n + 1] += (float)j;
-                        nextPtr[5 * n + 2] += (float)k;
-                        nextPtr[5 * n + 3] = TEXTURE_LENGTH * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / ATLAS_LENGTH;
-                    }
-                    nextPtr += faceVerticesSize / sizeof(float);
-                }
-                /*
-                    left face
-                */
-                ni = i - 1;
-                nj = j;
-                nk = k;
-                neighbourIsAir = false;
-                if (ni < 0) {
-                    neighbourIsAir = true;
-                } else {
-                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
-                }
-                if (neighbourIsAir) {
-                    memcpy(nextPtr, leftFaceVertices, faceVerticesSize);
-                    for (int n = 0; n < 6; n++) {
-                        nextPtr[5 * n + 0] += (float)i;
-                        nextPtr[5 * n + 1] += (float)j;
-                        nextPtr[5 * n + 2] += (float)k;
-                        nextPtr[5 * n + 3] = TEXTURE_LENGTH * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / ATLAS_LENGTH;
-                    }
-                    nextPtr += faceVerticesSize / sizeof(float);
-                }
-                /*
-                    right face
-                */
-                ni = i + 1;
-                nj = j;
-                nk = k;
-                neighbourIsAir = false;
-                if (ni >= CHUNK_SIZE) {
-                    neighbourIsAir = true;
-                } else {
-                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
-                }
-                if (neighbourIsAir) {
-                    memcpy(nextPtr, rightFaceVertices, faceVerticesSize);
-                    for (int n = 0; n < 6; n++) {
-                        nextPtr[5 * n + 0] += (float)i;
-                        nextPtr[5 * n + 1] += (float)j;
-                        nextPtr[5 * n + 2] += (float)k;
-                        nextPtr[5 * n + 3] = TEXTURE_LENGTH * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / ATLAS_LENGTH;
-                    }
-                    nextPtr += faceVerticesSize / sizeof(float);
-                }
-                /*
-                    bottom face
-                */
-                ni = i;
-                nj = j - 1;
-                nk = k;
-                neighbourIsAir = false;
-                if (nj < 0) {
-                    neighbourIsAir = true;
-                } else {
-                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
-                }
-                if (neighbourIsAir) {
-                    memcpy(nextPtr, bottomFaceVertices, faceVerticesSize);
-                    for (int n = 0; n < 6; n++) {
-                        nextPtr[5 * n + 0] += (float)i;
-                        nextPtr[5 * n + 1] += (float)j;
-                        nextPtr[5 * n + 2] += (float)k;
-                        nextPtr[5 * n + 3] = TEXTURE_LENGTH * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / ATLAS_LENGTH;
-                    }
-                    nextPtr += faceVerticesSize / sizeof(float);
-                }
-                /*
-                    top face
-                */
-                ni = i;
-                nj = j + 1;
-                nk = k;
-                neighbourIsAir = false;
-                if (nj >= CHUNK_SIZE) {
-                    neighbourIsAir = true;
-                } else {
-                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
-                }
-                if (neighbourIsAir) {
-                    memcpy(nextPtr, topFaceVertices, faceVerticesSize);
-                    for (int n = 0; n < 6; n++) {
-                        nextPtr[5 * n + 0] += (float)i;
-                        nextPtr[5 * n + 1] += (float)j;
-                        nextPtr[5 * n + 2] += (float)k;
-                        nextPtr[5 * n + 3] = TEXTURE_LENGTH * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / ATLAS_LENGTH;
-                    }
-                    nextPtr += faceVerticesSize / sizeof(float);
-                }
-            }
-        }
-    }
-
-    const GLsizeiptr sizeToWrite = sizeof(float) * (nextPtr - buf);
-    c->meshVertices = sizeToWrite / (sizeof(float) * 5);
-
-    glBindBuffer(GL_ARRAY_BUFFER, c->vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeToWrite, buf, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    free(buf);
-}
-
 void chunk_init(chunk_t *c, int cx, int cy, int cz) {
     c->cx = cx;
     c->cy = cy;
@@ -231,9 +61,9 @@ void chunk_init(chunk_t *c, int cx, int cy, int cz) {
     glBindBuffer(GL_ARRAY_BUFFER, c->vbo);
 
     glBindVertexArray(c->vao);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *) 0);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
+    glVertexAttribIPointer(1, 1, GL_INT, 4 * sizeof(float), (void *) (3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);

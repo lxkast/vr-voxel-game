@@ -189,7 +189,7 @@ int main(void) {
     BUILD_SHADER_PROGRAM(
         &program, {
             glBindAttribLocation(program, 0, "aPos");
-            glBindAttribLocation(program, 1, "aTexCoord");
+            glBindAttribLocation(program, 1, "aTexIndex");
         }, {
             LOG_ERROR("Couldn't build shader program");
             return -1;
