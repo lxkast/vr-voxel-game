@@ -28,18 +28,24 @@ typedef struct {
 } chunk_t;
 
 /**
- * @brief A function to initialise a chunk by filling it with a certain block.
+ * @brief Initialises a chunk
  * @param c A pointer to a chunk
  * @param cx The chunk x coordinate
  * @param cy The chunk y coordinate
  * @param cz The chunk z coordinate
+ */
+void chunk_init(chunk_t *c, int cx, int cy, int cz);
+
+/**
+ * @brief Fills a chunk with a certain block
+ * @param c A pointer to a chunk
  * @param block The type of block
  * @note The chunk object should be empty/uninitialised.
  */
-void chunk_create(chunk_t *c, int cx, int cy, int cz, block_t block);
+void chunk_fill(chunk_t *c, block_t block);
 
 /**
-* @brief A function to initialise a chunk by deserialising from a file
+* @brief Loads chunk data from a file
 * @param c A pointer to a chunk
 * @param fp A file pointer
 */
@@ -48,12 +54,9 @@ void chunk_createDeserialise(chunk_t *c, FILE *fp);
 /**
  * @brief A function to generate a chunk
  * @param c A pointer to a chunk
- * @param cx The chunk x coordinate
- * @param cy The chunk y coordinate
- * @param cz The chunk z coordinate
  * @note The chunk object should be empty/uninitialised.
  */
-void chunk_generate(chunk_t *c, int cx, int cy, int cz);
+void chunk_generate(chunk_t *c);
 
 /**
  * @brief Draws a chunk.

@@ -51,6 +51,25 @@ typedef enum {
 } raycastFace_e;
 
 /**
+ * @brief Contains data about what stage of loading the chunk is
+ */
+typedef enum {
+    LL_INIT = 0,
+    LL_PARTIAL = 1,
+    LL_TOTAL = 2,
+} chunkLoadLevel_e;
+
+/**
+ * @brief Contains data about the reload style of a chunk
+ */
+typedef enum {
+    REL_TOP_RELOAD = 0,
+    REL_CHILD = 2,
+    REL_TOP_UNLOAD = 3,
+    REL_TOMBSTONE = 3
+} reloadData_e;
+
+/**
  * @brief Struct that holds data about the result of a raycast
  */
 typedef struct {
