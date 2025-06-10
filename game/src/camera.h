@@ -97,4 +97,4 @@ void camera_setView(camera_t *c, GLuint program);
  */
 #define camera_right(c) c->ruf[0]
 
-void camera_update(void); // update the camera view from imu
+void camera_update(camera_t *c); // update the camera view from imu
