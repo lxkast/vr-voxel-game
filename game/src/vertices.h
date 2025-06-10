@@ -25,5 +25,8 @@ typedef enum {
 extern const vertex_t blockVertices[6][6];
 extern const unsigned int faceVerticesSize;
 
+extern const float itemBlockVertices[];
+extern const unsigned int itemBlockVerticesSize;
+
 extern const float quadVertices[];
 extern const unsigned int quadVerticesSize;

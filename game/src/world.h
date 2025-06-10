@@ -35,6 +35,9 @@ typedef struct {
     entity_t *entity;
     /// This is only checked if 'type' is ITEM
     item_e itemType;
+    /// Entity VAO and VBO, currentlyl only used for 'item' entities
+    GLuint vao;
+    GLuint vbo;
 } world_entity_t;
 
 /**

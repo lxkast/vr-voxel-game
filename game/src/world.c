@@ -377,6 +377,30 @@ void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, bl
     }
 }
 
+static void meshItemEntity(world_entity_t *e) {
+    glGenVertexArrays(1, &e->vao);
+    glGenBuffers(1, &e->vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, e->vbo);
+    glBindVertexArray(e->vao);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    float *mesh = malloc(itemBlockVerticesSize);
+    memcpy(mesh, itemBlockVertices, itemBlockVerticesSize);
+    block_t type = ITEM_TO_BLOCK[e->type];
+    for (int i = 0; i < 36; ++i) {
+        mesh[5 * i + 0] *= e->entity->size[0];
+        mesh[5 * i + 1] *= e->entity->size[1];
+        mesh[5 * i + 2] *= e->entity->size[2];
+        mesh[5 * i + 3] = TEXTURE_LENGTH * (mesh[5 * i + 3] + type) / TEXTURE_HEIGHT;
+    }
+    glBufferData(GL_ARRAY_BUFFER, itemBlockVerticesSize, mesh, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    free(mesh);
+}
+
 static world_entity_t createItemEntity(world_t *w, const vec3 pos, const item_e item) {
     world_entity_t newWorldEntity;
     newWorldEntity.type = ITEM;
@@ -398,6 +422,7 @@ static world_entity_t createItemEntity(world_t *w, const vec3 pos, const item_e 
 
     newWorldEntity.entity = newEntity;
     newWorldEntity.itemType = item;
+    meshItemEntity(&newWorldEntity);
     return newWorldEntity;
 }
 
@@ -418,9 +443,18 @@ void world_addEntity(world_t *w, const world_entity_e type, entity_t *entity, co
     }
 }
 
+static void freeEntity(world_entity_t *e) {
+    glDeleteBuffers(1, &e->vbo);
+    glDeleteVertexArrays(1, &e->vao);
+}
+
 void world_removeEntity(world_t *w, const int entityIndex) {
     if (entityIndex >= w->numEntities) {
         LOG_FATAL("Entity index out of range");
+    }
+
+    if (w->entities[entityIndex].type == ITEM) {
+        freeEntity(&w->entities[entityIndex]);
     }
 
     if (entityIndex == w->numEntities - 1) {
