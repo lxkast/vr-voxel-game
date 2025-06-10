@@ -385,8 +385,9 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
 
     if (*bp == BL_AIR) return false;
 
-    world_entity_t entity = createItemEntity(w, (vec3){(float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f}, BLOCK_TO_ITEM[*bp]);
-    // must implement dynarray before this will be completed
+    const world_entity_t entity = createItemEntity(w, (vec3){(float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f}, BLOCK_TO_ITEM[*bp]);
+    world_addEntity(w, entity.type, entity.entity, entity.itemType);
+    LOG_DEBUG("Adding Entity");
 
     *bp = BL_AIR;
     cp->tainted = true;
