@@ -28,8 +28,6 @@
 #define GROUND_ACCELERATION 35.f
 #define AIR_ACCELERATION 10.f
 
-#define GRAVITY_ACCELERATION (-10.f)
-
 static double previousMouse[2];
 
 static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {

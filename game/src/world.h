@@ -17,6 +17,8 @@
 #define FOG_START 16.f * (CHUNK_LOAD_RADIUS - 2)
 #define FOG_END 16.f * (CHUNK_LOAD_RADIUS - 1)
 
+#define GRAVITY_ACCELERATION (-10.f)
+
 #define MAX_NUM_ENTITIES 64
 
 typedef struct entity_t entity_t;

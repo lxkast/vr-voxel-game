@@ -333,7 +333,7 @@ static world_entity_t createItemEntity(world_t *w, const vec3 pos, const item_e 
     newEntity->position[1] = pos[1];
     newEntity->position[2] = pos[2];
     newEntity->acceleration[0] = 0;
-    newEntity->acceleration[1] = 0;
+    newEntity->acceleration[1] = GRAVITY_ACCELERATION;
     newEntity->acceleration[2] = 0;
     newEntity->velocity[0] = 0;
     newEntity->velocity[1] = 0;
@@ -628,6 +628,7 @@ void world_drawHighlight(world_t *w, int modelLocation) {
 void world_processAllEntities(world_t *w, const double dt) {
     for (int i = 0; i < w->numEntities; i++) {
         if (w->entities[i].type != NONE) {
+            w->entities[i].entity->acceleration[1] = GRAVITY_ACCELERATION;
             processEntity(w, w->entities[i].entity, dt);
         }
     }
