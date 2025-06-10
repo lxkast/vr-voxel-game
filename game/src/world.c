@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include "chunk.h"
 #include "entity.h"
+#include "noise.h"
 #include "uthash.h"
 #include "vertices.h"
 
@@ -31,7 +32,7 @@ typedef struct chunkValue_t {
     struct {
         reloadData_e reload;
         size_t nChildren;
-        struct chunkValue_t *children[8];
+        struct chunkValue_t *children[32];
     } loadData;
 
 } chunkValue_t;
@@ -196,7 +197,7 @@ static void decorator_placeBlock(struct decorator *d,
                                                    d->origin->chunk->cz + cz,
                                                    LL_INIT,
                                                    REL_CHILD);
-            if (d->origin->loadData.nChildren > 7) {
+            if (d->origin->loadData.nChildren > 31) {
                 LOG_FATAL("it's so over");
             }
             d->origin->loadData.children[d->origin->loadData.nChildren++] = d->cache[cx + 1][cy + 1][cz + 1];
@@ -207,24 +208,36 @@ static void decorator_placeBlock(struct decorator *d,
     }
 }
 
+static void decorator_placeTree(struct decorator *d, world_t *world) {
+    decorator_placeBlock(d, world, 0, 0, 0, BL_STONE);
+    decorator_placeBlock(d, world, 0, 1, 0, BL_STONE);
+    decorator_placeBlock(d, world, 0, 2, 0, BL_STONE);
+    decorator_placeBlock(d, world, 0, 3, 0, BL_STONE);
+    decorator_placeBlock(d, world, 0, 4, 0, BL_STONE);
+
+    decorator_placeBlock(d, world, 1, 3, 0, BL_STONE);
+    decorator_placeBlock(d, world, 2, 3, 0, BL_STONE);
+    decorator_placeBlock(d, world, -1, 3, 0, BL_STONE);
+    decorator_placeBlock(d, world, -2, 3, 0, BL_STONE);
+
+    decorator_placeBlock(d, world, 0, 3, 1, BL_STONE);
+    decorator_placeBlock(d, world, 0, 3, 2, BL_STONE);
+    decorator_placeBlock(d, world, 0, 3, -1, BL_STONE);
+    decorator_placeBlock(d, world, 0, 3, -2, BL_STONE);
+}
+
+
 static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
     struct decorator d;
-    if (decorator_initSurface(&d, cv, 15, 15, BL_GRASS)) {
-        decorator_placeBlock(&d, w, 0, 0, 0, BL_STONE);
-        decorator_placeBlock(&d, w, 0, 1, 0, BL_STONE);
-        decorator_placeBlock(&d, w, 0, 2, 0, BL_STONE);
-        decorator_placeBlock(&d, w, 0, 3, 0, BL_STONE);
-        decorator_placeBlock(&d, w, 0, 4, 0, BL_STONE);
 
-        decorator_placeBlock(&d, w, 1, 3, 0, BL_STONE);
-        decorator_placeBlock(&d, w, 2, 3, 0, BL_STONE);
-        decorator_placeBlock(&d, w, -1, 3, 0, BL_STONE);
-        decorator_placeBlock(&d, w, -2, 3, 0, BL_STONE);
-
-        decorator_placeBlock(&d, w, 0, 3, 1, BL_STONE);
-        decorator_placeBlock(&d, w, 0, 3, 2, BL_STONE);
-        decorator_placeBlock(&d, w, 0, 3, -1, BL_STONE);
-        decorator_placeBlock(&d, w, 0, 3, -2, BL_STONE);
+    for (int x = 0; x < CHUNK_SIZE; x++) {
+        for (int z = 0; z < CHUNK_SIZE; z++) {
+            if (x == 7 && z == 7) {
+                if (decorator_initSurface(&d, cv, x, z, BL_GRASS)) {
+                    decorator_placeTree(&d, w);
+                }
+            }
+        }
     }
 }
 
