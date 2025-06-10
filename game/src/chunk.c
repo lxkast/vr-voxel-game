@@ -55,8 +55,9 @@ static vertex_t *writeVertex(vertex_t *buf, ivec3 blockPos, direction_e dir, int
     memcpy(buf, blockVertices[dir], faceVerticesSize);
     if (dir == DIR_PLUSZ) {
         for (int i = 0; i < 6; ++i) {
-            buf[i].x *= width;
-            buf[i].y *= height;
+            buf[i].x = buf[i].x * width + blockPos[0];
+            buf[i].y = buf[i].y * height + blockPos[1];
+            buf[i].z += blockPos[2];
             buf[i].texIndex += texIndex;
         }
     }
@@ -101,8 +102,8 @@ static void chunk_createMesh(chunk_t *c) {
                     bool validSpace = true;
                     for (int x = i; x < i + width; ++x) {
                         if (seen[x][areaHeight][k]
-                            || !faceIsVisible(c, (ivec3){x, areaHeight, j}, up)
-                            || c->blocks[i + width][areaHeight][k] != type) {
+                            || !faceIsVisible(c, (ivec3){x, areaHeight, k}, up)
+                            || c->blocks[x][areaHeight][k] != type) {
                             validSpace = false;
                             break;
                         }
