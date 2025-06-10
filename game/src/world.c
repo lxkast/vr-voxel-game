@@ -29,12 +29,7 @@ typedef struct chunkValue_t {
     chunkLoadLevel_e ll;
 
     struct {
-        enum {
-            REL_TOP_RELOAD,
-            REL_TOP_UNLOAD,
-            REL_CHILD,
-            REL_TOMBSTONE
-        } reload;
+        reloadData_e reload;
         size_t nChildren;
         struct chunkValue_t *children[8];
     } loadData;
@@ -110,8 +105,14 @@ static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int c
  * @param cy Chunk y coordinate
  * @param cz Chunk z coordinate
  * @param ll The load level to load to if the chunk doesn't exist
+ * @param r The reload style of the chunk
  */
-static void loadChunk(world_t *w, const int cx, const int cy, const int cz, const chunkLoadLevel_e ll) {
+void world_loadChunk(world_t *w,
+                     const int cx,
+                     const int cy,
+                     const int cz,
+                     const chunkLoadLevel_e ll,
+                     const reloadData_e r) {
     size_t offset;
 
     cluster_t *cluster = clusterGet(w, cx, cy, cz, true, &offset);
@@ -121,18 +122,19 @@ static void loadChunk(world_t *w, const int cx, const int cy, const int cz, cons
     if (!cv->chunk) {
         cv->chunk = (chunk_t *)malloc(sizeof(chunk_t));
         chunk_init(cv->chunk, cx, cy, cz);
-
-        if (ll > LL_INIT) {
-            if (ll > LL_PARTIAL) {
-                chunk_generate(cv->chunk);
-            }
-        }
-
-        cv->ll = ll;
+        cv->ll = LL_INIT;
 
         cluster->n++;
     }
-    cv->loadData.reload = REL_TOP_RELOAD;
+
+    if (ll > cv->ll) {
+        if (ll > LL_PARTIAL) {
+            chunk_generate(cv->chunk);
+        }
+    }
+    cv->ll = ll;
+
+    if (r < cv->loadData.reload) cv->loadData.reload = r;
 }
 
 static bool getBlockAddr(world_t *w, int x, int y, int z, block_t **block, chunk_t **chunk) {
@@ -278,7 +280,7 @@ void world_doChunkLoading(world_t *w) {
             for (int y = -CHUNK_LOAD_RADIUS; y <= CHUNK_LOAD_RADIUS; y++) {
                 for (int z = -CHUNK_LOAD_RADIUS; z <= CHUNK_LOAD_RADIUS; z++) {
                     if (x * x + y * y + z * z <= CHUNK_LOAD_RADIUS * CHUNK_LOAD_RADIUS) {
-                        loadChunk(w, cx + x, cy + y, cz + z, LL_TOTAL);
+                        world_loadChunk(w, cx + x, cy + y, cz + z, LL_TOTAL, REL_TOP_RELOAD);
                     }
                 }
             }

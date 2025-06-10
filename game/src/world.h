@@ -60,6 +60,16 @@ typedef enum {
 } chunkLoadLevel_e;
 
 /**
+ * @brief Contains data about the reload style of a chunk
+ */
+typedef enum {
+    REL_TOP_RELOAD = 0,
+    REL_CHILD = 2,
+    REL_TOP_UNLOAD = 3,
+    REL_TOMBSTONE = 3
+} reloadData_e;
+
+/**
  * @brief Struct that holds data about the result of a raycast
  */
 typedef struct {
@@ -111,6 +121,22 @@ void world_updateChunkLoader(world_t *w, unsigned int id, const float pos[3]);
  * @param id The id of the chunk loader
  */
 void world_delChunkLoader(world_t *w, unsigned int id);
+
+/**
+ * @brief Loads a chunk.
+ * @param w A pointer to a world
+ * @param cx Chunk x coordinate
+ * @param cy Chunk y coordinate
+ * @param cz Chunk z coordinate
+ * @param ll The load level to load to if the chunk doesn't exist
+ * @param r The reload style of the chunk
+ */
+void world_loadChunk(world_t *w,
+                     int cx,
+                     int cy,
+                     int cz,
+                     chunkLoadLevel_e ll,
+                     reloadData_e r);
 
 /**
  * @brief Considers all chunk loaders and loads the correct chunks
