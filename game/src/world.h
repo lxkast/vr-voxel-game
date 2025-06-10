@@ -17,7 +17,7 @@
 #define FOG_START 16.f * (CHUNK_LOAD_RADIUS - 2)
 #define FOG_END 16.f * (CHUNK_LOAD_RADIUS - 1)
 
-#define INITIAL_ENTITY_ARRAY_SIZE 5
+#define MAX_NUM_ENTITIES 64
 
 typedef struct entity_t entity_t;
 
@@ -50,8 +50,8 @@ typedef struct world_t {
     GLuint highlightVbo;
     mat4 highlightModel;
     bool highlightFound;
-    world_entity_t entities[INITIAL_ENTITY_ARRAY_SIZE];
     int numEntities;
+    world_entity_t entities[MAX_NUM_ENTITIES];
 } world_t;
 
 /**
@@ -195,3 +195,7 @@ void world_highlightFace(world_t *w, camera_t *camera);
 void world_drawHighlight(world_t *w, int modelLocation);
 
 void world_processAllEntities(world_t *w, double dt);
+
+void world_addEntity(world_t *w, world_entity_e type, entity_t *entity, item_e itemType);
+
+void world_removeEntity(world_t *w, int entityIndex);

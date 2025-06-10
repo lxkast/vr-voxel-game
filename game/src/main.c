@@ -274,8 +274,7 @@ int main(void) {
     player_t player;
     player_init(&player);
 
-    world.entities[0].entity = &player.entity;
-    world.entities[0].type = PLAYER;
+    world_addEntity(&world, PLAYER, &player.entity, NONE);
 
     postProcess_t postProcess;
     postProcess_init(&postProcess, postProcessProgram, screenWidth, screenHeight);

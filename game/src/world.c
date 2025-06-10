@@ -155,13 +155,7 @@ void world_init(world_t *w, const GLuint program) {
     fogInit(w, program);
     highlightInit(w);
 
-    for (int i = 0; i < INITIAL_ENTITY_ARRAY_SIZE; i++) {
-        world_entity_t newEntity;
-        newEntity.type = NONE;
-        newEntity.entity = NULL;
-        newEntity.itemType = NONE;
-        w->entities[i] = newEntity;
-    }
+    w->numEntities = 0;
 }
 
 vec3 chunkBounds = {15.f, 15.f, 15.f};
@@ -355,6 +349,35 @@ static world_entity_t createItemEntity(world_t *w, const vec3 pos, const item_e 
     return newWorldEntity;
 }
 
+void world_addEntity(world_t *w, const world_entity_e type, entity_t *entity, const item_e itemType) {
+    world_entity_t newEntity;
+    newEntity.type = type;
+    newEntity.entity = entity;
+    newEntity.itemType = itemType;
+    if (w->numEntities == MAX_NUM_ENTITIES) {
+        for (int i = 0; i < MAX_NUM_ENTITIES; i++) {
+            if (w->entities[i].type == ITEM) {
+                w->entities[i] = newEntity;
+                return;
+            }
+        }
+    } else {
+        w->entities[w->numEntities++] = newEntity;
+    }
+}
+
+void world_removeEntity(world_t *w, const int entityIndex) {
+    if (entityIndex >= w->numEntities) {
+        LOG_FATAL("Entity index out of range");
+    }
+
+    if (entityIndex == w->numEntities - 1) {
+        w->numEntities--;
+    } else {
+        w->entities[entityIndex] = w->entities[--w->numEntities];
+    }
+}
+
 bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
     block_t *bp;
     chunk_t *cp;
@@ -362,7 +385,7 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
 
     if (*bp == BL_AIR) return false;
 
-    world_entity_t entity = createItemEntity(w, vec3((float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f), BLOCK_TO_ITEM[*bp]);
+    world_entity_t entity = createItemEntity(w, (vec3){(float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f}, BLOCK_TO_ITEM[*bp]);
     // must implement dynarray before this will be completed
 
     *bp = BL_AIR;
@@ -603,7 +626,7 @@ void world_drawHighlight(world_t *w, int modelLocation) {
 }
 
 void world_processAllEntities(world_t *w, const double dt) {
-    for (int i = 0; i < INITIAL_ENTITY_ARRAY_SIZE; i++) {
+    for (int i = 0; i < w->numEntities; i++) {
         if (w->entities[i].type != NONE) {
             processEntity(w, w->entities[i].entity, dt);
         }
