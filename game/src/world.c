@@ -32,7 +32,8 @@ typedef struct chunkValue_t {
         enum {
             REL_TOP_RELOAD,
             REL_TOP_UNLOAD,
-            REL_CHILD
+            REL_CHILD,
+            REL_TOMBSTONE
         } reload;
         size_t nChildren;
         struct chunkValue_t *children[8];
@@ -244,6 +245,26 @@ void world_delChunkLoader(world_t *w, const unsigned int id) {
     w->chunkLoaders[id].active = false;
 }
 
+static bool freeCv(world_t *w, cluster_t *cluster, const int i) {
+    chunkValue_t *cv = &cluster->cells[i];
+
+    for (int j = 0; j < cv->loadData.nChildren; j++) {
+        cv->loadData.children[j]->loadData.reload = REL_TOMBSTONE;
+    }
+
+    chunk_free(cv->chunk);
+    free(cv->chunk);
+    cv->chunk = NULL;
+    cluster->n--;
+    if (cluster->n <= 0) {
+        HASH_DEL(w->clusterTable, cluster);
+        free(cluster->cells);
+        free(cluster);
+        return false;
+    }
+    return true;
+}
+
 void world_doChunkLoading(world_t *w) {
     // Iterate through chunk loaders, loading any chunk in their radius
     for (int i = 0; i < MAX_CHUNK_LOADERS; i++) {
@@ -270,17 +291,8 @@ void world_doChunkLoading(world_t *w) {
         for (int i = 0; i < C_T * C_T * C_T; i++) {
             chunkValue_t *cv = &cluster->cells[i];
             if (!cv->chunk) continue;
-            if (cv->loadData.reload == REL_TOP_UNLOAD) {
-                chunk_free(cv->chunk);
-                free(cv->chunk);
-                cv->chunk = NULL;
-                cluster->n--;
-                if (cluster->n <= 0) {
-                    HASH_DEL(w->clusterTable, cluster);
-                    free(cluster->cells);
-                    free(cluster);
-                    break;
-                }
+            if (cv->loadData.reload == REL_TOP_UNLOAD || cv->loadData.reload == REL_TOMBSTONE) {
+                if (!freeCv(w, cluster, i)) break;
             } else if (cv->loadData.reload == REL_TOP_RELOAD) {
                 cv->loadData.reload = REL_TOP_UNLOAD;
             }
