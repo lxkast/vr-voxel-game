@@ -1,11 +1,9 @@
 #include "world.h"
-
-#include <errno.h>
 #include <cglm/cglm.h>
+#include <errno.h>
 #include <logging.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-
 #include "chunk.h"
 #include "entity.h"
 #include "uthash.h"
@@ -156,6 +154,13 @@ void world_init(world_t *w, const GLuint program) {
     w->clusterTable = NULL;
     fogInit(w, program);
     highlightInit(w);
+
+    for (int i = 0; i < INITIAL_ENTITY_ARRAY_SIZE; i++) {
+        world_entity_t newEntity;
+        newEntity.type = NONE;
+        newEntity.entity = NULL;
+        w->entities[i] = newEntity;
+    }
 }
 
 vec3 chunkBounds = {15.f, 15.f, 15.f};
@@ -563,4 +568,12 @@ void world_drawHighlight(world_t *w, int modelLocation) {
 
     glDrawArrays(GL_TRIANGLES, 0, faceVerticesSize / (5 * sizeof(float)));
     glBindVertexArray(0);
+}
+
+void world_processAllEntities(world_t *w, const double dt) {
+    for (int i = 0; i < INITIAL_ENTITY_ARRAY_SIZE; i++) {
+        if (w->entities[i].type != NONE) {
+            processEntity(w, w->entities[i].entity, dt);
+        }
+    }
 }

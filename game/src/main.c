@@ -274,6 +274,9 @@ int main(void) {
     player_t player;
     player_init(&player);
 
+    world.entities[0].entity = &player.entity;
+    world.entities[0].type = PLAYER;
+
     postProcess_t postProcess;
     postProcess_init(&postProcess, postProcessProgram, screenWidth, screenHeight);
 
@@ -291,7 +294,7 @@ int main(void) {
 
         world_updateChunkLoader(&world, cameraLoader, camera.eye);
 
-        processEntity(&world, &player.entity, analytics.dt);
+        world_processAllEntities(&world, analytics.dt);
         player_attachCamera(&player, &camera);
 
 

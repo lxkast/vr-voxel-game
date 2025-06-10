@@ -5,6 +5,7 @@
 #include "chunk.h"
 #include "uthash.h"
 #include "camera.h"
+#include "analytics.h"
 
 #define MAX_CHUNKS 256
 #define MAX_CHUNK_LOADERS 8
@@ -16,9 +17,12 @@
 #define FOG_START 16.f * (CHUNK_LOAD_RADIUS - 2)
 #define FOG_END 16.f * (CHUNK_LOAD_RADIUS - 1)
 
+#define INITIAL_ENTITY_ARRAY_SIZE 5
+
 typedef struct entity_t entity_t;
 
 typedef enum {
+    NONE,
     PLAYER,
     ITEM,
     // MOB,   (Not implemented yet)
@@ -44,7 +48,7 @@ typedef struct world_t {
     GLuint highlightVbo;
     mat4 highlightModel;
     bool highlightFound;
-    world_entity_t entity[16];
+    world_entity_t entities[INITIAL_ENTITY_ARRAY_SIZE];
 } world_t;
 
 /**
@@ -186,3 +190,5 @@ void world_highlightFace(world_t *w, camera_t *camera);
 * @param modelLocation The model location
 */
 void world_drawHighlight(world_t *w, int modelLocation);
+
+void world_processAllEntities(world_t *w, double dt);
