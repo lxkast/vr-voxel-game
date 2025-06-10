@@ -75,12 +75,21 @@ static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w)
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
         player_removeBlock(player, w);
     } else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-        player_placeBlock(player, w, BL_GRASS);
+        player_placeBlock(player, w);
     }
 
     changeRUFtoXYZ(acceleration, player->entity.yaw);
 
     glm_vec3_copy(acceleration, player->entity.acceleration);
+
+    for (char i = 0; i <= 8; i++) {
+        if (glfwGetKey(window, GLFW_KEY_1 + i) == GLFW_PRESS) {
+            player->hotbar.currentSlotIndex = i;
+            player->hotbar.currentSlot = &(player->hotbar.slots[i]);
+            player_printHotbar(player);
+            break;
+        }
+    }
 }
 
 static void processCameraInput(GLFWwindow *window, camera_t *camera) {
