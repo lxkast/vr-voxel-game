@@ -107,7 +107,7 @@ static void processCameraInput(GLFWwindow *window, camera_t *camera) {
 static bool postProcessingEnabled = true;
 static bool wireframeView = false;
 
-static void processInput(GLFWwindow *window, mat4 projection, const int projectionLocation) {
+static void processInput(GLFWwindow *window, mat4 projection) {
     static bool previousDownO = false;
     static bool previousDownP = false;
     const int oKey = glfwGetKey(window, GLFW_KEY_O);
@@ -122,8 +122,6 @@ static void processInput(GLFWwindow *window, mat4 projection, const int projecti
     if (pKey == GLFW_PRESS && !previousDownP) {
         postProcessingEnabled = !postProcessingEnabled;
         glm_perspective(FOV_Y, (float)SCREEN_WIDTH / (float)((postProcessingEnabled ? 2 : 1) * SCREEN_HEIGHT), 0.1f, 16.f * (CHUNK_LOAD_RADIUS + 1), projection);
-
-        glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projection);
         previousDownP = true;
     }
     if (pKey == GLFW_RELEASE) {
@@ -194,15 +192,28 @@ int main(void) {
             LOG_ERROR("Couldn't build shader program");
             return -1;
         },
-        "shaders/basic.vert",
-        "shaders/basic.frag"
+        "shaders/chunk.vert",
+        "shaders/chunk.frag"
+    );
+
+    GLuint blockEntityProgram;
+    BUILD_SHADER_PROGRAM(
+        &blockEntityProgram, {
+            glBindAttribLocation(blockEntityProgram, 0, "aPos");
+            glBindAttribLocation(blockEntityProgram, 1, "aTexCoord");
+        }, {
+            LOG_ERROR("Couldn't build shader program");
+            return -1;
+        },
+        "shaders/blockEntity.vert",
+        "shaders/blockEntity.frag"
     );
 
     GLuint postProcessProgram;
     BUILD_SHADER_PROGRAM(
         &postProcessProgram, {
-            glBindAttribLocation(program, 0, "aPos");
-            glBindAttribLocation(program, 1, "aTexCoord");
+            glBindAttribLocation(postProcessProgram, 0, "aPos");
+            glBindAttribLocation(postProcessProgram, 1, "aTexCoord");
         }, {
             LOG_ERROR("Couldn't build shader program");
             return -1;
@@ -220,11 +231,11 @@ int main(void) {
     const GLuint texture = loadTextureRGBA("textures/atlas.png", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
 
     glUseProgram(program);
-
+    const int mainModelLocation = glGetUniformLocation(program, "model");
     mat4 projection;
-    const int projectionLocation = glGetUniformLocation(program, "projection");
+    const int mainProjectionLocation = glGetUniformLocation(program, "projection");
     glm_perspective(FOV_Y, (float)SCREEN_WIDTH / (float)((postProcessingEnabled ? 2 : 1) * SCREEN_HEIGHT), 0.1f, 16.f * (CHUNK_LOAD_RADIUS + 1), projection);
-    glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projection);
+    glUniformMatrix4fv(mainProjectionLocation, 1, GL_FALSE, projection);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
@@ -232,6 +243,22 @@ int main(void) {
 
     glUseProgram(0);
 
+    glUseProgram(blockEntityProgram);
+    const int blockEntityModelLocation = glGetUniformLocation(blockEntityProgram, "model");
+    const int blockEntityProjectionLocation = glGetUniformLocation(blockEntityProgram, "projection");
+
+    glm_perspective(FOV_Y, (float)SCREEN_WIDTH / (float)((postProcessingEnabled ? 2 : 1) * SCREEN_HEIGHT), 0.1f, 16.f * (CHUNK_LOAD_RADIUS + 1), projection);
+    glUniformMatrix4fv(blockEntityProjectionLocation, 1, GL_FALSE, projection);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glUniform1i(glGetUniformLocation(blockEntityProgram, "uTextureAtlas"), 0);
+
+    glUseProgram(0);
+    GLenum err;
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        LOG_ERROR("OpenGL error: %d", err);
+    }
 
 
     /*
@@ -267,10 +294,11 @@ int main(void) {
     analytics_init(&analytics);
     double fpsDisplayAcc = 0;
 
+
     while (!glfwWindowShouldClose(window)) {
         analytics_startFrame(&analytics);
         glUseProgram(program);
-        processInput(window, projection, projectionLocation);
+        processInput(window, projection);
         processPlayerInput(window, &player, &world);
         processCameraInput(window, &camera);
         world_doChunkLoading(&world);
@@ -292,9 +320,9 @@ int main(void) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
         glUniform1i(glGetUniformLocation(program, "uTextureAtlas"), 0);
-        const int modelLocation = glGetUniformLocation(program, "model");
+
         glPolygonMode(GL_FRONT_AND_BACK, wireframeView ? GL_LINE : GL_FILL);
-        glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, projection);
+        glUniformMatrix4fv(mainProjectionLocation, 1, GL_FALSE, projection);
         world_highlightFace(&world, &camera);
         if (postProcessingEnabled) {
             glViewport(0, 0, postProcess.buffer_width, postProcess.buffer_height);
@@ -308,17 +336,32 @@ int main(void) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         camera_setView(&camera, program);
-        world_draw(&world, modelLocation, &camera);
-        world_drawHighlight(&world, modelLocation);
-
+        world_draw(&world, mainModelLocation, &camera);
+        world_drawHighlight(&world, mainModelLocation);
+        glUseProgram(blockEntityProgram);
+        glUniformMatrix4fv(blockEntityProjectionLocation, 1, GL_FALSE, projection);
+        camera_setView(&camera, blockEntityProgram);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glUniform1i(glGetUniformLocation(blockEntityProgram, "uTextureAtlas"), 0);
+        world_drawAllEntities(&world, blockEntityModelLocation);
+        glUseProgram(program);
         if (postProcessingEnabled) {
             postProcess_bindBuffer(&postProcess.rightFramebuffer);
             glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             camera_translateX(&camera, 2 * EYE_OFFSET);
             camera_setView(&camera, program);
-            world_draw(&world, modelLocation, &camera);
-            world_drawHighlight(&world, modelLocation);
+            world_draw(&world, mainModelLocation, &camera);
+            world_drawHighlight(&world, mainModelLocation);
+
+            glUseProgram(blockEntityProgram);
+            glUniformMatrix4fv(blockEntityProjectionLocation, 1, GL_FALSE, projection);
+            camera_setView(&camera, blockEntityProgram);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, texture);
+            glUniform1i(glGetUniformLocation(blockEntityProgram, "uTextureAtlas"), 0);
+            world_drawAllEntities(&world, blockEntityModelLocation);
 
             {
                 static int width, height;

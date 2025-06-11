@@ -388,12 +388,13 @@ static void meshItemEntity(world_entity_t *e) {
     glEnableVertexAttribArray(1);
     float *mesh = malloc(itemBlockVerticesSize);
     memcpy(mesh, itemBlockVertices, itemBlockVerticesSize);
-    block_t type = ITEM_TO_BLOCK[e->type];
+    block_t type = ITEM_TO_BLOCK[e->itemType];
     for (int i = 0; i < 36; ++i) {
-        mesh[5 * i + 0] *= e->entity->size[0];
-        mesh[5 * i + 1] *= e->entity->size[1];
-        mesh[5 * i + 2] *= e->entity->size[2];
-        mesh[5 * i + 3] = TEXTURE_LENGTH * (mesh[5 * i + 3] + type) / TEXTURE_HEIGHT;
+        // for some reason using e->entity->size gives really weird values.
+        mesh[5 * i + 0] /= 4.0f;
+        mesh[5 * i + 1] /= 4.0f;
+        mesh[5 * i + 2] /= 4.0f;
+        mesh[5 * i + 3] = TEXTURE_LENGTH * (mesh[5 * i + 3] + type) / ATLAS_LENGTH;
     }
     glBufferData(GL_ARRAY_BUFFER, itemBlockVerticesSize, mesh, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -708,6 +709,19 @@ void world_processAllEntities(world_t *w, const double dt) {
         if (w->entities[i].type != NONE) {
             w->entities[i].entity->acceleration[1] = GRAVITY_ACCELERATION;
             processEntity(w, w->entities[i].entity, dt);
+        }
+    }
+}
+
+void world_drawAllEntities(world_t *w, const int modelLocation) {
+    for (int i = 0; i < w->numEntities; i++) {
+        if (w->entities[i].type == ITEM) {
+            mat4 model;
+            glm_translate_make(model, w->entities[i].entity->position);
+            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
+            glBindVertexArray(w->entities[i].vao);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+            glBindVertexArray(0);
         }
     }
 }

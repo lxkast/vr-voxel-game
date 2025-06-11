@@ -223,3 +223,5 @@ void world_processAllEntities(world_t *w, double dt);
 void world_addEntity(world_t *w, world_entity_e type, entity_t *entity, item_e itemType);
 
 void world_removeEntity(world_t *w, int entityIndex);
+
+void world_drawAllEntities(world_t *w, const int modelLocation);

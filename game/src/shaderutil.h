@@ -16,8 +16,8 @@
             LOG_ERROR("Failed to create shader program");
             return -1;
         },
-        "shaders/basic.vert",
-        "shaders/basic.frag"
+        "shaders/chunk.vert",
+        "shaders/chunk.frag"
     );
     ```
 
@@ -25,8 +25,8 @@
         GLuint programHandle;
         if (
             su_createProgramFromFilenames(&programHandle, 2,
-                "shaders/basic.vert",
-                "shaders/basic.frag"
+                "shaders/chunk.vert",
+                "shaders/chunk.frag"
             ) != 0
         ) {
             LOG_ERROR("Failed to create shader program");
