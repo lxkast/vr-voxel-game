@@ -1,6 +1,7 @@
 #include "player.h"
 #include "GLFW/glfw3.h"
 #include "logging.h"
+#include "block.h"
 
 static const int faceToBlock[6][3] = {{-1,0,0}, {1,0,0}, {0,-1,0}, {0,1,0}, {0,0,-1}, {0,0,1} };
 
@@ -12,10 +13,24 @@ static bool onBlockCooldown(player_t *p) {
     return glfwGetTime() < p->blockCooldown;
 }
 
-void player_init(player_t *p) {
+void player_init(world_t *w, player_t *p) {
+    vec3 start = {0.f, 50.f, 0.f};
+
+    while (true) {
+        blockData_t bd;
+        world_getBlock(w, start, &bd);
+        printf("Start[1]: %f", start[1]);
+        if (bd.type != BL_AIR) {
+            break;
+        } else {
+            printf("Start[1]: %f", start[1]);
+            start[1]--;
+        }
+    }
+    printf("Start[2]: %f", start[2]);
     *p = (player_t){
         .entity = {
-            .position = {0.f, 15.f, 0.f},
+            .position = {start[0], start[1]+1.2f, start[2]},
             .velocity = {0.f, 0.f, 0.f},
             .size = {0.6f, 1.8f, 0.6f},
             .acceleration = {0.f, 0.f, 0.f},

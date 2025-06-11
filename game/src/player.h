@@ -35,9 +35,10 @@ typedef struct {
 
 /**
  * @brief Initialises a player object.
+ * @param w A pointer to a world
  * @param p A pointer to a player
  */
-void player_init(player_t *p);
+void player_init(world_t *w, player_t *p);
 
 /**
  * @brief Moves a camera to the player and sets orientation of the player.
