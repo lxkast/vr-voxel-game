@@ -1,12 +1,12 @@
 #include "vertices.h"
 
 ivec3 directions[6] = {
-    (ivec3){ 1, 0, 0 },
-    (ivec3){ -1, 0, 0 },
-    (ivec3){ 0, 1, 0 },
-    (ivec3){ 0, -1, 0 },
-    (ivec3){ 0, 0, 1 },
-    (ivec3){ 0, 0, -1 },
+    { 1, 0, 0 },
+    { -1, 0, 0 },
+    { 0, 1, 0 },
+    { 0, -1, 0 },
+    { 0, 0, 1 },
+    { 0, 0, -1 },
 };
 
 const unsigned int faceVerticesSize = 6 * sizeof(vertex_t);
