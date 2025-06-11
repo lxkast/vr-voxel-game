@@ -12,7 +12,7 @@
 #define C_T 8
 #define LOG_C_T 3
 
-#define CHUNK_LOAD_RADIUS 4
+#define CHUNK_LOAD_RADIUS 7
 
 #define FOG_START 16.f * (CHUNK_LOAD_RADIUS - 2)
 #define FOG_END 16.f * (CHUNK_LOAD_RADIUS - 1)

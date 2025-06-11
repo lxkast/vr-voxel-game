@@ -485,10 +485,9 @@ static void meshItemEntity(world_entity_t *e) {
     memcpy(mesh, itemBlockVertices, itemBlockVerticesSize);
     block_t type = ITEM_TO_BLOCK[e->itemType];
     for (int i = 0; i < 36; ++i) {
-        // for some reason using e->entity->size gives really weird values.
-        mesh[5 * i + 0] /= 4.0f;
-        mesh[5 * i + 1] /= 4.0f;
-        mesh[5 * i + 2] /= 4.0f;
+        mesh[5 * i + 0] *= e->entity->size[0];
+        mesh[5 * i + 1] *= e->entity->size[1];
+        mesh[5 * i + 2] *= e->entity->size[2];
         mesh[5 * i + 3] = TEXTURE_LENGTH * (mesh[5 * i + 3] + (float)type) / ATLAS_LENGTH;
     }
     glBufferData(GL_ARRAY_BUFFER, itemBlockVerticesSize, mesh, GL_STATIC_DRAW);
