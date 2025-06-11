@@ -16,7 +16,8 @@ static bool faceIsVisible(chunk_t *c, ivec3 blockPos, direction_e dir) {
             return true;
         }
     }
-    return c->blocks[neighbourPos[0]][neighbourPos[1]][neighbourPos[2]] == BL_AIR;
+    block_t type = c->blocks[neighbourPos[0]][neighbourPos[1]][neighbourPos[2]];
+    return type == BL_AIR || type == BL_LEAF;
 }
 
 // writes vertices of a face specified by buf

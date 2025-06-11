@@ -40,5 +40,8 @@ void main() {
     vec2 texCoords = vec2(((fracCoord.x + textureCol) * TEXTURE_WIDTH) / ATLAS_WIDTH,
                             ((fracCoord.y + textureRow) * TEXTURE_HEIGHT) / ATLAS_HEIGHT);
     vec4 finalRGB = mix(fogColor, texture(uTextureAtlas, texCoords), f);
+    if (finalRGB.a == 0.0) {
+        discard;
+    }
     FragColor = finalRGB;
 }
