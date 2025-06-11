@@ -209,21 +209,22 @@ static void decorator_placeBlock(struct decorator *d,
 }
 
 static void decorator_placeTree(struct decorator *d, world_t *world) {
+    for (int y = 2; y < 6; y++) {
+        for (int x = -2; x <= 2; x++) {
+            for (int z = -2; z <= 2; z++) {
+                if (y < 4 || (abs(x) + abs(z) < 2)) {
+                    decorator_placeBlock(d, world, x, y, z, BL_LEAF);
+                }
+            }
+        }
+    }
+
     decorator_placeBlock(d, world, 0, 0, 0, BL_LOG);
     decorator_placeBlock(d, world, 0, 1, 0, BL_LOG);
     decorator_placeBlock(d, world, 0, 2, 0, BL_LOG);
     decorator_placeBlock(d, world, 0, 3, 0, BL_LOG);
     decorator_placeBlock(d, world, 0, 4, 0, BL_LOG);
 
-    decorator_placeBlock(d, world, 1, 3, 0, BL_LEAF);
-    decorator_placeBlock(d, world, 2, 3, 0, BL_LEAF);
-    decorator_placeBlock(d, world, -1, 3, 0, BL_LEAF);
-    decorator_placeBlock(d, world, -2, 3, 0, BL_LEAF);
-
-    decorator_placeBlock(d, world, 0, 3, 1, BL_LEAF);
-    decorator_placeBlock(d, world, 0, 3, 2, BL_LEAF);
-    decorator_placeBlock(d, world, 0, 3, -1, BL_LEAF);
-    decorator_placeBlock(d, world, 0, 3, -2, BL_LEAF);
 }
 
 
