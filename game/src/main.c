@@ -303,8 +303,6 @@ int main(void) {
         processCameraInput(window, &camera);
         world_doChunkLoading(&world);
 
-        glfwSwapInterval(1);
-
         world_updateChunkLoader(&world, cameraLoader, camera.eye);
 
         world_processAllEntities(&world, analytics.dt);
