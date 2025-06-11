@@ -3,52 +3,10 @@
 #include <logging.h>
 #include <string.h>
 #include <math.h>
+#include "vertices.h"
+#include "noise.h"
 
 extern void chunk_createMesh(chunk_t *c);
-
-static float valueNoise(const int x, const int y) {
-    int n = x + y * 57;
-    n = (n << 13) ^ n;
-    const int nn = (n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff;
-    return 1.0f - ((float)nn / 1073741824.0f);
-}
-
-static float ease(const float t) {
-    return t * t * t * (t * (t * 6 - 15) + 10);
-}
-
-static float smoothValueNoise(const float x, const float y) {
-    const int x_int = (int)floorf(x);
-    const int y_int = (int)floorf(y);
-    const float x_frac = ease(x - (float)x_int);
-    float y_frac = ease(y - (float)y_int);
-
-
-    const float v00 = valueNoise(x_int,     y_int);
-    const float v10 = valueNoise(x_int + 1, y_int);
-    const float v01 = valueNoise(x_int,     y_int + 1);
-    const float v11 = valueNoise(x_int + 1, y_int + 1);
-
-    const float i1 = glm_lerp(v00, v10, x_frac);
-    const float i2 = glm_lerp(v01, v11, x_frac);
-    return glm_lerp(i1, i2, y_frac);
-}
-
-static float height(const int x, const int z) {
-    float totalHeight = 0.f;
-    float frequency = 0.01f;
-    float amplitude = 1.f;
-    float maxAmplitude = 0.f;
-
-    for (int octave = 0; octave < 4; octave++) {
-        totalHeight += smoothValueNoise((float)x * frequency, (float)z * frequency) * amplitude;
-        maxAmplitude += amplitude;
-        amplitude *= 0.5f;
-        frequency *= 2.f;
-    }
-
-    return totalHeight / maxAmplitude;
-}
 
 void chunk_init(chunk_t *c, int cx, int cy, int cz) {
     c->cx = cx;
@@ -96,9 +54,9 @@ void chunk_generate(chunk_t *c) {
             const float xf = (c->cx * CHUNK_SIZE + x);
             const float zf = (c->cz * CHUNK_SIZE + z);
 
-            const float biome = smoothValueNoise(xf * 0.005f, zf * 0.005f);
+            const float biome = noise_smoothValue(xf * 0.005f, zf * 0.005f);
 
-            const float n = height(xf, zf);
+            const float n = noise_height(xf, zf);
             const float height = n * 20.f;
 
             for (int y = 0; y < CHUNK_SIZE; y++) {
