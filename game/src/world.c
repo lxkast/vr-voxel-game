@@ -1,6 +1,7 @@
 #include "world.h"
 #include <cglm/cglm.h>
 #include <errno.h>
+#include <time.h>
 #include <logging.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -188,6 +189,8 @@ static void highlightInit(world_t *w) {
 }
 
 void world_init(world_t *w, const GLuint program) {
+    srand(time(NULL));
+
     memset(w, 0, sizeof(world_t));
     w->clusterTable = NULL;
     fogInit(w, program);
@@ -402,6 +405,10 @@ static void meshItemEntity(world_entity_t *e) {
     free(mesh);
 }
 
+float getRandRange(const float min, const float max) {
+    return min + (max - min) * ((float)rand() / RAND_MAX);
+}
+
 static world_entity_t createItemEntity(world_t *w, const vec3 pos, const item_e item) {
     world_entity_t newWorldEntity;
     newWorldEntity.type = ITEM;
@@ -412,13 +419,13 @@ static world_entity_t createItemEntity(world_t *w, const vec3 pos, const item_e 
     newEntity->acceleration[0] = 0;
     newEntity->acceleration[1] = GRAVITY_ACCELERATION;
     newEntity->acceleration[2] = 0;
-    newEntity->velocity[0] = 0;
-    newEntity->velocity[1] = 0;
-    newEntity->velocity[2] = 0;
+    newEntity->velocity[0] = getRandRange(-0.55f, 0.55f);
+    newEntity->velocity[1] = 0.5f;
+    newEntity->velocity[2] = getRandRange(-0.55f, 0.55f);
     newEntity->grounded = false;
     newEntity->size[0] = 0.25f;
-    newEntity->size[0] = 0.25f;
-    newEntity->size[0] = 0.25f;
+    newEntity->size[1] = 0.25f;
+    newEntity->size[2] = 0.25f;
     newEntity->yaw = 0.f;
 
     newWorldEntity.entity = newEntity;
