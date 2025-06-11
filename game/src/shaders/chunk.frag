@@ -39,7 +39,7 @@ void main() {
     int textureRow = vTexIndex % 4;
     vec2 texCoords = vec2(((fracCoord.x + textureCol) * TEXTURE_WIDTH) / ATLAS_WIDTH,
                             ((fracCoord.y + textureRow) * TEXTURE_HEIGHT) / ATLAS_HEIGHT);
-    vec4 finalRGB = mix(fogColor, texture(uTextureAtlas, texCoords), f);
+    vec4 finalRGB = texture(uTextureAtlas, texCoords);
     if (finalRGB.a == 0.0) {
         discard;
     }
@@ -55,5 +55,5 @@ void main() {
         }
         finalRGB = vec4(finalRGB.xyz, 1);
     }
-    FragColor = finalRGB;
+    FragColor = mix(fogColor, finalRGB, f);
 }
