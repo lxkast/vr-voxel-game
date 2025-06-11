@@ -43,5 +43,17 @@ void main() {
     if (finalRGB.a == 0.0) {
         discard;
     }
+    // normal-based lighting
+    // only shade block if not the highlight texture
+    if (textureCol > 0) {
+        if (textureRow == 2) {
+            // shade side
+            finalRGB *= 0.8;
+        } else if (textureRow == 1) {
+            // shade bottom
+            finalRGB *= 0.5;
+        }
+        finalRGB = vec4(finalRGB.xyz, 1);
+    }
     FragColor = finalRGB;
 }
