@@ -12,7 +12,7 @@
 #define C_T 8
 #define LOG_C_T 3
 
-#define CHUNK_LOAD_RADIUS 4
+#define CHUNK_LOAD_RADIUS 7
 
 #define FOG_START 16.f * (CHUNK_LOAD_RADIUS - 2)
 #define FOG_END 16.f * (CHUNK_LOAD_RADIUS - 1)
@@ -35,6 +35,9 @@ typedef struct {
     entity_t *entity;
     /// This is only checked if 'type' is ITEM
     item_e itemType;
+    /// Entity VAO and VBO, currently only used for 'item' entities
+    GLuint vao;
+    GLuint vbo;
 } world_entity_t;
 
 /**
@@ -54,6 +57,7 @@ typedef struct world_t {
     bool highlightFound;
     int numEntities;
     world_entity_t entities[MAX_NUM_ENTITIES];
+    int oldestItem;
 } world_t;
 
 /**
@@ -144,11 +148,11 @@ bool world_getBlocki(world_t *w, int x, int y, int z, blockData_t *bd);
  * @param bd A block data struct to allocate to
  * @return Whether the operation was successful
  */
-bool world_getBlock(world_t *w, vec3 pos, blockData_t *bd);
+bool world_getBlock(world_t *w, const vec3 pos, blockData_t *bd);
 
 /**
  * @brief Gets all adjacent blocks to a block at a specific position
- * @param w a pointer to the world
+ * @param w a pointer to the worlda
  * @param position the position of the block
  * @param buf the array where the blocks are stored
  */
@@ -199,7 +203,7 @@ bool world_placeBlock(world_t *w, int x, int y, int z, block_t block);
 * @param w A pointer to a world
 * @param dir The name of the directory to save the file in
 */
-bool world_save(world_t *w, const char *dir);
+bool world_save(const world_t *w, const char *dir);
 
 /**
 * @brief Highlights the face the camera is looking at
@@ -213,10 +217,29 @@ void world_highlightFace(world_t *w, camera_t *camera);
 * @param w A pointer to a world
 * @param modelLocation The model location
 */
-void world_drawHighlight(world_t *w, int modelLocation);
+void world_drawHighlight(const world_t *w, int modelLocation);
 
+/**
+ * @brief Updates all entities and their positions/velcities
+ * @param w A pointer to a world
+ * @param dt the time since the function was last run
+ */
 void world_processAllEntities(world_t *w, double dt);
 
+/**
+ * @brief Adds an entity to the world
+ * @param w A pointer to a world
+ * @param type The type of entity
+ * @param entity The actual entity
+ * @param itemType The type of item, if the entity's type is ITEM
+ */
 void world_addEntity(world_t *w, world_entity_e type, entity_t *entity, item_e itemType);
 
-void world_removeEntity(world_t *w, int entityIndex);
+/**
+ * @brief Removes an entity from the world
+ * @param w A pointer to a world
+ * @param entityIndex The index of the entity in the world entity array
+ */
+void world_removeItemEntity(world_t *w, int entityIndex);
+
+void world_drawAllEntities(const world_t *w, int modelLocation);

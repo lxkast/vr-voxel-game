@@ -181,7 +181,7 @@ void player_pickUpItemsCheck(player_t *p, world_t *w) {
                 if (slot->type == worldEntity.itemType && slot->count < ITEM_PROPERTIES[slot->type].maxStackSize) {
                     slot->count++;
                     player_printHotbar(p);
-                    world_removeEntity(w, i);
+                    world_removeItemEntity(w, i);
                     return;
                 }
             }
@@ -193,7 +193,7 @@ void player_pickUpItemsCheck(player_t *p, world_t *w) {
                     slot->type = worldEntity.itemType;
                     slot->count = 1;
                     player_printHotbar(p);
-                    world_removeEntity(w, i);
+                    world_removeItemEntity(w, i);
                     return;
                 }
             }

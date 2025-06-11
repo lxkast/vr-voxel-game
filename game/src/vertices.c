@@ -11,6 +11,7 @@ ivec3 directions[6] = {
 
 const unsigned int faceVerticesSize = 6 * sizeof(vertex_t);
 
+// vertices used for rendering blocks in chunks
 const vertex_t blockVertices[6][6] = {
     {    {1.0f,  1.0f,  1.0f, 2},
 {1.0f,  1.0f, 0.0f, 2},
@@ -49,6 +50,54 @@ const vertex_t blockVertices[6][6] = {
     {0.0f,  1.0f, 0.0f, 2},
     {0.0f, 0.0f, 0.0f, 2}},
 };
+
+// vertices used for rendering item entities (dropped blocks)
+const float itemBlockVertices[] = {
+    // right
+    1.0f,  1.0f,  1.0f,  0.0f, 0.75f,
+    1.0f,  1.0f, 0.0f,  1.0f, 0.75f,
+    1.0f, 0.0f, 0.0f,  1.0f, 0.5f,
+    1.0f, 0.0f, 0.0f,  1.0f, 0.5f,
+    1.0f, 0.0f,  1.0f,  0.0f, 0.5f,
+    1.0f,  1.0f,  1.0f,  0.0f, 0.75f,
+    // left
+    0.0f,  1.0f,  1.0f,  0.0f, 0.75f,
+    0.0f,  1.0f, 0.0f,  1.0f, 0.75f,
+    0.0f, 0.0f, 0.0f,  1.0f, 0.5f,
+    0.0f, 0.0f, 0.0f,  1.0f, 0.5f,
+    0.0f, 0.0f,  1.0f,  0.0f, 0.5f,
+    0.0f,  1.0f,  1.0f,  0.0f, 0.75f,
+    // top
+    0.0f,  1.0f, 0.0f,  0.0f, 1.0f,
+    1.0f,  1.0f, 0.0f,  1.0f, 1.0f,
+    1.0f,  1.0f,  1.0f,  1.0f, 0.75f,
+    1.0f,  1.0f,  1.0f,  1.0f, 0.75f,
+    0.0f,  1.0f,  1.0f,  0.0f, 0.75f,
+    0.0f,  1.0f, 0.0f,  0.0f, 1.0f,
+    // bottom
+    0.0f, 0.0f, 0.0f,  0.0f, 0.25f,
+    1.0f, 0.0f, 0.0f,  1.0f, 0.25f,
+    1.0f, 0.0f,  1.0f,  1.0f, 0.5f,
+    1.0f, 0.0f,  1.0f,  1.0f, 0.5f,
+    0.0f, 0.0f,  1.0f,  0.0f, 0.5f,
+    0.0f, 0.0f, 0.0f,  0.0f, 0.25f,
+    // front
+    0.0f, 0.0f,  1.0f,  0.0f, 0.5f,
+    1.0f, 0.0f,  1.0f,  1.0f, 0.5f,
+    1.0f,  1.0f,  1.0f,  1.0f, 0.75f,
+    1.0f,  1.0f,  1.0f,  1.0f, 0.75f,
+    0.0f,  1.0f,  1.0f,  0.0f, 0.75f,
+    0.0f, 0.0f,  1.0f,  0.0f, 0.5f,
+    // back
+    0.0f, 0.0f, 0.0f,  0.0f, 0.5f,
+    1.0f, 0.0f, 0.0f,  1.0f, 0.5f,
+    1.0f,  1.0f, 0.0f,  1.0f, 0.75f,
+    1.0f,  1.0f, 0.0f,  1.0f, 0.75f,
+    0.0f,  1.0f, 0.0f,  0.0f, 0.75f,
+    0.0f, 0.0f, 0.0f,  0.0f, 0.5f,
+};
+
+const unsigned int itemBlockVerticesSize = sizeof(itemBlockVertices);
 
 const float quadVertices[] = {
     // positions   // texCoords

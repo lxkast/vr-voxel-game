@@ -28,7 +28,7 @@ typedef struct {
 
 extern void world_getBlocksInRange(world_t *w, vec3 minPoint, const vec3 maxPoint, blockData_t buf[]);
 
-extern bool world_getBlock(world_t *w, vec3 position, blockData_t *bd);
+extern bool world_getBlock(world_t *w, const vec3 position, blockData_t *bd);
 
 /**
  * @brief Determines if two bounding boxes intersect in the X-axis

@@ -48,15 +48,17 @@ static const block_t ITEM_TO_BLOCK[] = {
     [ITEM_DIRT]  = BL_DIRT,
     [ITEM_GRASS] = BL_GRASS,
     [ITEM_LOG] = BL_LOG,
-    [ITEM_LEAF] = BL_LEAF
+    [ITEM_LEAF] = BL_LEAF,
+    [ITEM_STONE] = BL_STONE,
 };
 
 /// a mapping from block item types to the block types
 static const block_t BLOCK_TO_ITEM[] = {
     [BL_DIRT]  = ITEM_DIRT,
     [BL_GRASS] = ITEM_GRASS,
+    [BL_STONE] = ITEM_STONE,
     [BL_LOG] = ITEM_LOG,
-    [BL_LEAF] = ITEM_LEAF
+    [BL_LEAF] = ITEM_LEAF,
 };
 
 typedef struct {

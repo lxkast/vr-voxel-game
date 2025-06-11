@@ -242,7 +242,7 @@ static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
     }
 }
 
-static bool getBlockAddr(world_t *w, int x, int y, int z, block_t **block, chunk_t **chunk) {
+static bool getBlockAddr(world_t *w, const int x, const int y, const int z, block_t **block, chunk_t **chunk) {
     const int cx = x >> 4;
     const int cy = y >> 4;
     const int cz = z >> 4;
@@ -280,12 +280,15 @@ static void highlightInit(world_t *w) {
 }
 
 void world_init(world_t *w, const GLuint program) {
+    srand(1);
+
     memset(w, 0, sizeof(world_t));
     w->clusterTable = NULL;
     fogInit(w, program);
     highlightInit(w);
 
     w->numEntities = 0;
+    w->oldestItem = 0;
 }
 
 vec3 chunkBounds = {15.f, 15.f, 15.f};
@@ -410,7 +413,7 @@ void world_doChunkLoading(world_t *w) {
     }
 }
 
-bool world_getBlocki(world_t *w, int x, int y, int z, blockData_t *bd) {
+bool world_getBlocki(world_t *w, const int x, const int y, const int z, blockData_t *bd) {
     block_t *block;
     chunk_t *chunk;
     if (!getBlockAddr(w, x, y, z, &block, &chunk)) return false;
@@ -423,7 +426,7 @@ bool world_getBlocki(world_t *w, int x, int y, int z, blockData_t *bd) {
     return true;
 }
 
-bool world_getBlock(world_t *w, vec3 pos, blockData_t *bd) {
+bool world_getBlock(world_t *w, const vec3 pos, blockData_t *bd) {
     const int x = (int)floorf(pos[0]);
     const int y = (int)floorf(pos[1]);
     const int z = (int)floorf(pos[2]);
@@ -469,6 +472,40 @@ void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, bl
     }
 }
 
+static void meshItemEntity(world_entity_t *e) {
+    glGenVertexArrays(1, &e->vao);
+    glGenBuffers(1, &e->vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, e->vbo);
+    glBindVertexArray(e->vao);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    float *mesh = malloc(itemBlockVerticesSize);
+    memcpy(mesh, itemBlockVertices, itemBlockVerticesSize);
+    block_t type = ITEM_TO_BLOCK[e->itemType];
+    for (int i = 0; i < 36; ++i) {
+        mesh[5 * i + 0] *= e->entity->size[0];
+        mesh[5 * i + 1] *= e->entity->size[1];
+        mesh[5 * i + 2] *= e->entity->size[2];
+        mesh[5 * i + 3] = TEXTURE_LENGTH * (mesh[5 * i + 3] + (float)type) / ATLAS_LENGTH;
+    }
+    glBufferData(GL_ARRAY_BUFFER, itemBlockVerticesSize, mesh, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    free(mesh);
+}
+
+/**
+ * @brief Generates a random number in the range (min, max)
+ * @param min The minimum value the random number can take
+ * @param max The maximum value the random number can take
+ * @return the random number
+ */
+float getRandRange(const float min, const float max) {
+    return min + (max - min) * ((float)rand() / RAND_MAX);
+}
+
 static world_entity_t createItemEntity(world_t *w, const vec3 pos, const item_e item) {
     world_entity_t newWorldEntity;
     newWorldEntity.type = ITEM;
@@ -479,17 +516,18 @@ static world_entity_t createItemEntity(world_t *w, const vec3 pos, const item_e 
     newEntity->acceleration[0] = 0;
     newEntity->acceleration[1] = GRAVITY_ACCELERATION;
     newEntity->acceleration[2] = 0;
-    newEntity->velocity[0] = 0;
-    newEntity->velocity[1] = 0;
-    newEntity->velocity[2] = 0;
+    newEntity->velocity[0] = getRandRange(-0.55f, 0.55f);
+    newEntity->velocity[1] = 0.5f;
+    newEntity->velocity[2] = getRandRange(-0.55f, 0.55f);
     newEntity->grounded = false;
     newEntity->size[0] = 0.25f;
-    newEntity->size[0] = 0.25f;
-    newEntity->size[0] = 0.25f;
+    newEntity->size[1] = 0.25f;
+    newEntity->size[2] = 0.25f;
     newEntity->yaw = 0.f;
 
     newWorldEntity.entity = newEntity;
     newWorldEntity.itemType = item;
+    meshItemEntity(&newWorldEntity);
     return newWorldEntity;
 }
 
@@ -500,8 +538,10 @@ void world_addEntity(world_t *w, const world_entity_e type, entity_t *entity, co
     newEntity.itemType = itemType;
     if (w->numEntities == MAX_NUM_ENTITIES) {
         for (int i = 0; i < MAX_NUM_ENTITIES; i++) {
-            if (w->entities[i].type == ITEM) {
-                w->entities[i] = newEntity;
+            const int entityIndex = (w->oldestItem + i) % w->numEntities;
+            if (w->entities[entityIndex].type == ITEM) {
+                w->entities[entityIndex] = newEntity;
+                w->oldestItem = entityIndex+1;
                 return;
             }
         }
@@ -510,15 +550,25 @@ void world_addEntity(world_t *w, const world_entity_e type, entity_t *entity, co
     }
 }
 
-void world_removeEntity(world_t *w, const int entityIndex) {
+static void freeEntity(const world_entity_t *e) {
+    glDeleteBuffers(1, &e->vbo);
+    glDeleteVertexArrays(1, &e->vao);
+}
+
+void world_removeItemEntity(world_t *w, const int entityIndex) {
     if (entityIndex >= w->numEntities) {
         LOG_FATAL("Entity index out of range");
+    }
+
+    if (w->entities[entityIndex].type == ITEM) {
+        freeEntity(&w->entities[entityIndex]);
     }
 
     if (entityIndex == w->numEntities - 1) {
         w->numEntities--;
     } else {
         w->entities[entityIndex] = w->entities[--w->numEntities];
+        w->oldestItem = (entityIndex + 1) % w->numEntities;
     }
 }
 
@@ -538,7 +588,7 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
     return true;
 }
 
-bool world_placeBlock(world_t *w, int x, int y, int z, block_t block) {
+bool world_placeBlock(world_t *w, const int x, const int y, const int z, const block_t block) {
     block_t *bp;
     chunk_t *cp;
     if (!getBlockAddr(w, x, y, z, &bp, &cp)) return false;
@@ -551,7 +601,7 @@ bool world_placeBlock(world_t *w, int x, int y, int z, block_t block) {
     return true;
 }
 
-bool world_save(world_t *w, const char *dir) {
+bool world_save(const world_t *w, const char *dir) {
     struct stat st = {0};
     if (stat(dir, &st) == -1) {
         LOG_INFO("World save does not exist, creating directory...");
@@ -749,7 +799,7 @@ void world_highlightFace(world_t *w, camera_t *camera) {
     free(buffer);
 }
 
-void world_drawHighlight(world_t *w, int modelLocation) {
+void world_drawHighlight(const world_t *w, const int modelLocation) {
     if (!w->highlightFound) {
         return;
     }
@@ -766,6 +816,19 @@ void world_processAllEntities(world_t *w, const double dt) {
         if (w->entities[i].type != NONE) {
             w->entities[i].entity->acceleration[1] = GRAVITY_ACCELERATION;
             processEntity(w, w->entities[i].entity, dt);
+        }
+    }
+}
+
+void world_drawAllEntities(const world_t *w, const int modelLocation) {
+    for (int i = 0; i < w->numEntities; i++) {
+        if (w->entities[i].type == ITEM) {
+            mat4 model;
+            glm_translate_make(model, w->entities[i].entity->position);
+            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
+            glBindVertexArray(w->entities[i].vao);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+            glBindVertexArray(0);
         }
     }
 }
