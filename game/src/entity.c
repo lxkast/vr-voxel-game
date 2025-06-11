@@ -75,6 +75,9 @@ bool intersectsWithBlock(const entity_t entity, ivec3 blockPosition) {
  * @param axisNum The axis we are resolving on
  */
 static void handleAxisCollision(entity_t *entity, const aabb_t aabb, const blockBounding_t block, vec3 deltaP, const int axisNum) {
+    if (deltaP[axisNum] == 0.f) {
+        return;
+    }
     // checks to see if it collides in specified axis
     if (aabb.min[axisNum] + deltaP[axisNum] < block.aabb.max[axisNum] && aabb.max[axisNum] + deltaP[axisNum] > block.aabb.min[axisNum]) {
         if (deltaP[axisNum] < 0) {
