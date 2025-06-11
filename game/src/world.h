@@ -148,7 +148,7 @@ bool world_getBlocki(world_t *w, int x, int y, int z, blockData_t *bd);
  * @param bd A block data struct to allocate to
  * @return Whether the operation was successful
  */
-bool world_getBlock(world_t *w, vec3 pos, blockData_t *bd);
+bool world_getBlock(world_t *w, const vec3 pos, blockData_t *bd);
 
 /**
  * @brief Gets all adjacent blocks to a block at a specific position
@@ -203,7 +203,7 @@ bool world_placeBlock(world_t *w, int x, int y, int z, block_t block);
 * @param w A pointer to a world
 * @param dir The name of the directory to save the file in
 */
-bool world_save(world_t *w, const char *dir);
+bool world_save(const world_t *w, const char *dir);
 
 /**
 * @brief Highlights the face the camera is looking at
@@ -217,7 +217,7 @@ void world_highlightFace(world_t *w, camera_t *camera);
 * @param w A pointer to a world
 * @param modelLocation The model location
 */
-void world_drawHighlight(world_t *w, int modelLocation);
+void world_drawHighlight(const world_t *w, int modelLocation);
 
 /**
  * @brief Updates all entities and their positions/velcities
@@ -242,4 +242,4 @@ void world_addEntity(world_t *w, world_entity_e type, entity_t *entity, item_e i
  */
 void world_removeItemEntity(world_t *w, int entityIndex);
 
-void world_drawAllEntities(world_t *w, int modelLocation);
+void world_drawAllEntities(const world_t *w, int modelLocation);

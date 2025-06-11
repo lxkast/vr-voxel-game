@@ -99,7 +99,7 @@ static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int c
     return clusterPtr;
 }
 
-static void world_decorateChunk(world_t *w, chunkValue_t *cv);
+static void world_decorateChunk(world_t *w, const chunkValue_t *cv);
 
 /**
  * @brief Loads a chunk.
@@ -144,14 +144,14 @@ static chunkValue_t *world_loadChunk(world_t *w,
     return cv;
 }
 
-static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
+static void world_decorateChunk(world_t *w, const chunkValue_t *cv) {
     int (*ptr)[CHUNK_SIZE][CHUNK_SIZE] = (int (*)[CHUNK_SIZE][CHUNK_SIZE]) cv->chunk->blocks;
 
     // chunkValue_t *above = world_loadChunk(w, cv->chunk->cx, cv->chunk->cy + 1, cv->chunk->cz, LL_INIT, REL_CHILD);
     // cv->loadData.children[cv->loadData.nChildren++] = above;
 }
 
-static bool getBlockAddr(world_t *w, int x, int y, int z, block_t **block, chunk_t **chunk) {
+static bool getBlockAddr(world_t *w, const int x, const int y, const int z, block_t **block, chunk_t **chunk) {
     const int cx = x >> 4;
     const int cy = y >> 4;
     const int cz = z >> 4;
@@ -322,7 +322,7 @@ void world_doChunkLoading(world_t *w) {
     }
 }
 
-bool world_getBlocki(world_t *w, int x, int y, int z, blockData_t *bd) {
+bool world_getBlocki(world_t *w, const int x, const int y, const int z, blockData_t *bd) {
     block_t *block;
     chunk_t *chunk;
     if (!getBlockAddr(w, x, y, z, &block, &chunk)) return false;
@@ -335,7 +335,7 @@ bool world_getBlocki(world_t *w, int x, int y, int z, blockData_t *bd) {
     return true;
 }
 
-bool world_getBlock(world_t *w, vec3 pos, blockData_t *bd) {
+bool world_getBlock(world_t *w, const vec3 pos, blockData_t *bd) {
     const int x = (int)floorf(pos[0]);
     const int y = (int)floorf(pos[1]);
     const int z = (int)floorf(pos[2]);
@@ -398,7 +398,7 @@ static void meshItemEntity(world_entity_t *e) {
         mesh[5 * i + 0] /= 4.0f;
         mesh[5 * i + 1] /= 4.0f;
         mesh[5 * i + 2] /= 4.0f;
-        mesh[5 * i + 3] = TEXTURE_LENGTH * (mesh[5 * i + 3] + type) / ATLAS_LENGTH;
+        mesh[5 * i + 3] = TEXTURE_LENGTH * (mesh[5 * i + 3] + (float)type) / ATLAS_LENGTH;
     }
     glBufferData(GL_ARRAY_BUFFER, itemBlockVerticesSize, mesh, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -460,7 +460,7 @@ void world_addEntity(world_t *w, const world_entity_e type, entity_t *entity, co
     }
 }
 
-static void freeEntity(world_entity_t *e) {
+static void freeEntity(const world_entity_t *e) {
     glDeleteBuffers(1, &e->vbo);
     glDeleteVertexArrays(1, &e->vao);
 }
@@ -511,7 +511,7 @@ bool world_placeBlock(world_t *w, const int x, const int y, const int z, const b
     return true;
 }
 
-bool world_save(world_t *w, const char *dir) {
+bool world_save(const world_t *w, const char *dir) {
     struct stat st = {0};
     if (stat(dir, &st) == -1) {
         LOG_INFO("World save does not exist, creating directory...");
@@ -709,7 +709,7 @@ void world_highlightFace(world_t *w, camera_t *camera) {
     free(buffer);
 }
 
-void world_drawHighlight(world_t *w, int modelLocation) {
+void world_drawHighlight(const world_t *w, const int modelLocation) {
     if (!w->highlightFound) {
         return;
     }
@@ -730,7 +730,7 @@ void world_processAllEntities(world_t *w, const double dt) {
     }
 }
 
-void world_drawAllEntities(world_t *w, const int modelLocation) {
+void world_drawAllEntities(const world_t *w, const int modelLocation) {
     for (int i = 0; i < w->numEntities; i++) {
         if (w->entities[i].type == ITEM) {
             mat4 model;
