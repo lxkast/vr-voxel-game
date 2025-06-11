@@ -209,21 +209,21 @@ static void decorator_placeBlock(struct decorator *d,
 }
 
 static void decorator_placeTree(struct decorator *d, world_t *world) {
-    decorator_placeBlock(d, world, 0, 0, 0, BL_STONE);
-    decorator_placeBlock(d, world, 0, 1, 0, BL_STONE);
-    decorator_placeBlock(d, world, 0, 2, 0, BL_STONE);
-    decorator_placeBlock(d, world, 0, 3, 0, BL_STONE);
-    decorator_placeBlock(d, world, 0, 4, 0, BL_STONE);
+    decorator_placeBlock(d, world, 0, 0, 0, BL_LOG);
+    decorator_placeBlock(d, world, 0, 1, 0, BL_LOG);
+    decorator_placeBlock(d, world, 0, 2, 0, BL_LOG);
+    decorator_placeBlock(d, world, 0, 3, 0, BL_LOG);
+    decorator_placeBlock(d, world, 0, 4, 0, BL_LOG);
 
-    decorator_placeBlock(d, world, 1, 3, 0, BL_STONE);
-    decorator_placeBlock(d, world, 2, 3, 0, BL_STONE);
-    decorator_placeBlock(d, world, -1, 3, 0, BL_STONE);
-    decorator_placeBlock(d, world, -2, 3, 0, BL_STONE);
+    decorator_placeBlock(d, world, 1, 3, 0, BL_LEAF);
+    decorator_placeBlock(d, world, 2, 3, 0, BL_LEAF);
+    decorator_placeBlock(d, world, -1, 3, 0, BL_LEAF);
+    decorator_placeBlock(d, world, -2, 3, 0, BL_LEAF);
 
-    decorator_placeBlock(d, world, 0, 3, 1, BL_STONE);
-    decorator_placeBlock(d, world, 0, 3, 2, BL_STONE);
-    decorator_placeBlock(d, world, 0, 3, -1, BL_STONE);
-    decorator_placeBlock(d, world, 0, 3, -2, BL_STONE);
+    decorator_placeBlock(d, world, 0, 3, 1, BL_LEAF);
+    decorator_placeBlock(d, world, 0, 3, 2, BL_LEAF);
+    decorator_placeBlock(d, world, 0, 3, -1, BL_LEAF);
+    decorator_placeBlock(d, world, 0, 3, -2, BL_LEAF);
 }
 
 
