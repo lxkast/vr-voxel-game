@@ -35,7 +35,7 @@ typedef struct {
     entity_t *entity;
     /// This is only checked if 'type' is ITEM
     item_e itemType;
-    /// Entity VAO and VBO, currentlyl only used for 'item' entities
+    /// Entity VAO and VBO, currently only used for 'item' entities
     GLuint vao;
     GLuint vbo;
 } world_entity_t;
@@ -57,6 +57,7 @@ typedef struct world_t {
     bool highlightFound;
     int numEntities;
     world_entity_t entities[MAX_NUM_ENTITIES];
+    int oldestItem;
 } world_t;
 
 /**
@@ -222,6 +223,6 @@ void world_processAllEntities(world_t *w, double dt);
 
 void world_addEntity(world_t *w, world_entity_e type, entity_t *entity, item_e itemType);
 
-void world_removeEntity(world_t *w, int entityIndex);
+void world_removeItemEntity(world_t *w, int entityIndex);
 
-void world_drawAllEntities(world_t *w, const int modelLocation);
+void world_drawAllEntities(world_t *w, int modelLocation);

@@ -197,6 +197,7 @@ void world_init(world_t *w, const GLuint program) {
     highlightInit(w);
 
     w->numEntities = 0;
+    w->oldestItem = 0;
 }
 
 vec3 chunkBounds = {15.f, 15.f, 15.f};
@@ -441,8 +442,10 @@ void world_addEntity(world_t *w, const world_entity_e type, entity_t *entity, co
     newEntity.itemType = itemType;
     if (w->numEntities == MAX_NUM_ENTITIES) {
         for (int i = 0; i < MAX_NUM_ENTITIES; i++) {
-            if (w->entities[i].type == ITEM) {
-                w->entities[i] = newEntity;
+            const int entityIndex = (w->oldestItem + i) % w->numEntities;
+            if (w->entities[entityIndex].type == ITEM) {
+                w->entities[entityIndex] = newEntity;
+                w->oldestItem = entityIndex+1;
                 return;
             }
         }
@@ -456,7 +459,7 @@ static void freeEntity(world_entity_t *e) {
     glDeleteVertexArrays(1, &e->vao);
 }
 
-void world_removeEntity(world_t *w, const int entityIndex) {
+void world_removeItemEntity(world_t *w, const int entityIndex) {
     if (entityIndex >= w->numEntities) {
         LOG_FATAL("Entity index out of range");
     }
@@ -469,6 +472,7 @@ void world_removeEntity(world_t *w, const int entityIndex) {
         w->numEntities--;
     } else {
         w->entities[entityIndex] = w->entities[--w->numEntities];
+        w->oldestItem = (entityIndex + 1) % w->numEntities;
     }
 }
 
@@ -488,7 +492,7 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
     return true;
 }
 
-bool world_placeBlock(world_t *w, int x, int y, int z, block_t block) {
+bool world_placeBlock(world_t *w, const int x, const int y, const int z, const block_t block) {
     block_t *bp;
     chunk_t *cp;
     if (!getBlockAddr(w, x, y, z, &bp, &cp)) return false;
