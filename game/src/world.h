@@ -152,7 +152,7 @@ bool world_getBlock(world_t *w, const vec3 pos, blockData_t *bd);
 
 /**
  * @brief Gets all adjacent blocks to a block at a specific position
- * @param w a pointer to the world
+ * @param w a pointer to the worlda
  * @param position the position of the block
  * @param buf the array where the blocks are stored
  */

@@ -11,6 +11,8 @@ typedef enum {
     ITEM_SWORD,
     ITEM_SHOVEL,
     ITEM_PICKAXE,
+    ITEM_LOG,
+    ITEM_LEAF,
 } item_e;
 
 typedef struct {
@@ -37,12 +39,16 @@ static const itemProperties_t ITEM_PROPERTIES[] = {
     [ITEM_SWORD] = {"Sword",      false, true, 1,200},
     [ITEM_SHOVEL] = {"Shovel",      false, true, 1,200},
     [ITEM_PICKAXE] = {"Pickaxe",      false, true, 1,200},
+    [ITEM_LOG] = {"Log",       true,  false,  64,-1},
+    [ITEM_LEAF] = {"Leaf block",       true,  false,  64,-1},
 };
 
 /// a mapping from block item types to the block types
 static const block_t ITEM_TO_BLOCK[] = {
     [ITEM_DIRT]  = BL_DIRT,
     [ITEM_GRASS] = BL_GRASS,
+    [ITEM_LOG] = BL_LOG,
+    [ITEM_LEAF] = BL_LEAF,
     [ITEM_STONE] = BL_STONE,
 };
 
@@ -51,6 +57,8 @@ static const block_t BLOCK_TO_ITEM[] = {
     [BL_DIRT]  = ITEM_DIRT,
     [BL_GRASS] = ITEM_GRASS,
     [BL_STONE] = ITEM_STONE,
+    [BL_LOG] = ITEM_LOG,
+    [BL_LEAF] = ITEM_LEAF,
 };
 
 typedef struct {

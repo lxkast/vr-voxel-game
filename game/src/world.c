@@ -1,12 +1,12 @@
 #include "world.h"
 #include <cglm/cglm.h>
 #include <errno.h>
-#include <time.h>
 #include <logging.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include "chunk.h"
 #include "entity.h"
+#include "noise.h"
 #include "uthash.h"
 #include "vertices.h"
 
@@ -32,7 +32,7 @@ typedef struct chunkValue_t {
     struct {
         reloadData_e reload;
         size_t nChildren;
-        struct chunkValue_t *children[8];
+        struct chunkValue_t *children[32];
     } loadData;
 
 } chunkValue_t;
@@ -99,7 +99,7 @@ static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int c
     return clusterPtr;
 }
 
-static void world_decorateChunk(world_t *w, const chunkValue_t *cv);
+static void world_decorateChunk(world_t *w, chunkValue_t *cv);
 
 /**
  * @brief Loads a chunk.
@@ -127,6 +127,7 @@ static chunkValue_t *world_loadChunk(world_t *w,
         chunk_init(cv->chunk, cx, cy, cz);
         cv->ll = LL_INIT;
         cv->loadData.reload = REL_TOMBSTONE;
+        cv->loadData.nChildren = 0;
 
         cluster->n++;
     }
@@ -136,19 +137,109 @@ static chunkValue_t *world_loadChunk(world_t *w,
             chunk_generate(cv->chunk);
             world_decorateChunk(w, cv);
         }
+        cv->ll = ll;
     }
-    cv->ll = ll;
 
     if (r < cv->loadData.reload) cv->loadData.reload = r;
 
     return cv;
 }
 
-static void world_decorateChunk(world_t *w, const chunkValue_t *cv) {
-    int (*ptr)[CHUNK_SIZE][CHUNK_SIZE] = (int (*)[CHUNK_SIZE][CHUNK_SIZE]) cv->chunk->blocks;
+struct decorator {
+    int cacheN;
+    chunkValue_t *cache[3][3][3];
 
-    // chunkValue_t *above = world_loadChunk(w, cv->chunk->cx, cv->chunk->cy + 1, cv->chunk->cz, LL_INIT, REL_CHILD);
-    // cv->loadData.children[cv->loadData.nChildren++] = above;
+    chunkValue_t *origin;
+    int ox, oy, oz;
+};
+
+static void decorator_init(struct decorator *d, chunkValue_t *origin, const int x, const int y, const int z) {
+    d->cacheN = 0;
+    d->origin = origin;
+    memset(d->cache, 0, 27 * sizeof(chunkValue_t *));
+    d->cache[1][1][1] = origin;
+    d->ox = x;
+    d->oy = y;
+    d->oz = z;
+}
+
+static bool decorator_initSurface(struct decorator *d, chunkValue_t *origin, const int x, const int z, const block_t block) {
+    int y;
+    for (y = CHUNK_SIZE - 1; y > 0; y--) {
+        if (origin->chunk->blocks[x][y][z] == block) {
+            y++;
+            break;
+        }
+    }
+    decorator_init(d, origin, x, y, z);
+    return y != 0;
+}
+
+static void decorator_placeBlock(struct decorator *d,
+                                 world_t *world,
+                                 int x,
+                                 int y,
+                                 int z,
+                                 const block_t block) {
+    x = d->ox + x;
+    y = d->oy + y;
+    z = d->ox + z;
+
+    const int cx = x >> 4;
+    const int cy = y >> 4;
+    const int cz = z >> 4;
+
+    if (-1 <= cx && cx <= 1 && -1 <= cy && cy <= 1 && -1 <= cz && cz <= 1) {
+        if (!d->cache[cx + 1][cy + 1][cz + 1]) {
+            d->cache[cx + 1][cy + 1][cz + 1] = world_loadChunk(world,
+                                                   d->origin->chunk->cx + cx,
+                                                   d->origin->chunk->cy + cy,
+                                                   d->origin->chunk->cz + cz,
+                                                   LL_INIT,
+                                                   REL_CHILD);
+            if (d->origin->loadData.nChildren > 31) {
+                LOG_FATAL("it's so over");
+            }
+            d->origin->loadData.children[d->origin->loadData.nChildren++] = d->cache[cx + 1][cy + 1][cz + 1];
+        }
+
+        d->cache[cx + 1][cy + 1][cz + 1]->chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)] = block;
+        d->cache[cx + 1][cy + 1][cz + 1]->chunk->tainted = true;
+    }
+}
+
+static void decorator_placeTree(struct decorator *d, world_t *world) {
+    for (int y = 2; y < 6; y++) {
+        for (int x = -2; x <= 2; x++) {
+            for (int z = -2; z <= 2; z++) {
+                if (y < 4 || (abs(x) + abs(z) < 2)) {
+                    decorator_placeBlock(d, world, x, y, z, BL_LEAF);
+                }
+            }
+        }
+    }
+
+    decorator_placeBlock(d, world, 0, 0, 0, BL_LOG);
+    decorator_placeBlock(d, world, 0, 1, 0, BL_LOG);
+    decorator_placeBlock(d, world, 0, 2, 0, BL_LOG);
+    decorator_placeBlock(d, world, 0, 3, 0, BL_LOG);
+    decorator_placeBlock(d, world, 0, 4, 0, BL_LOG);
+
+}
+
+
+static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
+    struct decorator d;
+
+    for (int x = 0; x < CHUNK_SIZE; x++) {
+        for (int z = 0; z < CHUNK_SIZE; z++) {
+            if (x == 7 && z == 7) {
+                if (decorator_initSurface(&d, cv, x, z, BL_GRASS)) {
+                    decorator_placeTree(&d, w);
+                }
+            }
+        }
+    }
 }
 
 static bool getBlockAddr(world_t *w, const int x, const int y, const int z, block_t **block, chunk_t **chunk) {
@@ -189,7 +280,7 @@ static void highlightInit(world_t *w) {
 }
 
 void world_init(world_t *w, const GLuint program) {
-    srand(time(NULL));
+    srand(1);
 
     memset(w, 0, sizeof(world_t));
     w->clusterTable = NULL;
