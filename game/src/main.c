@@ -28,8 +28,6 @@
 #define GROUND_ACCELERATION 35.f
 #define AIR_ACCELERATION 10.f
 
-#define GRAVITY_ACCELERATION (-10.f)
-
 static double previousMouse[2];
 
 static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
@@ -191,7 +189,7 @@ int main(void) {
     BUILD_SHADER_PROGRAM(
         &program, {
             glBindAttribLocation(program, 0, "aPos");
-            glBindAttribLocation(program, 1, "aTexCoord");
+            glBindAttribLocation(program, 1, "aTexIndex");
         }, {
             LOG_ERROR("Couldn't build shader program");
             return -1;
@@ -260,6 +258,8 @@ int main(void) {
     player_t player;
     player_init(&player);
 
+    world_addEntity(&world, PLAYER, &player.entity, NONE);
+
     postProcess_t postProcess;
     postProcess_init(&postProcess, postProcessProgram, screenWidth, screenHeight);
 
@@ -277,7 +277,10 @@ int main(void) {
 
         world_updateChunkLoader(&world, cameraLoader, camera.eye);
 
-        processEntity(&world, &player.entity, analytics.dt);
+        world_processAllEntities(&world, analytics.dt);
+
+        player_pickUpItemsCheck(&player, &world);
+
         player_attachCamera(&player, &camera);
 
 

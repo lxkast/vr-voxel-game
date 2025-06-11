@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../logging/logging.h"
 
 #define RESIZE_UP_THRESHOLD 0.75
 #define RESIZE_DOWN_THRESHOLD 0.25
@@ -22,14 +23,17 @@ static unsigned long hash_str(const char *str) {
     return hash;
 }
 
-static void resize(hashmap *map, int new_capacity) {
+static void resize(hashmap *map, const int new_capacity) {
     hashmapElement **old = map->data;
-    int old_capacity = map->capacity;
+    const int old_capacity = map->capacity;
     map->data = malloc(sizeof(hashmapElement *) * new_capacity);
+    if (!map->data) {
+        LOG_FATAL("Failed to malloc map data in resize");
+    }
     memset(map->data, 0, sizeof(hashmapElement *) * new_capacity);
     map->capacity = new_capacity;
 
-    for (uint32_t i = 0; i < old_capacity; i++) {
+    for (int i = 0; i < old_capacity; i++) {
         hashmapElement *current = old[i];
         while (current) {
             hashmap_setElement(map, current->name, current->data);
@@ -85,9 +89,10 @@ bool hashmap_setElement(hashmap *hashmap, const char *name, void *data) {
     }
 
     hashmapElement *newElement = malloc(sizeof(hashmapElement));
-    unsigned const long nameLen = strlen(name);
-    newElement->name = (char *)malloc(sizeof(char) * (nameLen + 1));
-    strcpy(newElement->name, name);
+    if (!newElement) {
+        LOG_FATAL("Failed to malloc newElement in hashmap_setElement");
+    }
+    newElement->name = strdup(name);
     newElement->data = data;
     newElement->next = NULL;
     *current = newElement;
@@ -114,7 +119,7 @@ bool hashmap_removeElement(hashmap *hashmap, const char *name) {
     return false;
 }
 
-void hashmap_free(hashmap *hashmap) {
+void hashmap_free(const hashmap *hashmap) {
     for (int i = 0; i < hashmap->capacity; i++) {
         hashmapElement *current = hashmap->data[i];
         while (current) {
@@ -127,17 +132,23 @@ void hashmap_free(hashmap *hashmap) {
     free(hashmap->data);
 }
 
-void hashmap_init(hashmap *hashmap, int capacity) {
+void hashmap_init(hashmap *hashmap, const int capacity) {
     hashmap->capacity = capacity;
     hashmap->size = 0;
     hashmap->data = malloc(sizeof(hashmapElement *) * capacity);
+    if (!hashmap->data) {
+        LOG_FATAL("Failed to mallloc hashmap data in hashmap_init");
+    }
     memset(hashmap->data, 0, sizeof(hashmapElement *) * capacity);
 }
 
-void arraylist_init(resizingArrayList_t *arrList, int capacity) {
+void arraylist_init(resizingArrayList_t *arrList, const int capacity) {
     arrList->capacity = capacity;
     arrList->size = 0;
     arrList->data = malloc(sizeof(resizingArrayList_t *) * capacity);
+    if (!arrList->data) {
+        LOG_FATAL("Failed to mallloc arrayList data in arraylist_init");
+    }
 }
 
 void arraylist_free(resizingArrayList_t *arrList) {
@@ -145,9 +156,12 @@ void arraylist_free(resizingArrayList_t *arrList) {
     arrList->capacity = 0;
 }
 
-static void arraylist_resize(resizingArrayList_t *arrayList, int newCapacity) {
-    arrayList->data = realloc(arrayList->data, sizeof(resizingArrayList_t *) * newCapacity);
-    arrayList->capacity = newCapacity;
+static void arraylist_resize(resizingArrayList_t *arrList, const int newCapacity) {
+    arrList->data = realloc(arrList->data, sizeof(resizingArrayList_t *) * newCapacity);
+    if (!arrList->data) {
+        LOG_FATAL("Failed to realloc arrayList data in arraylist_resize");
+    }
+    arrList->capacity = newCapacity;
 }
 
 void arraylist_append(resizingArrayList_t *arrList, void *element) {
@@ -157,7 +171,7 @@ void arraylist_append(resizingArrayList_t *arrList, void *element) {
     arrList->data[arrList->size++] = element;
 }
 
-bool arraylist_remove(resizingArrayList_t *arrList, void *element) {
+bool arraylist_remove(resizingArrayList_t *arrList, const void *element) {
     int i = 0;
     while (i < arrList->size && arrList->data[i] != element) {
         i++;
@@ -173,13 +187,13 @@ bool arraylist_remove(resizingArrayList_t *arrList, void *element) {
     return true;
 }
 
-void *arraylist_get(resizingArrayList_t *arrList, int index) {
+void *arraylist_get(const resizingArrayList_t *arrList, const int index) {
     if (index >= arrList->size) {
         return NULL;
     }
     return arrList->data[index];
 }
 
-int arraylist_size(resizingArrayList_t *arrList) {
+int arraylist_size(const resizingArrayList_t *arrList) {
     return arrList->size;
 }

@@ -26,7 +26,7 @@ unsigned int futil_fileSize(futil_file_t *fp) {
     return n;
 }
 
-unsigned int futil_readBinary(futil_file_t *fp, uint32_t *buf, const int n) {
+unsigned int futil_readBinary(futil_file_t *fp, uint32_t *buf, const unsigned int n) {
     const unsigned int nRead = fread(buf, sizeof(uint32_t), n, fp);
     rewind(fp);
     return nRead;

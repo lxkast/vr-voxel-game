@@ -272,9 +272,9 @@ static void highlightInit(world_t *w) {
     glGenBuffers(1, &w->highlightVbo);
     glBindVertexArray(w->highlightVao);
     glBindBuffer(GL_ARRAY_BUFFER, w->highlightVbo);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *) 0);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
+    glVertexAttribIPointer(1, 2, GL_INT, 4 * sizeof(float), (void *) (3 * sizeof(float)));
     glEnableVertexAttribArray(1);
     glBindVertexArray(0);
 }
@@ -284,6 +284,8 @@ void world_init(world_t *w, const GLuint program) {
     w->clusterTable = NULL;
     fogInit(w, program);
     highlightInit(w);
+
+    w->numEntities = 0;
 }
 
 vec3 chunkBounds = {15.f, 15.f, 15.f};
@@ -467,6 +469,59 @@ void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, bl
     }
 }
 
+static world_entity_t createItemEntity(world_t *w, const vec3 pos, const item_e item) {
+    world_entity_t newWorldEntity;
+    newWorldEntity.type = ITEM;
+    entity_t *newEntity = malloc(sizeof(entity_t));
+    newEntity->position[0] = pos[0];
+    newEntity->position[1] = pos[1];
+    newEntity->position[2] = pos[2];
+    newEntity->acceleration[0] = 0;
+    newEntity->acceleration[1] = GRAVITY_ACCELERATION;
+    newEntity->acceleration[2] = 0;
+    newEntity->velocity[0] = 0;
+    newEntity->velocity[1] = 0;
+    newEntity->velocity[2] = 0;
+    newEntity->grounded = false;
+    newEntity->size[0] = 0.25f;
+    newEntity->size[0] = 0.25f;
+    newEntity->size[0] = 0.25f;
+    newEntity->yaw = 0.f;
+
+    newWorldEntity.entity = newEntity;
+    newWorldEntity.itemType = item;
+    return newWorldEntity;
+}
+
+void world_addEntity(world_t *w, const world_entity_e type, entity_t *entity, const item_e itemType) {
+    world_entity_t newEntity;
+    newEntity.type = type;
+    newEntity.entity = entity;
+    newEntity.itemType = itemType;
+    if (w->numEntities == MAX_NUM_ENTITIES) {
+        for (int i = 0; i < MAX_NUM_ENTITIES; i++) {
+            if (w->entities[i].type == ITEM) {
+                w->entities[i] = newEntity;
+                return;
+            }
+        }
+    } else {
+        w->entities[w->numEntities++] = newEntity;
+    }
+}
+
+void world_removeEntity(world_t *w, const int entityIndex) {
+    if (entityIndex >= w->numEntities) {
+        LOG_FATAL("Entity index out of range");
+    }
+
+    if (entityIndex == w->numEntities - 1) {
+        w->numEntities--;
+    } else {
+        w->entities[entityIndex] = w->entities[--w->numEntities];
+    }
+}
+
 bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
     block_t *bp;
     chunk_t *cp;
@@ -474,8 +529,13 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
 
     if (*bp == BL_AIR) return false;
 
+    const world_entity_t entity = createItemEntity(w, (vec3){(float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f}, BLOCK_TO_ITEM[*bp]);
+    world_addEntity(w, entity.type, entity.entity, entity.itemType);
+
     *bp = BL_AIR;
     cp->tainted = true;
+
+    return true;
 }
 
 bool world_placeBlock(world_t *w, int x, int y, int z, block_t block) {
@@ -487,6 +547,8 @@ bool world_placeBlock(world_t *w, int x, int y, int z, block_t block) {
 
     *bp = block;
     cp->tainted = true;
+
+    return true;
 }
 
 bool world_save(world_t *w, const char *dir) {
@@ -650,38 +712,30 @@ void world_highlightFace(world_t *w, camera_t *camera) {
     if (!res.found) {
         return;
     }
-    float *buffer = malloc(faceVerticesSize);
+    vertex_t *buffer = malloc(faceVerticesSize);
 
-    vec3 delta = {0.f, 0.f, 0.f};
+    vec3 delta = { 0.f, 0.f, 0.f };
+    memcpy(buffer, blockVertices[res.face], faceVerticesSize);
     switch (res.face) {
         case POS_X_FACE:
-            delta[0] += 0.01f;
-            memcpy(buffer, rightFaceVertices, faceVerticesSize);
+            delta[0] += 0.001f;
             break;
         case NEG_X_FACE:
-            delta[0] -= 0.01f;
-            memcpy(buffer, leftFaceVertices, faceVerticesSize);
+            delta[0] -= 0.001f;
             break;
         case POS_Y_FACE:
-            delta[1] += 0.01f;
-            memcpy(buffer, topFaceVertices, faceVerticesSize);
+            delta[1] += 0.001f;
             break;
         case NEG_Y_FACE:
-            delta[1] -= 0.01f;
-            memcpy(buffer, bottomFaceVertices, faceVerticesSize);
+            delta[1] -= 0.001f;
             break;
         case POS_Z_FACE:
-            delta[2] += 0.01f;
-            memcpy(buffer, frontFaceVertices, faceVerticesSize);
+            delta[2] += 0.001f;
             break;
         case NEG_Z_FACE:
-            delta[2] -= 0.01f;
-            memcpy(buffer, backFaceVertices, faceVerticesSize);
+            delta[2] -= 0.001f;
             break;
         default: LOG_FATAL("invalid face type");
-    }
-    for (int i = 0; i < 6; ++i) {
-        buffer[5 * i + 3] *= (TEXTURE_LENGTH / ATLAS_LENGTH);
     }
 
     glm_vec3_add(res.blockPosition, delta, res.blockPosition);
@@ -703,6 +757,15 @@ void world_drawHighlight(world_t *w, int modelLocation) {
 
     glUniformMatrix4fv(modelLocation, 1, GL_FALSE, w->highlightModel);
 
-    glDrawArrays(GL_TRIANGLES, 0, faceVerticesSize / (5 * sizeof(float)));
+    glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
+}
+
+void world_processAllEntities(world_t *w, const double dt) {
+    for (int i = 0; i < w->numEntities; i++) {
+        if (w->entities[i].type != NONE) {
+            w->entities[i].entity->acceleration[1] = GRAVITY_ACCELERATION;
+            processEntity(w, w->entities[i].entity, dt);
+        }
+    }
 }

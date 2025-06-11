@@ -2,9 +2,11 @@
 
 #include <cglm/cglm.h>
 #include <stdbool.h>
-#include "world.h"
+#include "block.h"
 
-typedef struct {
+typedef struct world_t world_t;
+
+typedef struct entity_t {
     vec3 position;
     vec3 velocity;
     vec3 size;
@@ -23,6 +25,10 @@ typedef struct {
     blockData_t data;
     aabb_t aabb;
 } blockBounding_t;
+
+extern void world_getBlocksInRange(world_t *w, vec3 minPoint, const vec3 maxPoint, blockData_t buf[]);
+
+extern bool world_getBlock(world_t *w, vec3 position, blockData_t *bd);
 
 /**
  * @brief Determines if two bounding boxes intersect in the X-axis
@@ -60,3 +66,5 @@ void processEntity(world_t *w, entity_t *entity, double dt);
  * @param dest the vector to store the result in
  */
 void glm_vec3_ceil(vec3 v, vec3 dest);
+
+bool entitiesIntersect(entity_t entity1, entity_t entity2);

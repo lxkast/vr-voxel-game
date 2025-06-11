@@ -12,6 +12,9 @@
 *.aux
 *.dvi
 *.ps
+*.fls
+*.fdb_latexmk
+*.synctex.gz
 
 #ignore junk files from compiling C code
 *.o
