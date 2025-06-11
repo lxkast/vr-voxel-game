@@ -219,10 +219,27 @@ void world_highlightFace(world_t *w, camera_t *camera);
 */
 void world_drawHighlight(world_t *w, int modelLocation);
 
+/**
+ * @brief Updates all entities and their positions/velcities
+ * @param w A pointer to a world
+ * @param dt the time since the function was last run
+ */
 void world_processAllEntities(world_t *w, double dt);
 
+/**
+ * @brief Adds an entity to the world
+ * @param w A pointer to a world
+ * @param type The type of entity
+ * @param entity The actual entity
+ * @param itemType The type of item, if the entity's type is ITEM
+ */
 void world_addEntity(world_t *w, world_entity_e type, entity_t *entity, item_e itemType);
 
+/**
+ * @brief Removes an entity from the world
+ * @param w A pointer to a world
+ * @param entityIndex The index of the entity in the world entity array
+ */
 void world_removeItemEntity(world_t *w, int entityIndex);
 
 void world_drawAllEntities(world_t *w, int modelLocation);

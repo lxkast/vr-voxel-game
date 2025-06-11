@@ -406,6 +406,12 @@ static void meshItemEntity(world_entity_t *e) {
     free(mesh);
 }
 
+/**
+ * @brief Generates a random number in the range (min, max)
+ * @param min The minimum value the random number can take
+ * @param max The maximum value the random number can take
+ * @return the random number
+ */
 float getRandRange(const float min, const float max) {
     return min + (max - min) * ((float)rand() / RAND_MAX);
 }
