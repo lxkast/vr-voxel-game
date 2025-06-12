@@ -483,7 +483,7 @@ static void meshItemEntity(worldEntity_t *e) {
     glEnableVertexAttribArray(1);
     float *mesh = malloc(itemBlockVerticesSize);
     memcpy(mesh, itemBlockVertices, itemBlockVerticesSize);
-    block_t type = ITEM_TO_BLOCK[e->itemType];
+    const block_t type = ITEM_TO_BLOCK[e->itemType];
     for (int i = 0; i < 36; ++i) {
         mesh[5 * i + 0] *= e->entity->size[0];
         mesh[5 * i + 1] *= e->entity->size[1];
@@ -508,7 +508,7 @@ float getRandRange(const float min, const float max) {
 
 static worldEntity_t createItemEntity(world_t *w, const vec3 pos, const item_e item) {
     worldEntity_t newWorldEntity;
-    newWorldEntity.type = ITEM;
+    newWorldEntity.type = WE_ITEM;
     entity_t *newEntity = malloc(sizeof(entity_t));
     newEntity->position[0] = pos[0];
     newEntity->position[1] = pos[1];
@@ -535,15 +535,13 @@ static worldEntity_t createItemEntity(world_t *w, const vec3 pos, const item_e i
 /**
  * @brief Adds an entity to the world
  * @param w A pointer to a world
- * @param type The type of entity
- * @param entity The actual entity
- * @param itemType The type of item, if the entity's type is ITEM
+ * @param entity The world entity to add
  */
 void world_addEntity(world_t *w, const worldEntity_t entity) {
     if (w->numEntities == MAX_NUM_ENTITIES) {
         for (int i = 0; i < MAX_NUM_ENTITIES; i++) {
             const int entityIndex = (w->oldestItem + i) % w->numEntities;
-            if (w->entities[entityIndex].type == ITEM) {
+            if (w->entities[entityIndex].type == WE_ITEM) {
                 w->entities[entityIndex] = entity;
                 w->oldestItem = entityIndex+1;
                 return;
@@ -564,7 +562,7 @@ void world_removeItemEntity(world_t *w, const int entityIndex) {
         LOG_FATAL("Entity index out of range");
     }
 
-    if (w->entities[entityIndex].type == ITEM) {
+    if (w->entities[entityIndex].type == WE_ITEM) {
         freeEntity(&w->entities[entityIndex]);
     }
 
@@ -817,7 +815,7 @@ void world_drawHighlight(const world_t *w, const int modelLocation) {
 
 void world_processAllEntities(world_t *w, const double dt) {
     for (int i = 0; i < w->numEntities; i++) {
-        if (w->entities[i].type != NONE) {
+        if (w->entities[i].type != WE_NONE) {
             w->entities[i].entity->acceleration[1] = GRAVITY_ACCELERATION;
             processEntity(w, w->entities[i].entity, dt);
         }
@@ -826,7 +824,7 @@ void world_processAllEntities(world_t *w, const double dt) {
 
 void world_drawAllEntities(const world_t *w, const int modelLocation) {
     for (int i = 0; i < w->numEntities; i++) {
-        if (w->entities[i].type == ITEM) {
+        if (w->entities[i].type == WE_ITEM) {
             mat4 model;
             glm_translate_make(model, w->entities[i].entity->position);
             glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
