@@ -33,10 +33,10 @@ void player_init(world_t *w, player_t *p) {
         world_getBlock(w, start, &bd);
         if (bd.type != BL_AIR) {
             break;
-        } else {
-            start[1]--;
         }
+        start[1]--;
     }
+
     *p = (player_t){
         .entity = {
             .position = {start[0], start[1]+1.2f, start[2]},
@@ -50,12 +50,12 @@ void player_init(world_t *w, player_t *p) {
         .cameraOffset = {0.3f, 1.6f, 0.3f},
         .hotbar = {
             .slots = {
+                {ITEM_PICKAXE, 1},
+                {ITEM_AXE, 1},
+                {ITEM_SHOVEL, 1},
                 {ITEM_DIRT, 64},
                 {ITEM_GRASS, 32},
                 {ITEM_STONE, 16},
-                {NOTHING, 0},
-                {NOTHING, 0},
-                {NOTHING, 0},
                 {NOTHING, 0},
                 {NOTHING, 0},
                 {NOTHING, 0}
@@ -127,13 +127,17 @@ void player_mineBlock(player_t *p, world_t *w, const double dt) {
 
     blockData_t block;
     if (world_getBlock(w, raycastBlock.blockPosition, &block)) {
+        double timeInc = dt;
+        if (p->hotbar.currentSlot->type == BLOCK_TO_TOOL[block.type]) {
+            timeInc *= ITEM_PROPERTIES[p->hotbar.currentSlot->type].miningBoost;
+        }
         if (glm_vec3_eqv(raycastBlock.blockPosition, p->miningBlockPos)) {
             LOG_DEBUG("Blocks are equal, adding dt");
-            p->currMiningTime += dt;
+            p->currMiningTime += timeInc;
             LOG_DEBUG("mining time is %f", p->currMiningTime);
         } else {
             glm_vec3_copy(raycastBlock.blockPosition, p->miningBlockPos);
-            p->currMiningTime = dt;
+            p->currMiningTime = timeInc;
         }
 
         LOG_DEBUG("mining time is %f", TIME_TO_MINE_BLOCK[block.type]);
