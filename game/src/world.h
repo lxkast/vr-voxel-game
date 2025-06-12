@@ -229,11 +229,9 @@ void world_processAllEntities(world_t *w, double dt);
 /**
  * @brief Adds an entity to the world
  * @param w A pointer to a world
- * @param type The type of entity
- * @param entity The actual entity
- * @param itemType The type of item, if the entity's type is ITEM
+ * @param we A world entity
  */
-void world_addEntity(world_t *w, world_entity_e type, entity_t *entity, item_e itemType);
+void world_addEntity(world_t *w, world_entity_t we);
 
 /**
  * @brief Removes an entity from the world

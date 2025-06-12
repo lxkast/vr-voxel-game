@@ -287,7 +287,6 @@ int main(void) {
     player_t player;
     player_init(&world, &player);
 
-    world_addEntity(&world, PLAYER, &player.entity, NONE);
 
     postProcess_t postProcess;
     postProcess_init(&postProcess, postProcessProgram, screenWidth, screenHeight);

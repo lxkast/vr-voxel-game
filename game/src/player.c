@@ -13,6 +13,16 @@ static bool onBlockCooldown(player_t *p) {
     return glfwGetTime() < p->blockCooldown;
 }
 
+static void player_addToWorld(player_t *p, world_t *w) {
+    world_addEntity(w, (world_entity_t){
+        .type = PLAYER,
+        .entity = &p->entity,
+        .itemType = -1,
+        .vao = -1,
+        .vbo = -1
+    });
+}
+
 void player_init(world_t *w, player_t *p) {
     vec3 start = {0.f, 50.f, 0.f};
 
@@ -53,6 +63,7 @@ void player_init(world_t *w, player_t *p) {
     };
 
     p->hotbar.currentSlot = &(p->hotbar.slots[0]);
+    player_addToWorld(p, w);
 }
 
 void player_attachCamera(player_t *p, camera_t *camera) {
