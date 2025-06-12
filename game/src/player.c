@@ -19,15 +19,12 @@ void player_init(world_t *w, player_t *p) {
     while (true) {
         blockData_t bd;
         world_getBlock(w, start, &bd);
-        printf("Start[1]: %f", start[1]);
         if (bd.type != BL_AIR) {
             break;
         } else {
-            printf("Start[1]: %f", start[1]);
             start[1]--;
         }
     }
-    printf("Start[2]: %f", start[2]);
     *p = (player_t){
         .entity = {
             .position = {start[0], start[1]+1.2f, start[2]},
