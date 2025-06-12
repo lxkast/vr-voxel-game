@@ -5,6 +5,7 @@
 #include "camera.h"
 #include "chunk.h"
 #include "item.h"
+#include "player.h"
 #include "uthash.h"
 
 #define MAX_CHUNKS 256
@@ -20,6 +21,7 @@
 #define GRAVITY_ACCELERATION (-10.f)
 
 #define MAX_NUM_ENTITIES 64
+#define MAX_NUM_PLAYERS 4
 
 typedef struct entity_t entity_t;
 
@@ -60,6 +62,9 @@ typedef struct world_t {
     int numEntities;
     worldEntity_t entities[MAX_NUM_ENTITIES];
     int oldestItem;
+    int numPlayers;
+    /// Stores pointers to all current players in the world
+    worldEntity_t *players[MAX_NUM_PLAYERS];
 } world_t;
 
 /**

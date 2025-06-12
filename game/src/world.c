@@ -12,6 +12,7 @@
 
 #define MAX_RAYCAST_DISTANCE 6.f
 #define RAYCAST_STEP_MAGNITUDE 0.1f
+#define BLOCK_RENDER_DISTANCE 25.f
 
 /**
  * @brief Key for hash table
@@ -289,6 +290,7 @@ void world_init(world_t *w, const GLuint program) {
 
     w->numEntities = 0;
     w->oldestItem = 0;
+    w->numPlayers = 0;
 }
 
 vec3 chunkBounds = {15.f, 15.f, 15.f};
@@ -537,18 +539,35 @@ static worldEntity_t createItemEntity(world_t *w, const vec3 pos, const item_e i
  * @param w A pointer to a world
  * @param entity The world entity to add
  */
-void world_addEntity(world_t *w, const worldEntity_t entity) {
+void world_addEntity(world_t *w, worldEntity_t entity) {
     if (w->numEntities == MAX_NUM_ENTITIES) {
         for (int i = 0; i < MAX_NUM_ENTITIES; i++) {
             const int entityIndex = (w->oldestItem + i) % w->numEntities;
             if (w->entities[entityIndex].type == WE_ITEM) {
                 w->entities[entityIndex] = entity;
+                w->entities[entityIndex];
                 w->oldestItem = entityIndex+1;
+                if (entity.type == WE_PLAYER) {
+                    if (w->numPlayers < MAX_NUM_PLAYERS) {
+                        w->players[w->numPlayers++] = &w->entities[entityIndex];
+                        LOG_DEBUG("Added Player Entity");
+                    } else {
+                        LOG_FATAL("Max number of players reached, cannot add another");
+                    }
+                }
                 return;
             }
         }
     } else {
         w->entities[w->numEntities++] = entity;
+        if (entity.type == WE_PLAYER) {
+            if (w->numPlayers < MAX_NUM_PLAYERS) {
+                w->players[w->numPlayers++] = &w->entities[w->numEntities-1];
+                LOG_DEBUG("Added Player Entity");
+            } else {
+                LOG_FATAL("Max number of players reached, cannot add another");
+            }
+        }
     }
 }
 
@@ -825,12 +844,23 @@ void world_processAllEntities(world_t *w, const double dt) {
 void world_drawAllEntities(const world_t *w, const int modelLocation) {
     for (int i = 0; i < w->numEntities; i++) {
         if (w->entities[i].type == WE_ITEM) {
-            mat4 model;
-            glm_translate_make(model, w->entities[i].entity->position);
-            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
-            glBindVertexArray(w->entities[i].vao);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-            glBindVertexArray(0);
+            bool drawItem = false;
+
+            for (int j = 0; j < w->numPlayers; j++) {
+                if (glm_vec3_distance(w->entities[i].entity->position, w->players[j]->entity->position) <= BLOCK_RENDER_DISTANCE) {
+                    drawItem = true;
+                    break;
+                }
+            }
+
+            if (drawItem) {
+                mat4 model;
+                glm_translate_make(model, w->entities[i].entity->position);
+                glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
+                glBindVertexArray(w->entities[i].vao);
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+                glBindVertexArray(0);
+            }
         }
     }
 }
