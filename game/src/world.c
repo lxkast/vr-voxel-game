@@ -472,7 +472,7 @@ void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, bl
     }
 }
 
-static void meshItemEntity(world_entity_t *e) {
+static void meshItemEntity(worldEntity_t *e) {
     glGenVertexArrays(1, &e->vao);
     glGenBuffers(1, &e->vbo);
     glBindBuffer(GL_ARRAY_BUFFER, e->vbo);
@@ -506,8 +506,8 @@ float getRandRange(const float min, const float max) {
     return min + (max - min) * ((float)rand() / RAND_MAX);
 }
 
-static world_entity_t createItemEntity(world_t *w, const vec3 pos, const item_e item) {
-    world_entity_t newWorldEntity;
+static worldEntity_t createItemEntity(world_t *w, const vec3 pos, const item_e item) {
+    worldEntity_t newWorldEntity;
     newWorldEntity.type = ITEM;
     entity_t *newEntity = malloc(sizeof(entity_t));
     newEntity->position[0] = pos[0];
@@ -539,7 +539,7 @@ static world_entity_t createItemEntity(world_t *w, const vec3 pos, const item_e 
  * @param entity The actual entity
  * @param itemType The type of item, if the entity's type is ITEM
  */
-void world_addEntity(world_t *w, const world_entity_t entity) {
+void world_addEntity(world_t *w, const worldEntity_t entity) {
     if (w->numEntities == MAX_NUM_ENTITIES) {
         for (int i = 0; i < MAX_NUM_ENTITIES; i++) {
             const int entityIndex = (w->oldestItem + i) % w->numEntities;
@@ -554,7 +554,7 @@ void world_addEntity(world_t *w, const world_entity_t entity) {
     }
 }
 
-static void freeEntity(const world_entity_t *e) {
+static void freeEntity(const worldEntity_t *e) {
     glDeleteBuffers(1, &e->vbo);
     glDeleteVertexArrays(1, &e->vao);
 }
@@ -583,7 +583,7 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
 
     if (*bp == BL_AIR) return false;
 
-    const world_entity_t entity = createItemEntity(w, (vec3){(float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f}, BLOCK_TO_ITEM[*bp]);
+    const worldEntity_t entity = createItemEntity(w, (vec3){(float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f}, BLOCK_TO_ITEM[*bp]);
     world_addEntity(w, entity);
 
     *bp = BL_AIR;

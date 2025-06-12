@@ -28,17 +28,17 @@ typedef enum {
     PLAYER,
     ITEM,
     // MOB,   (Not implemented yet)
-} world_entity_e;
+} worldEntity_e;
 
 typedef struct {
-    world_entity_e type;
+    worldEntity_e type;
     entity_t *entity;
     /// This is only checked if 'type' is ITEM
     item_e itemType;
     /// Entity VAO and VBO, currently only used for 'item' entities
     GLuint vao;
     GLuint vbo;
-} world_entity_t;
+} worldEntity_t;
 
 /**
  * @brief A struct that holds data about the world.
@@ -56,7 +56,7 @@ typedef struct world_t {
     mat4 highlightModel;
     bool highlightFound;
     int numEntities;
-    world_entity_t entities[MAX_NUM_ENTITIES];
+    worldEntity_t entities[MAX_NUM_ENTITIES];
     int oldestItem;
 } world_t;
 
@@ -231,7 +231,7 @@ void world_processAllEntities(world_t *w, double dt);
  * @param w A pointer to a world
  * @param we A world entity
  */
-void world_addEntity(world_t *w, world_entity_t we);
+void world_addEntity(world_t *w, worldEntity_t we);
 
 /**
  * @brief Removes an entity from the world
