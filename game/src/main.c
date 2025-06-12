@@ -30,7 +30,7 @@
 
 static double previousMouse[2];
 
-static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
+static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w, const double dt) {
     vec3 acceleration = { 0.f, GRAVITY_ACCELERATION, 0.f };
 
     const float sprintMultiplier = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? SPRINT_MULTIPLIER : 1.f ;
@@ -71,7 +71,7 @@ static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w)
     }
 
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-        player_removeBlock(player, w);
+        player_mineBlock(player, w, dt);
     } else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
         player_placeBlock(player, w);
     }
@@ -299,7 +299,7 @@ int main(void) {
         analytics_startFrame(&analytics);
         glUseProgram(program);
         processInput(window, projection);
-        processPlayerInput(window, &player, &world);
+        processPlayerInput(window, &player, &world, analytics.dt);
         processCameraInput(window, &camera);
         world_doChunkLoading(&world);
 

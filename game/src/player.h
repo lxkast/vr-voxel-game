@@ -34,7 +34,7 @@ typedef struct {
     /// The block the player is currently mining
     vec3 miningBlockPos;
     /// How long the player has been mining for
-    float currMiningTime;
+    double currMiningTime;
 } player_t;
 
 /**
@@ -58,3 +58,5 @@ void player_placeBlock(player_t *p, world_t *w);
 void player_printHotbar(const player_t *p);
 
 void player_pickUpItemsCheck(player_t *p, world_t *w);
+
+void player_mineBlock(player_t *p, world_t *w, double dt);

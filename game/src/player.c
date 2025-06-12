@@ -5,6 +5,8 @@
 
 static const int faceToBlock[6][3] = {{-1,0,0}, {1,0,0}, {0,-1,0}, {0,1,0}, {0,0,-1}, {0,0,1} };
 
+static const vec3 INVALID_BLOCK_POSITION = {0.1f, 0.1f, 0.1f};
+
 static void setBlockCooldown(player_t *p) {
     p->blockCooldown = glfwGetTime() + BLOCK_COOLDOWN_TIME;
 }
@@ -62,7 +64,7 @@ void player_init(world_t *w, player_t *p) {
         },
         // Using an invalid block position to avoid errors
         .miningBlockPos = {0.1f, 0.1f, 0.1f},
-        .miningCompletion = 0,
+        .currMiningTime = 0,
     };
 
     p->hotbar.currentSlot = &(p->hotbar.slots[0]);
@@ -113,11 +115,7 @@ void player_removeBlock(player_t *p, world_t *w) {
     }
 }
 
-void player_mineBlock(player_t *p, world_t *w) {
-    if (onBlockCooldown(p)) {
-        return;
-    }
-
+void player_mineBlock(player_t *p, world_t *w, const double dt) {
     vec3 camPos;
 
     glm_vec3_add(p->entity.position, p->cameraOffset, camPos);
@@ -127,9 +125,27 @@ void player_mineBlock(player_t *p, world_t *w) {
 
     const raycast_t raycastBlock = world_raycast(w, camPos, lookVector);
 
-    if (raycastBlock.found) {
-        world_removeBlock(w,(int)raycastBlock.blockPosition[0], (int)raycastBlock.blockPosition[1], (int)raycastBlock.blockPosition[2]);
-        setBlockCooldown(p);
+    blockData_t block;
+    if (world_getBlock(w, raycastBlock.blockPosition, &block)) {
+        if (glm_vec3_eqv(raycastBlock.blockPosition, p->miningBlockPos)) {
+            LOG_DEBUG("Blocks are equal, adding dt");
+            p->currMiningTime += dt;
+            LOG_DEBUG("mining time is %f", p->currMiningTime);
+        } else {
+            glm_vec3_copy(raycastBlock.blockPosition, p->miningBlockPos);
+            p->currMiningTime = dt;
+        }
+
+        LOG_DEBUG("mining time is %f", TIME_TO_MINE_BLOCK[block.type]);
+
+        if (p->currMiningTime > TIME_TO_MINE_BLOCK[block.type]) {
+            LOG_DEBUG("Removing Block");
+            world_removeBlock(w, block.x, block.y, block.z);
+        }
+
+    } else {
+        glm_vec3_copy(INVALID_BLOCK_POSITION, p->miningBlockPos);
+        p->currMiningTime = 0;
     }
 }
 

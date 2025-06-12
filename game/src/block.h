@@ -12,8 +12,8 @@ typedef enum {
     BL_LEAF
 } block_t;
 
-const float TIME_TO_MINE_BLOCK[] = {
-    [BL_AIR] = 0,
+static const float TIME_TO_MINE_BLOCK[] = {
+    [BL_AIR] = 0.f,
     [BL_GRASS] = 0.5f,
     [BL_DIRT] = 0.5f,
     [BL_SAND] = 0.4f,
