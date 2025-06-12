@@ -12,7 +12,7 @@
 
 #define MAX_RAYCAST_DISTANCE 6.f
 #define RAYCAST_STEP_MAGNITUDE 0.1f
-#define BLOCK_RENDER_DISTANCE 25.f
+#define BLOCK_DERENDER_DISTANCE 50.f
 
 /**
  * @brief Key for hash table
@@ -835,6 +835,14 @@ void world_drawHighlight(const world_t *w, const int modelLocation) {
 void world_processAllEntities(world_t *w, const double dt) {
     for (int i = 0; i < w->numEntities; i++) {
         if (w->entities[i].type != WE_NONE) {
+            if (w->entities[i].type == WE_ITEM) {
+                for (int j = 0; j < w->numPlayers; j++) {
+                    if (glm_vec3_distance(w->entities[i].entity->position, w->players[j]->entity->position) > BLOCK_DERENDER_DISTANCE) {
+                        world_removeItemEntity(w, i);
+                        i--;
+                    }
+                }
+            }
             w->entities[i].entity->acceleration[1] = GRAVITY_ACCELERATION;
             processEntity(w, w->entities[i].entity, dt);
         }
@@ -844,23 +852,12 @@ void world_processAllEntities(world_t *w, const double dt) {
 void world_drawAllEntities(const world_t *w, const int modelLocation) {
     for (int i = 0; i < w->numEntities; i++) {
         if (w->entities[i].type == WE_ITEM) {
-            bool drawItem = false;
-
-            for (int j = 0; j < w->numPlayers; j++) {
-                if (glm_vec3_distance(w->entities[i].entity->position, w->players[j]->entity->position) <= BLOCK_RENDER_DISTANCE) {
-                    drawItem = true;
-                    break;
-                }
-            }
-
-            if (drawItem) {
-                mat4 model;
-                glm_translate_make(model, w->entities[i].entity->position);
-                glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
-                glBindVertexArray(w->entities[i].vao);
-                glDrawArrays(GL_TRIANGLES, 0, 36);
-                glBindVertexArray(0);
-            }
+            mat4 model;
+            glm_translate_make(model, w->entities[i].entity->position);
+            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
+            glBindVertexArray(w->entities[i].vao);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+            glBindVertexArray(0);
         }
     }
 }
