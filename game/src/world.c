@@ -293,27 +293,54 @@ void world_init(world_t *w, const GLuint program) {
 
 vec3 chunkBounds = {15.f, 15.f, 15.f};
 
-// Note - we assume lookVector is normalised
-static bool isChunkInFrontOfCamera(camera_t *cam, const chunk_t *chunk) {
-    vec3 chunkCenter;
-    chunkCenter[0] = (float)(chunk->cx << 4) + 8.f;
-    chunkCenter[1] = (float)(chunk->cy << 4) + 8.f;
-    chunkCenter[2] = (float)(chunk->cz << 4) + 8.f;
-
-    vec3 toChunk;
-    glm_vec3_sub(chunkCenter, cam->eye, toChunk);
-
-    const float dot = glm_vec3_dot(toChunk, cam->ruf[2]);
-
-    return dot < 16.f;
+static bool completelyOutsidePlane(double plane[4], const chunk_t *chunk) {
+    double testPoint[3] = {
+        (chunk->cx << 4) + (plane[0] > 0 ? 16 : 0),
+        (chunk->cy << 4) + (plane[1] > 0 ? 16 : 0),
+        (chunk->cz << 4) + (plane[2] > 0 ? 16 : 0),
+    };
+    double dot = testPoint[0] * plane[0] + testPoint[1] * plane[1] + testPoint[2] * plane[2];
+    return dot < -plane[3];
 }
 
-void world_draw(const world_t *w, const int modelLocation, camera_t *cam) {
+// Note - we assume lookVector is normalised
+static bool shouldRender(camera_t *cam, const chunk_t *chunk, double planes[6][4]) {
+    for (int i = 0; i < 6; i++) {
+        if (completelyOutsidePlane(planes[i], chunk)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static void calculatePlanes(camera_t *cam, mat4 projection, double res[6][4]) {
+    mat4 view;
+    camera_createView(cam, view);
+    mat4 projview;
+    glm_mat4_mul(projection, view, projview);
+
+    for (int i = 0; i < 3; i++) {
+        res[i*2][0] = projview[0][3] + projview[0][i];
+        res[i*2][1] = projview[1][3] + projview[1][i];
+        res[i*2][2] = projview[2][3] + projview[2][i];
+        res[i*2][3] = projview[3][3] + projview[3][i];
+
+        res[i*2+1][0] = projview[0][3] - projview[0][i];
+        res[i*2+1][1] = projview[1][3] - projview[1][i];
+        res[i*2+1][2] = projview[2][3] - projview[2][i];
+        res[i*2+1][3] = projview[3][3] - projview[3][i];
+    }
+}
+
+void world_draw(const world_t *w, const int modelLocation, camera_t *cam, mat4 projection) {
     cluster_t *cluster, *tmp;
+    double planes[6][4];
+    calculatePlanes(cam, projection, planes);
+
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
         for (int i = 0; i < C_T * C_T * C_T; i++) {
             if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
-            const bool renderingChunk = isChunkInFrontOfCamera(cam, cluster->cells[i].chunk);
+            const bool renderingChunk = shouldRender(cam, cluster->cells[i].chunk, planes);
 
             if (cluster->cells[i].chunk && renderingChunk) {
                 chunk_draw(cluster->cells[i].chunk, modelLocation);
