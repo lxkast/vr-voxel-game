@@ -282,8 +282,10 @@ int main(void) {
     world_updateChunkLoader(&world, spawnLoader, GLM_VEC3_ZERO);
     world_updateChunkLoader(&world, cameraLoader, GLM_VEC3_ZERO);
 
+    world_doChunkLoading(&world);
+
     player_t player;
-    player_init(&player);
+    player_init(&world, &player);
 
     world_addEntity(&world, PLAYER, &player.entity, NONE);
 
@@ -293,7 +295,6 @@ int main(void) {
     analytics_t analytics;
     analytics_init(&analytics);
     double fpsDisplayAcc = 0;
-
 
     while (!glfwWindowShouldClose(window)) {
         analytics_startFrame(&analytics);
