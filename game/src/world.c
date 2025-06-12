@@ -472,7 +472,7 @@ void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, bl
     }
 }
 
-static void meshItemEntity(world_entity_t *e) {
+static void meshItemEntity(worldEntity_t *e) {
     glGenVertexArrays(1, &e->vao);
     glGenBuffers(1, &e->vbo);
     glBindBuffer(GL_ARRAY_BUFFER, e->vbo);
@@ -506,8 +506,8 @@ float getRandRange(const float min, const float max) {
     return min + (max - min) * ((float)rand() / RAND_MAX);
 }
 
-static world_entity_t createItemEntity(world_t *w, const vec3 pos, const item_e item) {
-    world_entity_t newWorldEntity;
+static worldEntity_t createItemEntity(world_t *w, const vec3 pos, const item_e item) {
+    worldEntity_t newWorldEntity;
     newWorldEntity.type = ITEM;
     entity_t *newEntity = malloc(sizeof(entity_t));
     newEntity->position[0] = pos[0];
@@ -531,26 +531,30 @@ static world_entity_t createItemEntity(world_t *w, const vec3 pos, const item_e 
     return newWorldEntity;
 }
 
-void world_addEntity(world_t *w, const world_entity_e type, entity_t *entity, const item_e itemType) {
-    world_entity_t newEntity;
-    newEntity.type = type;
-    newEntity.entity = entity;
-    newEntity.itemType = itemType;
+
+/**
+ * @brief Adds an entity to the world
+ * @param w A pointer to a world
+ * @param type The type of entity
+ * @param entity The actual entity
+ * @param itemType The type of item, if the entity's type is ITEM
+ */
+void world_addEntity(world_t *w, const worldEntity_t entity) {
     if (w->numEntities == MAX_NUM_ENTITIES) {
         for (int i = 0; i < MAX_NUM_ENTITIES; i++) {
             const int entityIndex = (w->oldestItem + i) % w->numEntities;
             if (w->entities[entityIndex].type == ITEM) {
-                w->entities[entityIndex] = newEntity;
+                w->entities[entityIndex] = entity;
                 w->oldestItem = entityIndex+1;
                 return;
             }
         }
     } else {
-        w->entities[w->numEntities++] = newEntity;
+        w->entities[w->numEntities++] = entity;
     }
 }
 
-static void freeEntity(const world_entity_t *e) {
+static void freeEntity(const worldEntity_t *e) {
     glDeleteBuffers(1, &e->vbo);
     glDeleteVertexArrays(1, &e->vao);
 }
@@ -579,8 +583,8 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
 
     if (*bp == BL_AIR) return false;
 
-    const world_entity_t entity = createItemEntity(w, (vec3){(float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f}, BLOCK_TO_ITEM[*bp]);
-    world_addEntity(w, entity.type, entity.entity, entity.itemType);
+    const worldEntity_t entity = createItemEntity(w, (vec3){(float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f}, BLOCK_TO_ITEM[*bp]);
+    world_addEntity(w, entity);
 
     *bp = BL_AIR;
     cp->tainted = true;
