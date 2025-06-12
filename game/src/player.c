@@ -59,7 +59,10 @@ void player_init(world_t *w, player_t *p) {
                 {NOTHING, 0}
             },
             .currentSlotIndex = 0
-        }
+        },
+        // Using an invalid block position to avoid errors
+        .miningBlockPos = {0.1f, 0.1f, 0.1f},
+        .miningCompletion = 0,
     };
 
     p->hotbar.currentSlot = &(p->hotbar.slots[0]);
@@ -99,6 +102,26 @@ void player_removeBlock(player_t *p, world_t *w) {
     glm_vec3_add(p->entity.position, p->cameraOffset, camPos);
 
     // remove minus sign later
+    vec3 lookVector;
+    glm_vec3_scale(p->lookVector, -1, lookVector);
+
+    const raycast_t raycastBlock = world_raycast(w, camPos, lookVector);
+
+    if (raycastBlock.found) {
+        world_removeBlock(w,(int)raycastBlock.blockPosition[0], (int)raycastBlock.blockPosition[1], (int)raycastBlock.blockPosition[2]);
+        setBlockCooldown(p);
+    }
+}
+
+void player_mineBlock(player_t *p, world_t *w) {
+    if (onBlockCooldown(p)) {
+        return;
+    }
+
+    vec3 camPos;
+
+    glm_vec3_add(p->entity.position, p->cameraOffset, camPos);
+
     vec3 lookVector;
     glm_vec3_scale(p->lookVector, -1, lookVector);
 

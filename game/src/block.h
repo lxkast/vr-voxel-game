@@ -12,6 +12,16 @@ typedef enum {
     BL_LEAF
 } block_t;
 
+const float TIME_TO_MINE_BLOCK[] = {
+    [BL_AIR] = 0,
+    [BL_GRASS] = 0.5f,
+    [BL_DIRT] = 0.5f,
+    [BL_SAND] = 0.4f,
+    [BL_STONE] = 3.f,
+    [BL_LOG] = 1.f,
+    [BL_LEAF] = 0.1f
+};
+
 /**
  * @brief Struct that holds data about a single block.
  */

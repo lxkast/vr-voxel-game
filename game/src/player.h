@@ -31,6 +31,10 @@ typedef struct {
     double blockCooldown;
     /// The player's hotbar
     hotbar_t hotbar;
+    /// The block the player is currently mining
+    vec3 miningBlockPos;
+    /// How long the player has been mining for
+    float currMiningTime;
 } player_t;
 
 /**

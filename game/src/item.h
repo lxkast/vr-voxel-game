@@ -24,7 +24,7 @@ typedef struct {
     bool isTool;
     /// the maximum number of the item in a stack
     int maxStackSize;
-    /// the durability of the item (if it is a tool)
+    /// the durability of the item (if it is a tool).
     /// -1 means N/A - otherwise decreases by 1 each time it is used
     int durability;
     /// Any other flags (yet to be implemented)
