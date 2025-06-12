@@ -58,7 +58,7 @@ void player_init(world_t *w, player_t *p) {
                 {ITEM_STONE, 16},
                 {NOTHING, 0},
                 {NOTHING, 0},
-                {NOTHING, 0}
+                {NOTHING, 0},
             },
             .currentSlotIndex = 0
         },
@@ -94,27 +94,6 @@ void player_attachCamera(player_t *p, camera_t *camera) {
     glm_vec3_copy(camera->ruf[2], p->lookVector);
 }
 
-void player_removeBlock(player_t *p, world_t *w) {
-    if (onBlockCooldown(p)) {
-        return;
-    }
-
-    vec3 camPos;
-
-    glm_vec3_add(p->entity.position, p->cameraOffset, camPos);
-
-    // remove minus sign later
-    vec3 lookVector;
-    glm_vec3_scale(p->lookVector, -1, lookVector);
-
-    const raycast_t raycastBlock = world_raycast(w, camPos, lookVector);
-
-    if (raycastBlock.found) {
-        world_removeBlock(w,(int)raycastBlock.blockPosition[0], (int)raycastBlock.blockPosition[1], (int)raycastBlock.blockPosition[2]);
-        setBlockCooldown(p);
-    }
-}
-
 void player_mineBlock(player_t *p, world_t *w, const double dt) {
     vec3 camPos;
 
@@ -132,19 +111,16 @@ void player_mineBlock(player_t *p, world_t *w, const double dt) {
             timeInc *= ITEM_PROPERTIES[p->hotbar.currentSlot->type].miningBoost;
         }
         if (glm_vec3_eqv(raycastBlock.blockPosition, p->miningBlockPos)) {
-            LOG_DEBUG("Blocks are equal, adding dt");
             p->currMiningTime += timeInc;
-            LOG_DEBUG("mining time is %f", p->currMiningTime);
         } else {
             glm_vec3_copy(raycastBlock.blockPosition, p->miningBlockPos);
             p->currMiningTime = timeInc;
         }
 
-        LOG_DEBUG("mining time is %f", TIME_TO_MINE_BLOCK[block.type]);
-
         if (p->currMiningTime > TIME_TO_MINE_BLOCK[block.type]) {
-            LOG_DEBUG("Removing Block");
             world_removeBlock(w, block.x, block.y, block.z);
+            glm_vec3_copy(INVALID_BLOCK_POSITION, p->miningBlockPos);
+            p->currMiningTime = 0;
         }
 
     } else {
@@ -195,11 +171,6 @@ static void repN(const char ch, const unsigned long long num) {
     }
 }
 
-/**
- * @brief This displays the player's hotbar in the terminal. This is so
- *        the code can be tested before we implement the hotbar visually.
- * @param p the player whose hotbar we want to print
- */
 void player_printHotbar(const player_t *p) {
     char printStrings[9][30];
 
