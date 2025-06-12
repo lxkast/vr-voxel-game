@@ -3,6 +3,31 @@
 #include "math.h"
 #include <cglm/cglm.h>
 
+/**
+ * @brief A mixer function
+ * @note https://gee.cs.oswego.edu/dl/papers/oopsla14.pdf
+ * @param rng The random number generator
+ * @return The new number
+ */
+static uint64_t mix64(rng_t *rng) {
+    uint64_t z = rng->state += 0x9E3779B97F4A7C15ULL;
+    z = (z ^ z >> 30) * 0xBF58476D1CE4E5B9ULL;
+    z = (z ^ z >> 27) * 0x94D049BB133111EBULL;
+    return z ^ z >> 31;
+}
+
+void rng_init(rng_t *rng, const uint64_t seed) {
+    rng->state = seed;
+}
+
+uint64_t rng_ull(rng_t *rng) {
+    return mix64(rng);
+}
+
+float rng_float(rng_t *rng) {
+    return (float)mix64(rng) / (float)0xFFFFFFFFFFFFFFFFULL;
+}
+
 float noise_value(const int x, const int y) {
     int n = x + y * 57;
     n = (n << 13) ^ n;
