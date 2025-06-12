@@ -9,7 +9,8 @@ typedef enum {
     BL_SAND,
     BL_STONE,
     BL_LOG,
-    BL_LEAF
+    BL_LEAF,
+    BL_GLOWSTONE,
 } block_t;
 
 /**
