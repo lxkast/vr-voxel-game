@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "block.h"
+#include "queue.h"
 
 #define CHUNK_SIZE 16
 #define CHUNK_SIZE_CUBED 4096
@@ -17,6 +18,10 @@ typedef struct {
     int cx, cy, cz;
     /// The array of blocks in the chunk.
     block_t blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
+    /// The array of light levels in the chunk.
+    int lightMap[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
+    /// The queue of light values used for generated the lightMap
+    lightQueue_t lightQueue;
     /// The VBO that holds the mesh.
     GLuint vbo;
     /// The VAO that is used for drawing.
