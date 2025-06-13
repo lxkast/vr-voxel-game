@@ -336,7 +336,7 @@ int main(void) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         camera_setView(&camera, program);
-        world_draw(&world, mainModelLocation, &camera);
+        world_draw(&world, mainModelLocation, &camera, projection);
         world_drawHighlight(&world, mainModelLocation);
         glUseProgram(blockEntityProgram);
         glUniformMatrix4fv(blockEntityProjectionLocation, 1, GL_FALSE, projection);
@@ -352,7 +352,7 @@ int main(void) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             camera_translateX(&camera, 2 * EYE_OFFSET);
             camera_setView(&camera, program);
-            world_draw(&world, mainModelLocation, &camera);
+            world_draw(&world, mainModelLocation, &camera, projection);
             world_drawHighlight(&world, mainModelLocation);
 
             glUseProgram(blockEntityProgram);

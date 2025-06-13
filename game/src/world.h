@@ -90,8 +90,10 @@ void world_init(world_t *w, GLuint program);
  * @brief Draws the world.
  * @param w A pointer to a world
  * @param modelLocation The model matrix location in the shader program
+ * @param cam A pointer to the camera from which to render from
+ * @param projection The current projection matrix
  */
-void world_draw(const world_t *w, int modelLocation, camera_t *cam);
+void world_draw(const world_t *w, int modelLocation, camera_t *cam, mat4 projection);
 
 /**
  * @brief Frees the world.
