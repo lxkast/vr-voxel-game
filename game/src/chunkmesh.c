@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "chunk.h"
+#include "lighting.h"
 #include "vertices.h"
 
 // helper to check if a block's face neighbours air or the chunk edge
@@ -152,6 +153,7 @@ static vertex_t *greedyMeshDirection(chunk_t *c, direction_e dir, vertex_t *buf)
  * @param c A pointer to a chunk
  */
 void chunk_createMesh(chunk_t *c) {
+    chunk_processLighting(c);
     const size_t bytesPerBlock = sizeof(vertex_t) * 36;
 
     vertex_t *buf = malloc(CHUNK_SIZE_CUBED * bytesPerBlock);

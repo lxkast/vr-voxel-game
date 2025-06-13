@@ -9,6 +9,7 @@
 #include "noise.h"
 #include "uthash.h"
 #include "vertices.h"
+#include "lighting.h"
 
 #define MAX_RAYCAST_DISTANCE 6.f
 #define RAYCAST_STEP_MAGNITUDE 0.1f
@@ -597,8 +598,15 @@ bool world_placeBlock(world_t *w, const int x, const int y, const int z, const b
     chunk_t *cp;
     if (!getBlockAddr(w, x, y, z, &bp, &cp)) return false;
 
-    if (*bp != BL_AIR) return false;
-
+    if (*bp != BL_AIR) {
+        return false;
+    }
+    if (block == BL_GLOWSTONE) {
+        lightQueueItem_t qi = {
+            .pos = { x - ((x >> 4) << 4), y - ((y >> 4) << 4), z - ((z >> 4) << 4) },
+            .lightValue = LIGHT_MAX_VALUE };
+        queue_push(&cp->lightQueue, qi);
+    }
     *bp = block;
     cp->tainted = true;
 
