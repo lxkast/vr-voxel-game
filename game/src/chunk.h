@@ -26,19 +26,22 @@ typedef struct {
     int meshVertices;
     /// Holds whether the mesh needs to be regenerated.
     bool tainted;
-
+    /// An rng for use in terrain generation
+    rng_t rng;
+    /// A noise object
     noise_t noise;
 } chunk_t;
 
 /**
  * @brief Initialises a chunk
  * @param c A pointer to a chunk
- * @param noise A noise object to copy
+ * @param rng An rng
+ * @param noise A noise object
  * @param cx The chunk x coordinate
  * @param cy The chunk y coordinate
  * @param cz The chunk z coordinate
  */
-void chunk_init(chunk_t *c, noise_t noise, int cx, int cy, int cz);
+void chunk_init(chunk_t *c, rng_t rng, noise_t noise, int cx, int cy, int cz);
 
 /**
  * @brief Fills a chunk with a certain block

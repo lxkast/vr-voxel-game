@@ -59,6 +59,7 @@ typedef struct world_t {
     int numEntities;
     worldEntity_t entities[MAX_NUM_ENTITIES];
     int oldestItem;
+    uint64_t seed;
     rng_t generalRng;
     rng_t worldRng;
     noise_t noise;

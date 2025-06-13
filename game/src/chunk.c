@@ -8,7 +8,8 @@
 
 extern void chunk_createMesh(chunk_t *c);
 
-void chunk_init(chunk_t *c, noise_t noise, int cx, int cy, int cz) {
+void chunk_init(chunk_t *c, rng_t rng, noise_t noise, int cx, int cy, int cz) {
+    c->rng = rng;
     c->noise = noise;
 
     c->cx = cx;
