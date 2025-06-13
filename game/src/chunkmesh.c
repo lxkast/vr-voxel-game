@@ -21,9 +21,55 @@ static bool faceIsVisible(chunk_t *c, ivec3 blockPos, direction_e dir) {
     return type == BL_AIR || type == BL_LEAF;
 }
 
+// computes the light value of a vertex by averaging the 4 light values in the direction of the normal
+static float computeVertexLight(chunk_t *c, int vx, int vy, int vz, direction_e dir) {
+    int offsets[] = { 0, -1 };
+    int count = 0;
+    float sum = 0;
+    switch (dir) {
+        case DIR_PLUSZ:
+        case DIR_MINUSZ:
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 2; ++j) {
+                    int nx = vx + offsets[i];
+                    int ny = vy + offsets[j];
+                    if (nx >= 0 && nx < CHUNK_SIZE && ny >= 0 && ny < CHUNK_SIZE && vz >= 0 && vz < CHUNK_SIZE) {
+                        sum += c->lightMap[nx][ny][vz];
+                        count++;
+                    }
+                }
+            }
+        case DIR_PLUSY:
+        case DIR_MINUSY:
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 2; ++j) {
+                    int nx = vx + offsets[i];
+                    int nz = vy + offsets[j];
+                    if (nx >= 0 && nx < CHUNK_SIZE && vy >= 0 && vy < CHUNK_SIZE && nz >= 0 && nz < CHUNK_SIZE) {
+                        sum += c->lightMap[nx][vy][nz];
+                        count++;
+                    }
+                }
+            }
+        case DIR_PLUSX:
+        case DIR_MINUSX:
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 2; ++j) {
+                    int ny = vx + offsets[i];
+                    int nz = vy + offsets[j];
+                    if (vx >= 0 && vx < CHUNK_SIZE && ny >= 0 && ny < CHUNK_SIZE && nz >= 0 && nz < CHUNK_SIZE) {
+                        sum += c->lightMap[vx][ny][nz];
+                        count++;
+                    }
+                }
+            }
+    }
+    return sum / (float)count;
+}
+
 // writes vertices of a face specified by buf
 // returns pointer to next free position in the buffer
-static vertex_t *writeVertex(vertex_t *buf, ivec3 blockPos, direction_e dir, int width, int height, int type, float light) {
+static vertex_t *writeFace(chunk_t *c, vertex_t *buf, ivec3 blockPos, direction_e dir, int width, int height, int type) {
     ivec3 dirVec;
     memcpy(&dirVec, &directions[dir], sizeof(ivec3));
     int texIndex = type * 4;
@@ -36,7 +82,7 @@ static vertex_t *writeVertex(vertex_t *buf, ivec3 blockPos, direction_e dir, int
                 buf[i].y = buf[i].y * height + blockPos[1];
                 buf[i].z += blockPos[2];
                 buf[i].texIndex += texIndex;
-                buf[i].lightValue = light;
+                buf[i].lightValue = computeVertexLight(c, buf[i].x, buf[i].y, buf[i].z, dir);
             }
             break;
         case DIR_PLUSY:
@@ -46,7 +92,7 @@ static vertex_t *writeVertex(vertex_t *buf, ivec3 blockPos, direction_e dir, int
                 buf[i].y += blockPos[1];
                 buf[i].z = buf[i].z * height + blockPos[2];
                 buf[i].texIndex += texIndex;
-                buf[i].lightValue = light;
+                buf[i].lightValue = computeVertexLight(c, buf[i].x, buf[i].y, buf[i].z, dir);
             }
             break;
         case DIR_PLUSX:
@@ -56,14 +102,14 @@ static vertex_t *writeVertex(vertex_t *buf, ivec3 blockPos, direction_e dir, int
                 buf[i].y = buf[i].y * width + blockPos[1];
                 buf[i].z = buf[i].z * height + blockPos[2];
                 buf[i].texIndex += texIndex;
-                buf[i].lightValue = light;
+                buf[i].lightValue = computeVertexLight(c, buf[i].x, buf[i].y, buf[i].z, dir);
             }
             break;
     }
     return buf + 6;
 }
 
-// helper to compute next coordinate for width and height expansion based on direction
+// helper for greedy meshing to compute next coordinate for width and height expansion based on direction
 static void getNextCoord(ivec3 out, int i, int j, int k, direction_e dir, int width, int height) {
     switch (dir) {
         case DIR_PLUSZ:
@@ -151,7 +197,7 @@ static vertex_t *greedyMeshDirection(chunk_t *c, direction_e dir, vertex_t *buf)
                 if (nx >= 0 && ny >= 0 && nz >= 0 && nx < CHUNK_SIZE && ny < CHUNK_SIZE && nz < CHUNK_SIZE) {
                     light = c->lightMap[nx][ny][nz];
                 }
-                nextPtr = writeVertex(nextPtr, base, dir, width, height, type, light);
+                nextPtr = writeFace(c, nextPtr, base, dir, width, height, type);
             }
         }
     }
