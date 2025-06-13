@@ -206,7 +206,7 @@ static void decorator_placeBlock(struct decorator *d,
                                           LL_INIT,
                                           REL_CHILD);
             if (d->origin->loadData.nChildren > 31) {
-                LOG_FATAL("it's so over");
+                LOG_FATAL("Buffer overflow in chunk children");
             }
             bool found = false;
             for (int i = 0; i < d->origin->loadData.nChildren; i++) {
