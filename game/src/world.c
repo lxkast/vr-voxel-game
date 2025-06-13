@@ -197,21 +197,31 @@ static void decorator_placeBlock(struct decorator *d,
     const int cz = z >> 4;
 
     if (-1 <= cx && cx <= 1 && -1 <= cy && cy <= 1 && -1 <= cz && cz <= 1) {
-        if (!d->cache[cx + 1][cy + 1][cz + 1]) {
-            d->cache[cx + 1][cy + 1][cz + 1] = world_loadChunk(world,
-                                                   d->origin->chunk->cx + cx,
-                                                   d->origin->chunk->cy + cy,
-                                                   d->origin->chunk->cz + cz,
-                                                   LL_INIT,
-                                                   REL_CHILD);
+        chunkValue_t **cacheValue = &d->cache[cx + 1][cy + 1][cz + 1];
+        if (!*cacheValue) {
+            *cacheValue = world_loadChunk(world,
+                                          d->origin->chunk->cx + cx,
+                                          d->origin->chunk->cy + cy,
+                                          d->origin->chunk->cz + cz,
+                                          LL_INIT,
+                                          REL_CHILD);
             if (d->origin->loadData.nChildren > 31) {
-                LOG_FATAL("it's so over");
+                LOG_FATAL("Buffer overflow in chunk children");
             }
-            d->origin->loadData.children[d->origin->loadData.nChildren++] = d->cache[cx + 1][cy + 1][cz + 1];
+            bool found = false;
+            for (int i = 0; i < d->origin->loadData.nChildren; i++) {
+                if (d->origin->loadData.children[i] == *cacheValue) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                d->origin->loadData.children[d->origin->loadData.nChildren++] = *cacheValue;
+            }
         }
 
-        d->cache[cx + 1][cy + 1][cz + 1]->chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)] = block;
-        d->cache[cx + 1][cy + 1][cz + 1]->chunk->tainted = true;
+        (*cacheValue)->chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)] = block;
+        (*cacheValue)->chunk->tainted = true;
     }
 }
 
