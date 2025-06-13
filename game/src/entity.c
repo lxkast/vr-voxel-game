@@ -1,4 +1,5 @@
 #include "entity.h"
+#include "logging.h"
 
 #define vec3_SIZE 12
 #define VELOCITY_CUTOFF 0.05f
@@ -70,13 +71,14 @@ bool intersectsWithBlock(const entity_t entity, ivec3 blockPosition) {
 /**
  * @brief Handles a collision of an entity and a block along a specific axis. Tries to
  *        resolve collisions by updating deltaP so the entity never moves inside a block.
+ * @param w A pointer to a world
  * @param entity The entity that is colliding
  * @param aabb The entity's bounding box
  * @param block The block we are checking for collisions with
  * @param deltaP The amount we were originally planning on moving the entity by
  * @param axisNum The axis we are resolving on
  */
-static void handleAxisCollision(entity_t *entity, const aabb_t aabb, const blockBounding_t block, vec3 deltaP, const int axisNum) {
+static void handleAxisCollision(world_t *w, entity_t *entity, const aabb_t aabb, const blockBounding_t block, vec3 deltaP, const int axisNum) {
     if (deltaP[axisNum] == 0.f) {
         return;
     }
@@ -84,7 +86,13 @@ static void handleAxisCollision(entity_t *entity, const aabb_t aabb, const block
     if (aabb.min[axisNum] + deltaP[axisNum] < block.aabb.max[axisNum] && aabb.max[axisNum] + deltaP[axisNum] > block.aabb.min[axisNum]) {
         if (deltaP[axisNum] < 0) {
             // if velocity is negative, makes the entity's min point end up at the block's max point
-            deltaP[axisNum] = block.aabb.max[axisNum] - aabb.min[axisNum];
+            //deltaP[axisNum] = block.aabb.max[axisNum] - aabb.min[axisNum];
+            LOG_DEBUG("Updating Position");
+            if (axisNum == 1) {
+                // if the entity lands on a block from above, set grounded to true
+                entity->grounded = true;
+            }
+
         } else {
             // if velocity is positive, makes the entity's max point end up at the block's min point
             deltaP[axisNum] = block.aabb.min[axisNum] - aabb.max[axisNum];
@@ -160,7 +168,16 @@ static void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
             continue;
         }
         if (intersectsX(aabb, blocks[i].aabb) && intersectsZ(aabb, blocks[i].aabb)) {
-            handleAxisCollision(entity, aabb, blocks[i], deltaP, 1);
+            handleAxisCollision(w, entity, aabb, blocks[i], deltaP, 1);
+        }
+        vec3 centerUnderside = {entity->position[0] + entity->size[0] / 2, entity->position[1], entity->position[2] + entity->size[2] / 2};
+
+        const raycast_t raycast = world_raycast(w, centerUnderside, (vec3){0.f, -1.f, 0.f}, fabsf(deltaP[1]));
+
+        if (raycast.found) {
+            if (fabsf(entity->position[1] - (raycast.blockPosition[1] + 1)) < fabsf(deltaP[1]) + 1) {
+                deltaP[1] = (raycast.blockPosition[1] + 1) - entity->position[1];
+            }
         }
     }
 
@@ -170,7 +187,7 @@ static void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
             continue;
         }
         if (intersectsY(aabb, blocks[i].aabb) && intersectsZ(aabb, blocks[i].aabb)) {
-            handleAxisCollision(entity, aabb, blocks[i], deltaP, 0);
+            handleAxisCollision(w, entity, aabb, blocks[i], deltaP, 0);
         }
     }
 
@@ -180,7 +197,7 @@ static void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
             continue;
         }
         if (intersectsX(aabb, blocks[i].aabb) && intersectsY(aabb, blocks[i].aabb)) {
-            handleAxisCollision(entity, aabb, blocks[i], deltaP, 2);
+            handleAxisCollision(w, entity, aabb, blocks[i], deltaP, 2);
         }
     }
 

@@ -483,7 +483,7 @@ static void meshItemEntity(worldEntity_t *e) {
     glEnableVertexAttribArray(1);
     float *mesh = malloc(itemBlockVerticesSize);
     memcpy(mesh, itemBlockVertices, itemBlockVerticesSize);
-    block_t type = ITEM_TO_BLOCK[e->itemType];
+    const block_t type = ITEM_TO_BLOCK[e->itemType];
     for (int i = 0; i < 36; ++i) {
         mesh[5 * i + 0] *= e->entity->size[0];
         mesh[5 * i + 1] *= e->entity->size[1];
@@ -669,7 +669,7 @@ static block_t getBlockType(world_t *w, vec3 position) {
     return bd.type;
 }
 
-raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection, float raycastDistance) {
+raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection, const float raycastDistance) {
     vec3 viewNormalised;
     glm_vec3_copy(viewDirection, viewNormalised);
     glm_normalize(viewNormalised);
@@ -705,6 +705,15 @@ raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection, floa
     float totalDistance = 0;
 
     raycastFace_e currentFace = POS_X_FACE;
+
+    // Check starting block first
+    if (getBlockType(w, currentBlock) != BL_AIR) {
+        return (raycast_t){
+            .blockPosition = {currentBlock[0], currentBlock[1], currentBlock[2]},
+            .face = currentFace,
+            .found = true
+        };
+    }
 
     while (totalDistance < raycastDistance) {
         // checks for a solid block

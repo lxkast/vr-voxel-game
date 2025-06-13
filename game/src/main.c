@@ -287,7 +287,6 @@ int main(void) {
     player_t player;
     player_init(&world, &player);
 
-
     postProcess_t postProcess;
     postProcess_init(&postProcess, postProcessProgram, screenWidth, screenHeight);
 
