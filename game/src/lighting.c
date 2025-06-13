@@ -7,8 +7,12 @@
 void chunk_processLighting(chunk_t *c) {
     while (c->lightQueue.size > 0) {
         lightQueueItem_t head = queue_pop(&c->lightQueue);
-        int *light = &c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]];
-        *light = glm_imin(*light + head.lightValue, LIGHT_MAX_VALUE);
+        int prevLightValue = c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]];
+        if (head.lightValue > prevLightValue) {
+            c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]] = head.lightValue > LIGHT_MAX_VALUE ? LIGHT_MAX_VALUE : head.lightValue;
+        } else {
+            continue;
+        }
 
         // check each direction and add to queue if solid
         for (int dir = 0; dir < 6; ++dir) {
@@ -28,9 +32,8 @@ void chunk_processLighting(chunk_t *c) {
                 continue;
             }
 
-            if (c->blocks[nPos[0]][nPos[1]][nPos[2]] != BL_AIR &&
-                c->blocks[nPos[0]][nPos[1]][nPos[2]] != BL_LEAF &&
-                c->lightMap[nPos[0]][nPos[1]][nPos[2]] + 2 <= head.lightValue &&
+            if ((c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_AIR || c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_LEAF) &&
+                c->lightMap[nPos[0]][nPos[1]][nPos[2]] < head.lightValue - 1 &&
                 head.lightValue - 1 > 0) {
                 lightQueueItem_t nItem = { .lightValue = head.lightValue - 1 };
                 memcpy(&nItem.pos, &nPos, sizeof(ivec3));
