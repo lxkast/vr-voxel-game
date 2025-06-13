@@ -279,9 +279,7 @@ static void highlightInit(world_t *w) {
     glBindVertexArray(0);
 }
 
-void world_init(world_t *w, const GLuint program) {
-    srand(1);
-
+void world_init(world_t *w, GLuint program, uint64_t seed) {
     memset(w, 0, sizeof(world_t));
     w->clusterTable = NULL;
     fogInit(w, program);
@@ -289,6 +287,9 @@ void world_init(world_t *w, const GLuint program) {
 
     w->numEntities = 0;
     w->oldestItem = 0;
+    
+    rng_init(&w->worldRng, seed);
+    rng_init(&w->generalRng, rng_ull(&w->worldRng));
 }
 
 vec3 chunkBounds = {15.f, 15.f, 15.f};

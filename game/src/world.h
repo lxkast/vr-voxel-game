@@ -6,6 +6,7 @@
 #include "chunk.h"
 #include "item.h"
 #include "uthash.h"
+#include "noise.h"
 
 #define MAX_CHUNKS 256
 #define MAX_CHUNK_LOADERS 8
@@ -58,6 +59,8 @@ typedef struct world_t {
     int numEntities;
     worldEntity_t entities[MAX_NUM_ENTITIES];
     int oldestItem;
+    rng_t generalRng;
+    rng_t worldRng;
 } world_t;
 
 /**
@@ -83,8 +86,9 @@ typedef enum {
  * @brief Initialises a world struct.
  * @param w A pointer to a world
  * @param program A shader program for setting effects
+ * @param seed The world seed
  */
-void world_init(world_t *w, GLuint program);
+void world_init(world_t *w, GLuint program, uint64_t seed);
 
 /**
  * @brief Draws the world.
