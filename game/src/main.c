@@ -72,8 +72,11 @@ static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w,
 
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
         player_mineBlock(player, w, dt);
-    } else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-        player_placeBlock(player, w);
+    } else {
+        player->currMiningTime = 0;
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+            player_placeBlock(player, w);
+        }
     }
 
     changeRUFtoXYZ(acceleration, player->entity.yaw);
