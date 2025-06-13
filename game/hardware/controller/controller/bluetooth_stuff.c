@@ -19,7 +19,7 @@
 static const uint8_t hidReportDescriptor[] = 
 {
     0x05, 0x01,    // UsagePage(Generic Desktop[0x0001])
-    0x09, 0x02,    // UsageId(Joystick[0x0004])
+    0x09, 0x04,    // UsageId(Joystick[0x0004])
     0xA1, 0x01,    // Collection(Application)
     0x85, 0x01,    // Report ID (1)
     0x09, 0x01,    //     UsageId(Pointer[0x0001])
@@ -75,7 +75,7 @@ static void bluetooth_setup(void){
     // setup SM: Display only
     sm_init();
     sm_set_io_capabilities(IO_CAPABILITY_NO_INPUT_NO_OUTPUT);
-    sm_set_authentication_requirements(0);
+    sm_set_authentication_requirements(SM_AUTHREQ_BONDING | SM_AUTHREQ_BONDING);
 
     // setup ATT server
     att_server_init(profile_data, NULL, NULL);
@@ -117,8 +117,8 @@ static uint8_t buttons;
 static void send_report(void){
     ReadData data;
     read_data(&data);
-    // printf("Building report");
-    uint8_t report[] = { ((uint8_t) (data.dx * 256) - 128), 0, 0};
+    uint8_t report[] = { (int16_t) ((data.dx * 256) - 128), (int16_t) (data.dy * 256) - 128, 0};
+    
     for (int i =0; i < SWITCH_COUNT; i++) {
         if (data.buttons[i]) {
             report[2] |= 1 << i;
@@ -126,8 +126,6 @@ static void send_report(void){
             report[2] &= ~(1 << i);
         }
     }
-
-    printf("%d %d %d", report[0], report[1], report[2]);
     
     hids_device_send_input_report(con_handle, report, sizeof(report));
         
@@ -177,16 +175,13 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
 static btstack_timer_source_t heartbeat;
 
 static void heartbeat_handler(struct btstack_timer_source *ts){
-    printf("Heartbeat - con_handle: 0x%04x\n", con_handle);
     
     if (con_handle != HCI_CON_HANDLE_INVALID) {
-        printf("Requesting can_send_now\n");
         hids_device_request_can_send_now_event(con_handle);
-        printf("Request completed");
     }
     
     // Schedule next heartbeat
-    btstack_run_loop_set_timer(ts, 100); // 1 second
+    btstack_run_loop_set_timer(ts, 30); // 1 second
     btstack_run_loop_add_timer(ts);
 }
 
@@ -198,7 +193,7 @@ int btstack_main(void)
     hci_power_control(HCI_POWER_ON);
 
     heartbeat.process = &heartbeat_handler;
-    btstack_run_loop_set_timer(&heartbeat, 100);
+    btstack_run_loop_set_timer(&heartbeat, 30);
     btstack_run_loop_add_timer(&heartbeat);
     return 0;
 }

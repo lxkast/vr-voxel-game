@@ -35,7 +35,6 @@ int read_data(ReadData* data) {
         // Read joystick Y (ADC2)
         adc_select_input(2);
         uint16_t joy_y = adc_read();
-
         data->dx = (float) joy_x / 4098.0f;
         data->dy = (float) joy_y / 4098.0f;
 
