@@ -273,10 +273,12 @@ static void highlightInit(world_t *w) {
     glGenBuffers(1, &w->highlightVbo);
     glBindVertexArray(w->highlightVao);
     glBindBuffer(GL_ARRAY_BUFFER, w->highlightVbo);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *) 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
     glEnableVertexAttribArray(0);
-    glVertexAttribIPointer(1, 2, GL_INT, 4 * sizeof(float), (void *) (3 * sizeof(float)));
+    glVertexAttribIPointer(1, 1, GL_INT, 5 * sizeof(float), (void *) (3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+    glVertexAttribIPointer(2, 1, GL_INT, 5 * sizeof(float), (void *) (4 * sizeof(float)));
+    glEnableVertexAttribArray(2);
     glBindVertexArray(0);
 }
 

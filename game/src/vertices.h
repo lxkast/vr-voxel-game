@@ -4,6 +4,7 @@
 typedef struct {
     float x,y,z;
     int texIndex;
+    int lightValue;
 } vertex_t;
 
 extern ivec3 directions[6];

@@ -104,7 +104,7 @@ static void handleAxisCollision(entity_t *entity, const aabb_t aabb, const block
 static void blockDataToBlockBounding(const blockData_t *buf, const unsigned int numBlocks, blockBounding_t *result) {
     vec3 blockSize = {1.f, 1.f, 1.f};
     for (int i = 0; i < numBlocks; i++) {
-        const blockData_t block = buf[i];
+        const blockData_t block = buf[numBlocks - i];
 
         vec3 position = {(float)block.x, (float)block.y, (float)block.z};
 

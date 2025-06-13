@@ -8,6 +8,7 @@
 #define FACE_SIDE 2
 
 flat in int vTexIndex;
+flat in int vLightValue;
 in float vFogDepth;
 in vec3 vPos;
 
@@ -46,15 +47,14 @@ void main() {
     if (finalRGB.a == 0.0) {
         discard;
     }
-    // normal-based lighting
-    // only shade block if not the highlight texture
+
     if (textureCol > HIGHLIGHT_COLUMN) {
-        if (textureRow == FACE_SIDE) {
-            finalRGB *= 0.8;
-        } else if (textureRow == FACE_BOTTOM) {
-            finalRGB *= 0.5;
+        if (vLightValue == 0) {
+            finalRGB = vec4(0,0,0,1);
+        } else {
+            finalRGB = vec4(finalRGB.xyz / (16.0 - float(vLightValue)), 1);
         }
-        finalRGB = vec4(finalRGB.xyz, 1);
     }
     FragColor = mix(fogColor, finalRGB, f);
+//    FragColor = vec4(float(vLightValue) / 16.0, float(vLightValue) / 16.0, float(vLightValue) / 16.0, 1);
 }
