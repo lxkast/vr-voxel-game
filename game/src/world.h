@@ -7,6 +7,7 @@
 #include "item.h"
 #include "player.h"
 #include "uthash.h"
+#include "noise.h"
 
 #define MAX_CHUNKS 256
 #define MAX_CHUNK_LOADERS 8
@@ -67,6 +68,10 @@ typedef struct world_t {
     int numPlayers;
     /// Stores pointers to all current players in the world
     worldEntity_t *players[MAX_NUM_PLAYERS];
+    uint64_t seed;
+    rng_t generalRng;
+    rng_t worldRng;
+    noise_t noise;
 } world_t;
 
 /**
@@ -92,15 +97,18 @@ typedef enum {
  * @brief Initialises a world struct.
  * @param w A pointer to a world
  * @param program A shader program for setting effects
+ * @param seed The world seed
  */
-void world_init(world_t *w, GLuint program);
+void world_init(world_t *w, GLuint program, uint64_t seed);
 
 /**
  * @brief Draws the world.
  * @param w A pointer to a world
  * @param modelLocation The model matrix location in the shader program
+ * @param cam A pointer to the camera from which to render from
+ * @param projection The current projection matrix
  */
-void world_draw(const world_t *w, int modelLocation, camera_t *cam);
+void world_draw(const world_t *w, int modelLocation, camera_t *cam, mat4 projection);
 
 /**
  * @brief Frees the world.
