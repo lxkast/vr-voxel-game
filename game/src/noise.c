@@ -28,6 +28,10 @@ float rng_float(rng_t *rng) {
     return (float)mix64(rng) / (float)0xFFFFFFFFFFFFFFFFULL;
 }
 
+float rng_floatRange(rng_t *rng, const float min, const float max) {
+    return min + (max - min) * rng_float(rng);
+}
+
 float noise_value(const int x, const int y) {
     int n = x + y * 57;
     n = (n << 13) ^ n;

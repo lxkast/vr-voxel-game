@@ -497,15 +497,6 @@ static void meshItemEntity(worldEntity_t *e) {
     free(mesh);
 }
 
-/**
- * @brief Generates a random number in the range (min, max)
- * @param min The minimum value the random number can take
- * @param max The maximum value the random number can take
- * @return the random number
- */
-float getRandRange(const float min, const float max) {
-    return min + (max - min) * ((float)rand() / RAND_MAX);
-}
 
 static worldEntity_t createItemEntity(world_t *w, const vec3 pos, const item_e item) {
     worldEntity_t newWorldEntity;
@@ -517,9 +508,9 @@ static worldEntity_t createItemEntity(world_t *w, const vec3 pos, const item_e i
     newEntity->acceleration[0] = 0;
     newEntity->acceleration[1] = GRAVITY_ACCELERATION;
     newEntity->acceleration[2] = 0;
-    newEntity->velocity[0] = getRandRange(-0.55f, 0.55f);
+    newEntity->velocity[0] = rng_floatRange(&w->generalRng, -0.55f, 0.55f);
     newEntity->velocity[1] = 0.5f;
-    newEntity->velocity[2] = getRandRange(-0.55f, 0.55f);
+    newEntity->velocity[2] = rng_floatRange(&w->generalRng, -0.55f, 0.55f);
     newEntity->grounded = false;
     newEntity->size[0] = 0.25f;
     newEntity->size[1] = 0.25f;
