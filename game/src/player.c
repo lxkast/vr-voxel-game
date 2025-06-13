@@ -18,6 +18,7 @@ static void player_addToWorld(player_t *p, world_t *w) {
         .type = WE_PLAYER,
         .entity = &p->entity,
         .itemType = -1,
+        .needsFreeing = false,
         .vao = -1,
         .vbo = -1
     });

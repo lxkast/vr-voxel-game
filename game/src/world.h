@@ -39,6 +39,8 @@ typedef struct {
     entity_t *entity;
     /// This is only checked if 'type' is WE_ITEM
     item_e itemType;
+    /// Stores whether the entity needs to be freed
+    bool needsFreeing;
     /// Entity VAO and VBO, currently only used for 'item' entities
     GLuint vao;
     GLuint vbo;

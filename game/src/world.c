@@ -345,7 +345,9 @@ void world_free(world_t *w) {
     }
 
     for (int i = 0; i < w->numEntities; i++) {
-        freeEntity(&w->entities[i]);
+        if (w->entities[i].needsFreeing) {
+            freeEntity(&w->entities[i]);
+        }
     }
 }
 
@@ -539,6 +541,7 @@ static worldEntity_t createItemEntity(world_t *w, const vec3 pos, const item_e i
 
     newWorldEntity.entity = newEntity;
     newWorldEntity.itemType = item;
+    newWorldEntity.needsFreeing = true;
     meshItemEntity(&newWorldEntity);
     return newWorldEntity;
 }
