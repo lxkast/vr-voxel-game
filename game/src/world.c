@@ -125,7 +125,14 @@ static chunkValue_t *world_loadChunk(world_t *w,
 
     if (!cv->chunk) {
         cv->chunk = (chunk_t *)calloc(1, sizeof(chunk_t));
-        chunk_init(cv->chunk, cx, cy, cz);
+
+        rng_t chunkRng;
+        rng_init(&chunkRng, w->seed ^
+                            ((uint64_t)cx << 16) ^
+                            ((uint64_t)cy << 32) ^
+                            ((uint64_t)cz << 48));
+
+        chunk_init(cv->chunk, chunkRng, w->noise, cx, cy, cz);
         cv->ll = LL_INIT;
         cv->loadData.reload = REL_TOMBSTONE;
         cv->loadData.nChildren = 0;
@@ -191,21 +198,31 @@ static void decorator_placeBlock(struct decorator *d,
     const int cz = z >> 4;
 
     if (-1 <= cx && cx <= 1 && -1 <= cy && cy <= 1 && -1 <= cz && cz <= 1) {
-        if (!d->cache[cx + 1][cy + 1][cz + 1]) {
-            d->cache[cx + 1][cy + 1][cz + 1] = world_loadChunk(world,
-                                                   d->origin->chunk->cx + cx,
-                                                   d->origin->chunk->cy + cy,
-                                                   d->origin->chunk->cz + cz,
-                                                   LL_INIT,
-                                                   REL_CHILD);
+        chunkValue_t **cacheValue = &d->cache[cx + 1][cy + 1][cz + 1];
+        if (!*cacheValue) {
+            *cacheValue = world_loadChunk(world,
+                                          d->origin->chunk->cx + cx,
+                                          d->origin->chunk->cy + cy,
+                                          d->origin->chunk->cz + cz,
+                                          LL_INIT,
+                                          REL_CHILD);
             if (d->origin->loadData.nChildren > 31) {
-                LOG_FATAL("it's so over");
+                LOG_FATAL("Buffer overflow in chunk children");
             }
-            d->origin->loadData.children[d->origin->loadData.nChildren++] = d->cache[cx + 1][cy + 1][cz + 1];
+            bool found = false;
+            for (int i = 0; i < d->origin->loadData.nChildren; i++) {
+                if (d->origin->loadData.children[i] == *cacheValue) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                d->origin->loadData.children[d->origin->loadData.nChildren++] = *cacheValue;
+            }
         }
 
-        d->cache[cx + 1][cy + 1][cz + 1]->chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)] = block;
-        d->cache[cx + 1][cy + 1][cz + 1]->chunk->tainted = true;
+        (*cacheValue)->chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)] = block;
+        (*cacheValue)->chunk->tainted = true;
     }
 }
 
@@ -280,9 +297,7 @@ static void highlightInit(world_t *w) {
     glBindVertexArray(0);
 }
 
-void world_init(world_t *w, const GLuint program) {
-    srand(1);
-
+void world_init(world_t *w, GLuint program, uint64_t seed) {
     memset(w, 0, sizeof(world_t));
     w->clusterTable = NULL;
     fogInit(w, program);
@@ -291,31 +306,63 @@ void world_init(world_t *w, const GLuint program) {
     w->numEntities = 0;
     w->oldestItem = 0;
     w->numPlayers = 0;
+    
+    w->seed = seed;
+    rng_init(&w->worldRng, seed);
+    rng_init(&w->generalRng, rng_ull(&w->worldRng));
+    w->noise.seed = (uint32_t)rng_ull(&w->worldRng);
 }
 
 vec3 chunkBounds = {15.f, 15.f, 15.f};
 
-// Note - we assume lookVector is normalised
-static bool isChunkInFrontOfCamera(camera_t *cam, const chunk_t *chunk) {
-    vec3 chunkCenter;
-    chunkCenter[0] = (float)(chunk->cx << 4) + 8.f;
-    chunkCenter[1] = (float)(chunk->cy << 4) + 8.f;
-    chunkCenter[2] = (float)(chunk->cz << 4) + 8.f;
-
-    vec3 toChunk;
-    glm_vec3_sub(chunkCenter, cam->eye, toChunk);
-
-    const float dot = glm_vec3_dot(toChunk, cam->ruf[2]);
-
-    return dot < 16.f;
+static bool completelyOutsidePlane(double plane[4], const chunk_t *chunk) {
+    double testPoint[3] = {
+        (chunk->cx << 4) + (plane[0] > 0 ? 16 : 0),
+        (chunk->cy << 4) + (plane[1] > 0 ? 16 : 0),
+        (chunk->cz << 4) + (plane[2] > 0 ? 16 : 0),
+    };
+    double dot = testPoint[0] * plane[0] + testPoint[1] * plane[1] + testPoint[2] * plane[2];
+    return dot < -plane[3];
 }
 
-void world_draw(const world_t *w, const int modelLocation, camera_t *cam) {
+// Note - we assume lookVector is normalised
+static bool shouldRender(camera_t *cam, const chunk_t *chunk, double planes[6][4]) {
+    for (int i = 0; i < 6; i++) {
+        if (completelyOutsidePlane(planes[i], chunk)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static void calculatePlanes(camera_t *cam, mat4 projection, double res[6][4]) {
+    mat4 view;
+    camera_createView(cam, view);
+    mat4 projview;
+    glm_mat4_mul(projection, view, projview);
+
+    for (int i = 0; i < 3; i++) {
+        res[i*2][0] = projview[0][3] + projview[0][i];
+        res[i*2][1] = projview[1][3] + projview[1][i];
+        res[i*2][2] = projview[2][3] + projview[2][i];
+        res[i*2][3] = projview[3][3] + projview[3][i];
+
+        res[i*2+1][0] = projview[0][3] - projview[0][i];
+        res[i*2+1][1] = projview[1][3] - projview[1][i];
+        res[i*2+1][2] = projview[2][3] - projview[2][i];
+        res[i*2+1][3] = projview[3][3] - projview[3][i];
+    }
+}
+
+void world_draw(const world_t *w, const int modelLocation, camera_t *cam, mat4 projection) {
     cluster_t *cluster, *tmp;
+    double planes[6][4];
+    calculatePlanes(cam, projection, planes);
+
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
         for (int i = 0; i < C_T * C_T * C_T; i++) {
             if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
-            const bool renderingChunk = isChunkInFrontOfCamera(cam, cluster->cells[i].chunk);
+            const bool renderingChunk = shouldRender(cam, cluster->cells[i].chunk, planes);
 
             if (cluster->cells[i].chunk && renderingChunk) {
                 chunk_draw(cluster->cells[i].chunk, modelLocation);
@@ -508,15 +555,6 @@ static void meshItemEntity(worldEntity_t *e) {
     free(mesh);
 }
 
-/**
- * @brief Generates a random number in the range (min, max)
- * @param min The minimum value the random number can take
- * @param max The maximum value the random number can take
- * @return the random number
- */
-float getRandRange(const float min, const float max) {
-    return min + (max - min) * ((float)rand() / RAND_MAX);
-}
 
 static worldEntity_t createItemEntity(world_t *w, const vec3 pos, const item_e item) {
     worldEntity_t newWorldEntity;
@@ -528,9 +566,9 @@ static worldEntity_t createItemEntity(world_t *w, const vec3 pos, const item_e i
     newEntity->acceleration[0] = 0;
     newEntity->acceleration[1] = GRAVITY_ACCELERATION;
     newEntity->acceleration[2] = 0;
-    newEntity->velocity[0] = getRandRange(-0.55f, 0.55f);
+    newEntity->velocity[0] = rng_floatRange(&w->generalRng, -0.55f, 0.55f);
     newEntity->velocity[1] = 0.5f;
-    newEntity->velocity[2] = getRandRange(-0.55f, 0.55f);
+    newEntity->velocity[2] = rng_floatRange(&w->generalRng, -0.55f, 0.55f);
     newEntity->grounded = false;
     newEntity->size[0] = 0.25f;
     newEntity->size[1] = 0.25f;
