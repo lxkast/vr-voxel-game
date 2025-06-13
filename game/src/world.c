@@ -124,7 +124,7 @@ static chunkValue_t *world_loadChunk(world_t *w,
 
     if (!cv->chunk) {
         cv->chunk = (chunk_t *)calloc(1, sizeof(chunk_t));
-        chunk_init(cv->chunk, cx, cy, cz);
+        chunk_init(cv->chunk, w->noise, cx, cy, cz);
         cv->ll = LL_INIT;
         cv->loadData.reload = REL_TOMBSTONE;
         cv->loadData.nChildren = 0;
@@ -290,6 +290,7 @@ void world_init(world_t *w, GLuint program, uint64_t seed) {
     
     rng_init(&w->worldRng, seed);
     rng_init(&w->generalRng, rng_ull(&w->worldRng));
+    w->noise.seed = (uint32_t)rng_ull(&w->worldRng);
 }
 
 vec3 chunkBounds = {15.f, 15.f, 15.f};

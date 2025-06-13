@@ -61,6 +61,7 @@ typedef struct world_t {
     int oldestItem;
     rng_t generalRng;
     rng_t worldRng;
+    noise_t noise;
 } world_t;
 
 /**

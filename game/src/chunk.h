@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "block.h"
+#include "noise.h"
 
 #define CHUNK_SIZE 16
 #define CHUNK_SIZE_CUBED 4096
@@ -25,16 +26,19 @@ typedef struct {
     int meshVertices;
     /// Holds whether the mesh needs to be regenerated.
     bool tainted;
+
+    noise_t noise;
 } chunk_t;
 
 /**
  * @brief Initialises a chunk
  * @param c A pointer to a chunk
+ * @param noise A noise object to copy
  * @param cx The chunk x coordinate
  * @param cy The chunk y coordinate
  * @param cz The chunk z coordinate
  */
-void chunk_init(chunk_t *c, int cx, int cy, int cz);
+void chunk_init(chunk_t *c, noise_t noise, int cx, int cy, int cz);
 
 /**
  * @brief Fills a chunk with a certain block

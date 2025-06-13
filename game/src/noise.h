@@ -21,8 +21,12 @@ float rng_float(rng_t *rng);
  */
 float rng_floatRange(rng_t *rng, const float min, const float max);
 
-float noise_value(int x, int z);
+typedef struct {
+    uint32_t seed;
+} noise_t;
 
-float noise_smoothValue(float x, float y);
+float noise_value(noise_t *n, int x, int z);
 
-float noise_height(int x, int z);
+float noise_smoothValue(noise_t *n, float x, float y);
+
+float noise_height(noise_t *n, int x, int z);
