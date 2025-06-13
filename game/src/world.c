@@ -171,15 +171,13 @@ static void decorator_init(struct decorator *d, chunkValue_t *origin, const int 
 }
 
 static bool decorator_initSurface(struct decorator *d, chunkValue_t *origin, const int x, const int z, const block_t block) {
-    int y;
-    for (y = CHUNK_SIZE - 1; y > 0; y--) {
+    for (int y = CHUNK_SIZE - 2; y >= 0; y--) {
         if (origin->chunk->blocks[x][y][z] == block) {
-            y++;
-            break;
+            decorator_init(d, origin, x, y + 1, z);
+            return true;
         }
     }
-    decorator_init(d, origin, x, y, z);
-    return y != 0;
+    return false;
 }
 
 static void decorator_placeBlock(struct decorator *d,
@@ -190,7 +188,7 @@ static void decorator_placeBlock(struct decorator *d,
                                  const block_t block) {
     x = d->ox + x;
     y = d->oy + y;
-    z = d->ox + z;
+    z = d->oz + z;
 
     const int cx = x >> 4;
     const int cy = y >> 4;
@@ -250,7 +248,7 @@ static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
 
     for (int x = 0; x < CHUNK_SIZE; x++) {
         for (int z = 0; z < CHUNK_SIZE; z++) {
-            if (x == 7 && z == 7) {
+            if (rng_float(&cv->chunk->rng) < 0.01f) {
                 if (decorator_initSurface(&d, cv, x, z, BL_GRASS)) {
                     decorator_placeTree(&d, w);
                 }
