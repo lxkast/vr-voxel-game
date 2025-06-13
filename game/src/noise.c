@@ -49,8 +49,8 @@ static float ease(const float t) {
 float noise_smoothValue(noise_t *n, const float x, const float y) {
     const int xInt = (int)floorf(x);
     const int yInt = (int)floorf(y);
-    const float xFrac = ease(x - (float)x_int);
-    float yFrac = ease(y - (float)y_int);
+    const float xFrac = ease(x - (float)xInt);
+    float yFrac = ease(y - (float)yInt);
 
 
     const float v00 = noise_value(n, xInt, yInt);
@@ -58,9 +58,9 @@ float noise_smoothValue(noise_t *n, const float x, const float y) {
     const float v01 = noise_value(n, xInt, yInt + 1);
     const float v11 = noise_value(n, xInt + 1, yInt + 1);
 
-    const float i1 = glm_lerp(v00, v10, x_frac);
-    const float i2 = glm_lerp(v01, v11, x_frac);
-    return glm_lerp(i1, i2, y_frac);
+    const float i1 = glm_lerp(v00, v10, xFrac);
+    const float i2 = glm_lerp(v01, v11, xFrac);
+    return glm_lerp(i1, i2, yFrac);
 }
 
 float noise_height(noise_t *n, const int x, const int z) {
