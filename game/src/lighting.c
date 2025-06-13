@@ -7,7 +7,7 @@
 void chunk_processLighting(chunk_t *c) {
     while (c->lightQueue.size > 0) {
         lightQueueItem_t head = queue_pop(&c->lightQueue);
-        int lightLevel = c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]];
+        float lightLevel = c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]];
 
         // check each direction and add to queue if transparent
         for (int dir = 0; dir < 6; ++dir) {
@@ -27,7 +27,7 @@ void chunk_processLighting(chunk_t *c) {
                 continue;
             }
 
-            int newLight = lightLevel - 1;
+            float newLight = lightLevel - 1;
             if ((c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_AIR || c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_LEAF) &&
                 newLight > 0 &&
                 c->lightMap[nPos[0]][nPos[1]][nPos[2]] < newLight) {

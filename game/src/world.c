@@ -277,7 +277,7 @@ static void highlightInit(world_t *w) {
     glEnableVertexAttribArray(0);
     glVertexAttribIPointer(1, 1, GL_INT, 5 * sizeof(float), (void *) (3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-    glVertexAttribIPointer(2, 1, GL_INT, 5 * sizeof(float), (void *) (4 * sizeof(float)));
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (4 * sizeof(float)));
     glEnableVertexAttribArray(2);
     glBindVertexArray(0);
 }

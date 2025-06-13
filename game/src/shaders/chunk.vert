@@ -2,14 +2,14 @@
 
 in vec3 aPos;
 in int aTexIndex;
-in int aLightValue;
+in float aLightValue;
 
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
 flat out int vTexIndex;
-flat out int vLightValue;
+out float vLightValue;
 out float vFogDepth;
 out vec3 vPos;
 

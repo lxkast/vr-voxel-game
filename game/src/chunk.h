@@ -19,7 +19,7 @@ typedef struct {
     /// The array of blocks in the chunk.
     block_t blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
     /// The array of light levels in the chunk.
-    int lightMap[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
+    float lightMap[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
     /// The queue of light values used for generated the lightMap
     lightQueue_t lightQueue;
     /// The VBO that holds the mesh.

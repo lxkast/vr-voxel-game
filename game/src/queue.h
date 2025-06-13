@@ -4,7 +4,7 @@
 
 typedef struct {
     ivec3 pos;
-    int lightValue;
+    float lightValue;
 } lightQueueItem_t;
 
 // a resizing circular queue for light values

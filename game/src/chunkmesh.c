@@ -23,7 +23,7 @@ static bool faceIsVisible(chunk_t *c, ivec3 blockPos, direction_e dir) {
 
 // writes vertices of a face specified by buf
 // returns pointer to next free position in the buffer
-static vertex_t *writeVertex(vertex_t *buf, ivec3 blockPos, direction_e dir, int width, int height, int type, int light) {
+static vertex_t *writeVertex(vertex_t *buf, ivec3 blockPos, direction_e dir, int width, int height, int type, float light) {
     ivec3 dirVec;
     memcpy(&dirVec, &directions[dir], sizeof(ivec3));
     int texIndex = type * 4;
@@ -147,7 +147,7 @@ static vertex_t *greedyMeshDirection(chunk_t *c, direction_e dir, vertex_t *buf)
                 ivec3 neighbourCoord;
                 glm_ivec3_add(directions[dir], base, neighbourCoord);
                 int nx = neighbourCoord[0], ny = neighbourCoord[1], nz = neighbourCoord[2];
-                int light = 0;
+                float light = 0;
                 if (nx >= 0 && ny >= 0 && nz >= 0 && nx < CHUNK_SIZE && ny < CHUNK_SIZE && nz < CHUNK_SIZE) {
                     light = c->lightMap[nx][ny][nz];
                 }
@@ -182,7 +182,7 @@ void chunk_createMesh(chunk_t *c) {
     glEnableVertexAttribArray(0);
     glVertexAttribIPointer(1, 1, GL_INT, 5 * sizeof(float), (void *) (3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-    glVertexAttribIPointer(2, 1, GL_INT, 5 * sizeof(float), (void *) (4 * sizeof(float)));
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (4 * sizeof(float)));
     glEnableVertexAttribArray(2);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
