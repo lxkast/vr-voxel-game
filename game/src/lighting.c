@@ -7,14 +7,9 @@
 void chunk_processLighting(chunk_t *c) {
     while (c->lightQueue.size > 0) {
         lightQueueItem_t head = queue_pop(&c->lightQueue);
-        int prevLightValue = c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]];
-        if (head.lightValue > prevLightValue) {
-            c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]] = head.lightValue > LIGHT_MAX_VALUE ? LIGHT_MAX_VALUE : head.lightValue;
-        } else {
-            continue;
-        }
+        int lightLevel = c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]];
 
-        // check each direction and add to queue if solid
+        // check each direction and add to queue if transparent
         for (int dir = 0; dir < 6; ++dir) {
             ivec3 dirVec;
             memcpy(&dirVec, &directions[dir], sizeof(ivec3));
@@ -32,12 +27,14 @@ void chunk_processLighting(chunk_t *c) {
                 continue;
             }
 
+            int newLight = lightLevel - 1;
             if ((c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_AIR || c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_LEAF) &&
-                c->lightMap[nPos[0]][nPos[1]][nPos[2]] < head.lightValue - 1 &&
-                head.lightValue - 1 > 0) {
-                lightQueueItem_t nItem = { .lightValue = head.lightValue - 1 };
+                newLight > 0 &&
+                c->lightMap[nPos[0]][nPos[1]][nPos[2]] < newLight) {
+                lightQueueItem_t nItem;
                 memcpy(&nItem.pos, &nPos, sizeof(ivec3));
                 queue_push(&c->lightQueue, nItem);
+                c->lightMap[nPos[0]][nPos[1]][nPos[2]] = newLight;
             }
         }
     }
