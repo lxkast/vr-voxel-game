@@ -5,6 +5,8 @@
 #define GROUND_FRICTION_CONSTANT 0.2f
 #define AIR_FRICTION_CONSTANT 0.6f
 
+extern raycast_t world_raycast(world_t *w, vec3 startPos, vec3 lookDirection, float raycastDistance);
+
 /**
  * @brief Determines if two bounding boxes intersect in the X-axis
  * @param box1 the first bounding box
@@ -83,10 +85,6 @@ static void handleAxisCollision(entity_t *entity, const aabb_t aabb, const block
         if (deltaP[axisNum] < 0) {
             // if velocity is negative, makes the entity's min point end up at the block's max point
             deltaP[axisNum] = block.aabb.max[axisNum] - aabb.min[axisNum];
-            if (axisNum == 1) {
-                // if the entity lands on a block from above, set grounded to true
-                entity->grounded = true;
-            }
         } else {
             // if velocity is positive, makes the entity's max point end up at the block's min point
             deltaP[axisNum] = block.aabb.min[axisNum] - aabb.max[axisNum];
