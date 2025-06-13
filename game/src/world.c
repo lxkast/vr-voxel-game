@@ -324,6 +324,12 @@ void world_draw(const world_t *w, const int modelLocation, camera_t *cam) {
     }
 }
 
+static void freeEntity(const worldEntity_t *e) {
+    glDeleteBuffers(1, &e->vbo);
+    glDeleteVertexArrays(1, &e->vao);
+    free(e->entity);
+}
+
 void world_free(world_t *w) {
     cluster_t *cluster, *tmp;
 
@@ -336,6 +342,10 @@ void world_free(world_t *w) {
         }
         free(cluster->cells);
         free(cluster);
+    }
+
+    for (int i = 0; i < w->numEntities; i++) {
+        freeEntity(&w->entities[i]);
     }
 }
 
@@ -550,7 +560,6 @@ void world_addEntity(world_t *w, worldEntity_t entity) {
                 if (entity.type == WE_PLAYER) {
                     if (w->numPlayers < MAX_NUM_PLAYERS) {
                         w->players[w->numPlayers++] = &w->entities[entityIndex];
-                        LOG_DEBUG("Added Player Entity");
                     } else {
                         LOG_FATAL("Max number of players reached, cannot add another");
                     }
@@ -563,17 +572,11 @@ void world_addEntity(world_t *w, worldEntity_t entity) {
         if (entity.type == WE_PLAYER) {
             if (w->numPlayers < MAX_NUM_PLAYERS) {
                 w->players[w->numPlayers++] = &w->entities[w->numEntities-1];
-                LOG_DEBUG("Added Player Entity");
             } else {
                 LOG_FATAL("Max number of players reached, cannot add another");
             }
         }
     }
-}
-
-static void freeEntity(const worldEntity_t *e) {
-    glDeleteBuffers(1, &e->vbo);
-    glDeleteVertexArrays(1, &e->vao);
 }
 
 void world_removeItemEntity(world_t *w, const int entityIndex) {
