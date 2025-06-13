@@ -124,7 +124,14 @@ static chunkValue_t *world_loadChunk(world_t *w,
 
     if (!cv->chunk) {
         cv->chunk = (chunk_t *)calloc(1, sizeof(chunk_t));
-        chunk_init(cv->chunk, cx, cy, cz);
+
+        rng_t chunkRng;
+        rng_init(&chunkRng, w->seed ^
+                            ((uint64_t)cx << 16) ^
+                            ((uint64_t)cy << 32) ^
+                            ((uint64_t)cz << 48));
+
+        chunk_init(cv->chunk, chunkRng, w->noise, cx, cy, cz);
         cv->ll = LL_INIT;
         cv->loadData.reload = REL_TOMBSTONE;
         cv->loadData.nChildren = 0;
@@ -279,9 +286,7 @@ static void highlightInit(world_t *w) {
     glBindVertexArray(0);
 }
 
-void world_init(world_t *w, const GLuint program) {
-    srand(1);
-
+void world_init(world_t *w, GLuint program, uint64_t seed) {
     memset(w, 0, sizeof(world_t));
     w->clusterTable = NULL;
     fogInit(w, program);
@@ -289,6 +294,11 @@ void world_init(world_t *w, const GLuint program) {
 
     w->numEntities = 0;
     w->oldestItem = 0;
+    
+    w->seed = seed;
+    rng_init(&w->worldRng, seed);
+    rng_init(&w->generalRng, rng_ull(&w->worldRng));
+    w->noise.seed = (uint32_t)rng_ull(&w->worldRng);
 }
 
 vec3 chunkBounds = {15.f, 15.f, 15.f};
@@ -523,15 +533,6 @@ static void meshItemEntity(worldEntity_t *e) {
     free(mesh);
 }
 
-/**
- * @brief Generates a random number in the range (min, max)
- * @param min The minimum value the random number can take
- * @param max The maximum value the random number can take
- * @return the random number
- */
-float getRandRange(const float min, const float max) {
-    return min + (max - min) * ((float)rand() / RAND_MAX);
-}
 
 static worldEntity_t createItemEntity(world_t *w, const vec3 pos, const item_e item) {
     worldEntity_t newWorldEntity;
@@ -543,9 +544,9 @@ static worldEntity_t createItemEntity(world_t *w, const vec3 pos, const item_e i
     newEntity->acceleration[0] = 0;
     newEntity->acceleration[1] = GRAVITY_ACCELERATION;
     newEntity->acceleration[2] = 0;
-    newEntity->velocity[0] = getRandRange(-0.55f, 0.55f);
+    newEntity->velocity[0] = rng_floatRange(&w->generalRng, -0.55f, 0.55f);
     newEntity->velocity[1] = 0.5f;
-    newEntity->velocity[2] = getRandRange(-0.55f, 0.55f);
+    newEntity->velocity[2] = rng_floatRange(&w->generalRng, -0.55f, 0.55f);
     newEntity->grounded = false;
     newEntity->size[0] = 0.25f;
     newEntity->size[1] = 0.25f;

@@ -8,7 +8,10 @@
 
 extern void chunk_createMesh(chunk_t *c);
 
-void chunk_init(chunk_t *c, int cx, int cy, int cz) {
+void chunk_init(chunk_t *c, rng_t rng, noise_t noise, int cx, int cy, int cz) {
+    c->rng = rng;
+    c->noise = noise;
+
     c->cx = cx;
     c->cy = cy;
     c->cz = cz;
@@ -54,9 +57,9 @@ void chunk_generate(chunk_t *c) {
             const float xf = (c->cx * CHUNK_SIZE + x);
             const float zf = (c->cz * CHUNK_SIZE + z);
 
-            const float biome = noise_smoothValue(xf * 0.005f, zf * 0.005f);
+            const float biome = noise_smoothValue(&c->noise, xf * 0.005f, zf * 0.005f);
 
-            const float n = noise_height(xf, zf);
+            const float n = noise_height(&c->noise, xf, zf);
             const float height = n * 20.f;
 
             for (int y = 0; y < CHUNK_SIZE; y++) {
