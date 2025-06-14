@@ -8,6 +8,12 @@
 
 extern void chunk_createMesh(chunk_t *c);
 
+static float smoothstep(float min, float max, float x) {
+    x = glm_clamp((x - min) / (max - min), 0.f, 1.f);
+
+    return x * x * (3.0f - 2.0f * x);
+}
+
 static float getHumidity(chunk_t *c, const float h, const int x, const int z) {
     const float n = noise_smoothValue(&c->noise, 0.005f * (float)x - 1024.f, 0.005f * (float)z + 1024.f);
     return 20.f * n;
@@ -19,8 +25,19 @@ static float getTemperature(chunk_t *c, const float h, const int x, const int z)
 }
 
 static float getHeight(chunk_t *c, const int x, const int z) {
-    const float n = noise_fbm(&c->noise, (float)x, (float)z, 4, 0.5f, 0.01f);
-    return (50.f + n * 50.f);
+    const float xf = (float)x;
+    const float zf = (float)z;
+
+    const float biome = 0.5f + (0.5f * noise_fbm(&c->noise, xf, zf, 2, 0.5f, 0.005f));
+    const float biomeMask = smoothstep(0.4f, 0.6f, biome);
+
+    const float hills = 0.5f + (0.5f * noise_fbm(&c->noise, xf, zf, 5, 0.4f, 0.01f));
+
+    const float flat = 0.05f + (0.05f * noise_fbm(&c->noise, xf, zf, 3, 0.4f, 0.01f));
+
+    const float h = glm_lerp(flat, hills, biomeMask);
+
+    return h * 100.f;
 }
 
 void chunk_init(chunk_t *c, const rng_t rng, const noise_t noise, const int cx, const int cy, const int cz) {
