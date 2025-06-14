@@ -1,9 +1,12 @@
 #include "entity.h"
+#include "logging.h"
 
 #define vec3_SIZE 12
 #define VELOCITY_CUTOFF 0.05f
 #define GROUND_FRICTION_CONSTANT 0.2f
 #define AIR_FRICTION_CONSTANT 0.6f
+
+extern raycast_t world_raycast(world_t *w, vec3 startPos, vec3 lookDirection, float raycastDistance);
 
 /**
  * @brief Determines if two bounding boxes intersect in the X-axis
@@ -68,13 +71,14 @@ bool intersectsWithBlock(const entity_t entity, ivec3 blockPosition) {
 /**
  * @brief Handles a collision of an entity and a block along a specific axis. Tries to
  *        resolve collisions by updating deltaP so the entity never moves inside a block.
+ * @param w A pointer to a world
  * @param entity The entity that is colliding
  * @param aabb The entity's bounding box
  * @param block The block we are checking for collisions with
  * @param deltaP The amount we were originally planning on moving the entity by
  * @param axisNum The axis we are resolving on
  */
-static void handleAxisCollision(entity_t *entity, const aabb_t aabb, const blockBounding_t block, vec3 deltaP, const int axisNum) {
+static void handleAxisCollision(world_t *w, entity_t *entity, const aabb_t aabb, const blockBounding_t block, vec3 deltaP, const int axisNum) {
     if (deltaP[axisNum] == 0.f) {
         return;
     }
@@ -83,10 +87,12 @@ static void handleAxisCollision(entity_t *entity, const aabb_t aabb, const block
         if (deltaP[axisNum] < 0) {
             // if velocity is negative, makes the entity's min point end up at the block's max point
             deltaP[axisNum] = block.aabb.max[axisNum] - aabb.min[axisNum];
+
             if (axisNum == 1) {
                 // if the entity lands on a block from above, set grounded to true
                 entity->grounded = true;
             }
+
         } else {
             // if velocity is positive, makes the entity's max point end up at the block's min point
             deltaP[axisNum] = block.aabb.min[axisNum] - aabb.max[axisNum];
@@ -104,7 +110,7 @@ static void handleAxisCollision(entity_t *entity, const aabb_t aabb, const block
 static void blockDataToBlockBounding(const blockData_t *buf, const unsigned int numBlocks, blockBounding_t *result) {
     vec3 blockSize = {1.f, 1.f, 1.f};
     for (int i = 0; i < numBlocks; i++) {
-        const blockData_t block = buf[numBlocks - i];
+        const blockData_t block = buf[numBlocks - i - 1];
 
         vec3 position = {(float)block.x, (float)block.y, (float)block.z};
 
@@ -162,8 +168,21 @@ static void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
             continue;
         }
         if (intersectsX(aabb, blocks[i].aabb) && intersectsZ(aabb, blocks[i].aabb)) {
-            handleAxisCollision(entity, aabb, blocks[i], deltaP, 1);
+            handleAxisCollision(w, entity, aabb, blocks[i], deltaP, 1);
         }
+    }
+
+    if (deltaP[1] < -2) {
+        vec3 centerUnderside = {entity->position[0] + entity->size[0] / 2, entity->position[1], entity->position[2] + entity->size[2] / 2};
+
+        const raycast_t raycast = world_raycast(w, centerUnderside, (vec3){0.f, -1.f, 0.f}, fabsf(deltaP[1])+1);
+
+        if (raycast.found) {
+            if (fabsf(entity->position[1] - (raycast.blockPosition[1] + 1)) < fabsf(deltaP[1])) {
+                deltaP[1] = (raycast.blockPosition[1] + 1) - entity->position[1];
+            }
+        }
+        entity->grounded = true;
     }
 
     // resolves collisions in X-axis
@@ -172,7 +191,7 @@ static void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
             continue;
         }
         if (intersectsY(aabb, blocks[i].aabb) && intersectsZ(aabb, blocks[i].aabb)) {
-            handleAxisCollision(entity, aabb, blocks[i], deltaP, 0);
+            handleAxisCollision(w, entity, aabb, blocks[i], deltaP, 0);
         }
     }
 
@@ -182,7 +201,7 @@ static void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
             continue;
         }
         if (intersectsX(aabb, blocks[i].aabb) && intersectsY(aabb, blocks[i].aabb)) {
-            handleAxisCollision(entity, aabb, blocks[i], deltaP, 2);
+            handleAxisCollision(w, entity, aabb, blocks[i], deltaP, 2);
         }
     }
 

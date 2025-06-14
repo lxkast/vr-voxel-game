@@ -15,9 +15,10 @@ static bool onBlockCooldown(player_t *p) {
 
 static void player_addToWorld(player_t *p, world_t *w) {
     world_addEntity(w, (worldEntity_t){
-        .type = PLAYER,
+        .type = WE_PLAYER,
         .entity = &p->entity,
         .itemType = -1,
+        .needsFreeing = false,
         .vao = -1,
         .vbo = -1
     });
@@ -102,7 +103,7 @@ void player_removeBlock(player_t *p, world_t *w) {
     vec3 lookVector;
     glm_vec3_scale(p->lookVector, -1, lookVector);
 
-    const raycast_t raycastBlock = world_raycast(w, camPos, lookVector);
+    const raycast_t raycastBlock = world_raycast(w, camPos, lookVector, 6.f);
 
     if (raycastBlock.found) {
         world_removeBlock(w,(int)raycastBlock.blockPosition[0], (int)raycastBlock.blockPosition[1], (int)raycastBlock.blockPosition[2]);
@@ -122,7 +123,7 @@ void player_placeBlock(player_t *p, world_t *w) {
     vec3 lookVector;
     glm_vec3_scale(p->lookVector, -1, lookVector);
 
-    const raycast_t raycastBlock = world_raycast(w, camPos, lookVector);
+    const raycast_t raycastBlock = world_raycast(w, camPos, lookVector, 6.f);
 
     if (raycastBlock.found) {
         const int *moveDelta = faceToBlock[raycastBlock.face];
@@ -197,7 +198,7 @@ void player_printHotbar(const player_t *p) {
 void player_pickUpItemsCheck(player_t *p, world_t *w) {
     for (int i = 0; i < w->numEntities; i++) {
         const worldEntity_t worldEntity = w->entities[i];
-        if (worldEntity.type == ITEM && entitiesIntersect(p->entity, *worldEntity.entity)) {
+        if (worldEntity.type == WE_ITEM && entitiesIntersect(p->entity, *worldEntity.entity)) {
             // checking if player already has those items
             for (int j = 0; j < 9; j++) {
                 hotbarItem_t *slot = &p->hotbar.slots[j];
