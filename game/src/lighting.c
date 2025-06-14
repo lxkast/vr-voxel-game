@@ -1,7 +1,143 @@
 #include <string.h>
 
 #include "lighting.h"
-#include "vertices.h"
+
+#include <logging.h>
+
+// computes the light value of a vertex by averaging the 4 light values in the direction of the normal
+float computeVertexLight(chunk_t *c, int vx, int vy, int vz, direction_e dir) {
+    const int offsets[2] = { 0, -1 };
+
+    int count = 0;
+    int sum = 0;
+
+    switch (dir) {
+        case DIR_PLUSZ: {
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 2; ++j) {
+                    int nx = vx + offsets[i];
+                    int ny = vy + offsets[j];
+                    int nz = vz;
+                    if (nx >= 0 && nx < CHUNK_SIZE &&
+                        ny >= 0 && ny < CHUNK_SIZE &&
+                        nz >= 0 && nz < CHUNK_SIZE) {
+                        int lv = c->lightMap[nx][ny][nz];
+                        sum += lv;
+                        count++;
+                    } else {
+                        // TODO: fetch light value from neighbouring chunk
+                    }
+                }
+            }
+            break;
+        }
+        case DIR_MINUSZ: {
+            int dz = -1;
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 2; ++j) {
+                    int nx = vx + offsets[i];
+                    int ny = vy + offsets[j];
+                    int nz = vz + dz;
+                    if (nx >= 0 && nx < CHUNK_SIZE &&
+                        ny >= 0 && ny < CHUNK_SIZE &&
+                        nz >= 0 && nz < CHUNK_SIZE) {
+                        int lv = c->lightMap[nx][ny][nz];
+                        sum += lv;
+                        count++;
+                    } else {
+                        // TODO: fetch light value from neighbouring chunk
+                    }
+                }
+            }
+            break;
+        }
+        case DIR_PLUSY: {
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 2; ++j) {
+                    int nx = vx + offsets[i];
+                    int nz = vz + offsets[j];
+                    int ny = vy;
+                    if (nx >= 0 && nx < CHUNK_SIZE &&
+                        ny >= 0 && ny < CHUNK_SIZE &&
+                        nz >= 0 && nz < CHUNK_SIZE) {
+                        int lv = c->lightMap[nx][ny][nz];
+                        sum += lv;
+                        count++;
+                    } else {
+                        // TODO: fetch light value from neighbouring chunk
+                    }
+                }
+            }
+            break;
+        }
+        case DIR_MINUSY: {
+            int dy = -1;
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 2; ++j) {
+                    int nx = vx + offsets[i];
+                    int nz = vz + offsets[j];
+                    int ny = vy + dy;
+                    if (nx >= 0 && nx < CHUNK_SIZE &&
+                        ny >= 0 && ny < CHUNK_SIZE &&
+                        nz >= 0 && nz < CHUNK_SIZE) {
+                        int lv = c->lightMap[nx][ny][nz];
+                        sum += lv;
+                        count++;
+                    } else {
+                        // TODO: fetch light value from neighbouring chunk
+                    }
+                }
+            }
+            break;
+        }
+        case DIR_PLUSX: {
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 2; ++j) {
+                    int ny = vy + offsets[i];
+                    int nz = vz + offsets[j];
+                    int nx = vx;
+                    if (nx >= 0 && nx < CHUNK_SIZE &&
+                        ny >= 0 && ny < CHUNK_SIZE &&
+                        nz >= 0 && nz < CHUNK_SIZE) {
+                        int lv = c->lightMap[nx][ny][nz];
+                        sum += lv;
+                        count++;
+                    } else {
+                        // TODO: fetch light value from neighbouring chunk
+                    }
+                }
+            }
+            break;
+        }
+        case DIR_MINUSX: {
+            int dx = -1;
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 2; ++j) {
+                    int ny = vy + offsets[i];
+                    int nz = vz + offsets[j];
+                    int nx = vx + dx;
+                    if (nx >= 0 && nx < CHUNK_SIZE &&
+                        ny >= 0 && ny < CHUNK_SIZE &&
+                        nz >= 0 && nz < CHUNK_SIZE) {
+                        int lv = c->lightMap[nx][ny][nz];
+                        sum += lv;
+                        count++;
+                    } else {
+                        // TODO: fetch light value from neighbouring chunk
+                    }
+                }
+            }
+            break;
+        }
+        default:
+            LOG_FATAL("Invalid direction enum in computeVertexLight");
+    }
+
+    if (count == 0) {
+        return 0.0f;
+    }
+    return sum / (float)count;
+}
 
 // performs a BFS flood-fill to approximate the light values of each chunk
 void chunk_processLighting(chunk_t *c) {
