@@ -18,6 +18,7 @@
 #define AIR_ACCELERATION 10.f
 
 static double previousMouse[2];
+static int joystickID = -1;
 
 static void (*toggle_wireframe)();
 static void (*toggle_vr)();
@@ -81,25 +82,24 @@ void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
         }
     }
 
-#define JOYSTICK GLFW_JOYSTICK_4
-    int present = glfwJoystickPresent(JOYSTICK);
-    if (present) {
-	LOG_DEBUG("Joystick name %s", glfwGetJoystickName(JOYSTICK));
+    if (joystickID != -1) {
         int axisCount;
-        const float* axes = glfwGetJoystickAxes(JOYSTICK, &axisCount);
+        const float* axes = glfwGetJoystickAxes(joystickID, &axisCount);
 
         int buttonCount;
-        const unsigned char *buttons = glfwGetJoystickButtons(JOYSTICK, &buttonCount);
+        const unsigned char *buttons = glfwGetJoystickButtons(joystickID, &buttonCount);
         if (buttonCount != 5 || axisCount != 2) {
-            LOG_FATAL("Joystick is not our controller, buttons: %d, axis: %d", buttonCount, axisCount);
-        }
-        const float joySprintMultiplier = buttons[3] ? SPRINT_MULTIPLIER : 1.f;
-        acceleration[2] += -axes[1] * (player->entity.grounded ? GROUND_ACCELERATION : AIR_ACCELERATION) * joySprintMultiplier;
-        acceleration[0] += axes[0] * (player->entity.grounded ? GROUND_ACCELERATION : AIR_ACCELERATION) * joySprintMultiplier;
+            LOG_DEBUG("Joystick is not our controller, has been swapped out, buttons: %d, axis: %d", buttonCount, axisCount);
+            joystickID = -1;
+        } else {
+            const float joySprintMultiplier = buttons[3] ? SPRINT_MULTIPLIER : 1.f;
+            acceleration[2] += -axes[1] * (player->entity.grounded ? GROUND_ACCELERATION : AIR_ACCELERATION) * joySprintMultiplier;
+            acceleration[0] += axes[0] * (player->entity.grounded ? GROUND_ACCELERATION : AIR_ACCELERATION) * joySprintMultiplier;
 
-        if (buttons[4] && player->entity.grounded) {
-            player->entity.velocity[1] = 5;
-            player->entity.grounded = false;
+            if (buttons[4] && player->entity.grounded) {
+                player->entity.velocity[1] = 5;
+                player->entity.grounded = false;
+            }
         }
     }
 
@@ -107,6 +107,25 @@ void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
     changeRUFtoXYZ(acceleration, player->entity.yaw);
 
     glm_vec3_copy(acceleration, player->entity.acceleration);
+}
+
+void joystickEvent(int jid, int event) {
+    if (event == GLFW_CONNECTED) {
+
+        int axisCount;
+        glfwGetJoystickAxes(jid, &axisCount);
+
+        int buttonCount;
+        glfwGetJoystickButtons(jid, &buttonCount);
+        if (axisCount == 2 && buttonCount == 5) {
+            LOG_INFO("Joystick connected, id: %d", jid);
+            joystickID = jid;
+        }
+    } else if (event == GLFW_DISCONNECTED) {
+        if (jid == joystickID) {
+            joystickID = -1;
+        }
+    }
 }
 
 void processCameraInput(GLFWwindow *window, camera_t *camera) {
@@ -141,5 +160,12 @@ void initialiseInput(GLFWwindow *window, void (*wireframe)(), void (*vr)()) {
     toggle_vr = vr;
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwGetCursorPos(window, previousMouse, previousMouse + 1);
+    glfwSetJoystickCallback(joystickEvent);
     glfwSetKeyCallback(window, key_callback);
+
+    for (int i = GLFW_JOYSTICK_1; i < GLFW_JOYSTICK_LAST; i++) {
+        if (glfwJoystickPresent(i)) {
+            joystickEvent(i, GLFW_CONNECTED);
+        }
+    }
 }
