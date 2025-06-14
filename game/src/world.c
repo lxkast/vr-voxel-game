@@ -153,15 +153,61 @@ static chunkValue_t *world_loadChunk(world_t *w,
     return cv;
 }
 
-struct decorator {
+typedef struct {
     int cacheN;
     chunkValue_t *cache[3][3][3];
 
     chunkValue_t *origin;
     int ox, oy, oz;
+} decorator_t;
+
+typedef struct {
+    block_t type;
+    int x,y,z;
+} structure_block_t;
+
+typedef struct {
+    decorator_t decorator;
+    int numBlocks;
+    structure_block_t *blocks;
+} structure_t;
+
+structure_block_t treePattern[] = {
+    {BL_LOG, 0,0,0},
+    {BL_LOG, 0,1,0},
+    {BL_LOG, 0,2,0},
+    {BL_LOG, 0,3,0},
+    {BL_LOG, 0,4,0},
+
+    // y=2 layer
+    {BL_LEAF, -2,2,-2}, {BL_LEAF, -1,2,-2}, {BL_LEAF, 0,2,-2}, {BL_LEAF, 1,2,-2}, {BL_LEAF, 2,2,-2},
+    {BL_LEAF, -2,2,-1}, {BL_LEAF, -1,2,-1}, {BL_LEAF, 0,2,-1}, {BL_LEAF, 1,2,-1}, {BL_LEAF, 2,2,-1},
+    {BL_LEAF, -2,2,0},  {BL_LEAF, 0,2,0},  {BL_LEAF, 1,2,0},  {BL_LEAF, 2,2,0},
+    {BL_LEAF, -2,2,1},  {BL_LEAF, -1,2,1},  {BL_LEAF, 0,2,1},  {BL_LEAF, 1,2,1},  {BL_LEAF, 2,2,1},
+    {BL_LEAF, -2,2,2},  {BL_LEAF, -1,2,2},  {BL_LEAF, 0,2,2},  {BL_LEAF, 1,2,2},  {BL_LEAF, 2,2,2},
+
+    // y=3 layer
+    {BL_LEAF, -2,3,-2}, {BL_LEAF, -1,3,-2}, {BL_LEAF, 0,3,-2}, {BL_LEAF, 1,3,-2}, {BL_LEAF, 2,3,-2},
+    {BL_LEAF, -2,3,-1}, {BL_LEAF, -1,3,-1}, {BL_LEAF, 0,3,-1}, {BL_LEAF, 1,3,-1}, {BL_LEAF, 2,3,-1},
+    {BL_LEAF, -2,3,0},  {BL_LEAF, 0,3,0},  {BL_LEAF, 1,3,0},  {BL_LEAF, 2,3,0},
+    {BL_LEAF, -2,3,1},  {BL_LEAF, -1,3,1},  {BL_LEAF, 0,3,1},  {BL_LEAF, 1,3,1},  {BL_LEAF, 2,3,1},
+    {BL_LEAF, -2,3,2},  {BL_LEAF, -1,3,2},  {BL_LEAF, 0,3,2},  {BL_LEAF, 1,3,2},  {BL_LEAF, 2,3,2},
+
+    // y=4 layer
+    {BL_LEAF, -1,4,0}, {BL_LEAF, 0,4,-1}, {BL_LEAF, 0,4,0}, {BL_LEAF, 0,4,1}, {BL_LEAF, 1,4,0},
+
+    // y=5 layer
+    {BL_LEAF, -1,5,0}, {BL_LEAF, 0,5,-1}, {BL_LEAF, 0,5,0}, {BL_LEAF, 0,5,1}, {BL_LEAF, 1,5,0}
 };
 
-static void decorator_init(struct decorator *d, chunkValue_t *origin, const int x, const int y, const int z) {
+structure_t treeStructure = {
+    .numBlocks = 63,
+    .blocks = treePattern,
+};
+
+
+
+static void decorator_init(decorator_t *d, chunkValue_t *origin, const int x, const int y, const int z) {
     d->cacheN = 0;
     d->origin = origin;
     memset(d->cache, 0, 27 * sizeof(chunkValue_t *));
@@ -171,7 +217,7 @@ static void decorator_init(struct decorator *d, chunkValue_t *origin, const int 
     d->oz = z;
 }
 
-static bool decorator_initSurface(struct decorator *d, chunkValue_t *origin, const int x, const int z, const block_t block) {
+static bool decorator_initSurface(decorator_t *d, chunkValue_t *origin, const int x, const int z, const block_t block) {
     for (int y = CHUNK_SIZE - 2; y >= 0; y--) {
         if (origin->chunk->blocks[x][y][z] == block) {
             decorator_init(d, origin, x, y + 1, z);
@@ -181,7 +227,7 @@ static bool decorator_initSurface(struct decorator *d, chunkValue_t *origin, con
     return false;
 }
 
-static void decorator_placeBlock(struct decorator *d,
+static void decorator_placeBlock(decorator_t *d,
                                  world_t *world,
                                  int x,
                                  int y,
@@ -224,7 +270,7 @@ static void decorator_placeBlock(struct decorator *d,
     }
 }
 
-static void decorator_placeTree(struct decorator *d, world_t *world) {
+static void decorator_placeTree(decorator_t *d, world_t *world) {
     for (int y = 2; y < 6; y++) {
         for (int x = -2; x <= 2; x++) {
             for (int z = -2; z <= 2; z++) {
@@ -240,18 +286,24 @@ static void decorator_placeTree(struct decorator *d, world_t *world) {
     decorator_placeBlock(d, world, 0, 2, 0, BL_LOG);
     decorator_placeBlock(d, world, 0, 3, 0, BL_LOG);
     decorator_placeBlock(d, world, 0, 4, 0, BL_LOG);
+}
 
+static void world_placeStructure(world_t *world, structure_t *structure) {
+    for (int i = 0; i < structure->numBlocks; i++) {
+        const structure_block_t block = structure->blocks[i];
+        decorator_placeBlock(&structure->decorator, world, block.x, block.y, block.z, block.type);
+    }
 }
 
 
 static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
-    struct decorator d;
+    //decorator_t d;
 
     for (int x = 0; x < CHUNK_SIZE; x++) {
         for (int z = 0; z < CHUNK_SIZE; z++) {
             if (rng_float(&cv->chunk->rng) < 0.01f) {
-                if (decorator_initSurface(&d, cv, x, z, BL_GRASS)) {
-                    decorator_placeTree(&d, w);
+                if (decorator_initSurface(&treeStructure.decorator, cv, x, z, BL_GRASS)) {
+                    world_placeStructure(w, &treeStructure);
                 }
             }
         }
