@@ -78,7 +78,7 @@ bool intersectsWithBlock(const entity_t entity, ivec3 blockPosition) {
  * @param deltaP The amount we were originally planning on moving the entity by
  * @param axisNum The axis we are resolving on
  */
-static void handleAxisCollision(world_t *w, entity_t *entity, const aabb_t aabb, const blockBounding_t block, vec3 deltaP, const int axisNum) {
+static void handleAxisCollision(entity_t *entity, const aabb_t aabb, const blockBounding_t block, vec3 deltaP, const int axisNum) {
     if (deltaP[axisNum] == 0.f) {
         return;
     }
@@ -126,12 +126,13 @@ void glm_vec3_ceil(vec3 v, vec3 dest) {
 
 /**
  * @brief Updates the entity's position using deltaP, whilst checking for possible collisions
+ * @param w A pointer to a world
  * @param entity the entity whose position you're changing
  * @param deltaP the amount you want to change it by
  */
 static void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
     // defining the entity's AABB bounding box
-    const aabb_t aabb = makeAABB(entity->position, entity->size);
+    aabb_t aabb = makeAABB(entity->position, entity->size);
 
     // working out the bottom left and top right corners of the cuboid of blocks
     // around the player we want to check collisions with
@@ -168,7 +169,7 @@ static void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
             continue;
         }
         if (intersectsX(aabb, blocks[i].aabb) && intersectsZ(aabb, blocks[i].aabb)) {
-            handleAxisCollision(w, entity, aabb, blocks[i], deltaP, 1);
+            handleAxisCollision(entity, aabb, blocks[i], deltaP, 1);
         }
     }
 
@@ -180,10 +181,13 @@ static void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
         if (raycast.found) {
             if (fabsf(entity->position[1] - (raycast.blockPosition[1] + 1)) < fabsf(deltaP[1])) {
                 deltaP[1] = (raycast.blockPosition[1] + 1) - entity->position[1];
+                entity->grounded = true;
             }
         }
-        entity->grounded = true;
     }
+
+    aabb.max[1] += deltaP[1];
+    aabb.min[1] += deltaP[1];
 
     // resolves collisions in X-axis
     for (int i = 0; i < numBlocks; i++) {
@@ -191,9 +195,12 @@ static void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
             continue;
         }
         if (intersectsY(aabb, blocks[i].aabb) && intersectsZ(aabb, blocks[i].aabb)) {
-            handleAxisCollision(w, entity, aabb, blocks[i], deltaP, 0);
+            handleAxisCollision(entity, aabb, blocks[i], deltaP, 0);
         }
     }
+
+    aabb.max[0] += deltaP[0];
+    aabb.min[0] += deltaP[0];
 
     // resolves collisions in Z-axis
     for (int i = 0; i < numBlocks; i++) {
@@ -201,11 +208,10 @@ static void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
             continue;
         }
         if (intersectsX(aabb, blocks[i].aabb) && intersectsY(aabb, blocks[i].aabb)) {
-            handleAxisCollision(w, entity, aabb, blocks[i], deltaP, 2);
+            handleAxisCollision(entity, aabb, blocks[i], deltaP, 2);
         }
     }
 
-    // updates position
     glm_vec3_add(entity->position, deltaP, entity->position);
 }
 
