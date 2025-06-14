@@ -8,6 +8,9 @@
 #include "player.h"
 #include "uthash.h"
 #include "noise.h"
+#include "../external/miniaudio/miniaudio.h"
+
+#define MA_ENABLE_MP3
 
 #define MAX_CHUNKS 256
 #define MAX_CHUNK_LOADERS 8
@@ -72,6 +75,7 @@ typedef struct world_t {
     rng_t generalRng;
     rng_t worldRng;
     noise_t noise;
+    ma_engine engine;
 } world_t;
 
 /**

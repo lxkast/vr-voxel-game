@@ -311,6 +311,10 @@ void world_init(world_t *w, GLuint program, uint64_t seed) {
     rng_init(&w->worldRng, seed);
     rng_init(&w->generalRng, rng_ull(&w->worldRng));
     w->noise.seed = (uint32_t)rng_ull(&w->worldRng);
+
+    if (ma_engine_init(NULL, &w->engine) != MA_SUCCESS) {
+        LOG_FATAL("Engine not loaded");
+    }
 }
 
 vec3 chunkBounds = {15.f, 15.f, 15.f};
@@ -643,6 +647,10 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
     if (!getBlockAddr(w, x, y, z, &bp, &cp)) return false;
 
     if (*bp == BL_AIR) return false;
+
+    if (*bp == BL_LOG) {
+        ma_engine_play_sound(&w->engine, "..\\..\\src\\audio\\log_destroy.mp3", NULL);
+    }
 
     const worldEntity_t entity = createItemEntity(w, (vec3){(float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f}, BLOCK_TO_ITEM[*bp]);
     world_addEntity(w, entity);

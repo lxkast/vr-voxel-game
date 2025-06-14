@@ -11,7 +11,6 @@
 #include "shaderutil.h"
 #include "texture.h"
 #include "world.h"
-#include <miniaudio.h>
 
 #if defined(__APPLE__) && defined(__MACH__)
 #define MINOR_VERSION 2
