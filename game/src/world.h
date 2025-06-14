@@ -5,6 +5,7 @@
 #include "camera.h"
 #include "chunk.h"
 #include "item.h"
+#include "player.h"
 #include "uthash.h"
 #include "noise.h"
 
@@ -21,21 +22,26 @@
 #define GRAVITY_ACCELERATION (-10.f)
 
 #define MAX_NUM_ENTITIES 64
+#define MAX_NUM_PLAYERS 4
 
 typedef struct entity_t entity_t;
 
 typedef enum {
-    NONE,
-    PLAYER,
-    ITEM,
-    // MOB,   (Not implemented yet)
+    WE_NONE,
+    WE_PLAYER,
+    WE_ITEM,
+    // WE_MOB,   (Not implemented yet)
 } worldEntity_e;
 
 typedef struct {
+    /// What kind of entity it is
     worldEntity_e type;
+    /// The actual entity_t entity
     entity_t *entity;
-    /// This is only checked if 'type' is ITEM
+    /// This is only checked if 'type' is WE_ITEM
     item_e itemType;
+    /// Stores whether the entity needs to be freed
+    bool needsFreeing;
     /// Entity VAO and VBO, currently only used for 'item' entities
     GLuint vao;
     GLuint vbo;
@@ -59,6 +65,9 @@ typedef struct world_t {
     int numEntities;
     worldEntity_t entities[MAX_NUM_ENTITIES];
     int oldestItem;
+    int numPlayers;
+    /// Stores pointers to all current players in the world
+    worldEntity_t *players[MAX_NUM_PLAYERS];
     uint64_t seed;
     rng_t generalRng;
     rng_t worldRng;
