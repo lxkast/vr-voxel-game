@@ -1,5 +1,5 @@
 [[applicationCollection]]
-usage = ['Generic Desktop', 'Gamepad']
+usage = ['Generic Desktop', 'Joystick']
 
     [[applicationCollection.inputReport]]
 
@@ -16,5 +16,5 @@ usage = ['Generic Desktop', 'Gamepad']
 
 
         [[applicationCollection.inputReport.variableItem]]
-        usageRange = ['Button', 'Button 1', 'Button 4']
+        usageRange = ['Button', 'Button 1', 'Button 5']
         logicalValueRange = [0, 1]
