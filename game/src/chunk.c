@@ -4,227 +4,40 @@
 #include <string.h>
 #include <math.h>
 #include "vertices.h"
+#include "noise.h"
 
-static float valueNoise(const int x, const int y) {
-    int n = x + y * 57;
-    n = (n << 13) ^ n;
-    const int nn = (n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff;
-    return 1.0f - ((float)nn / 1073741824.0f);
-}
+extern void chunk_createMesh(chunk_t *c);
 
-static float ease(const float t) {
-    return t * t * t * (t * (t * 6 - 15) + 10);
-}
+void chunk_init(chunk_t *c, rng_t rng, noise_t noise, int cx, int cy, int cz) {
+    c->rng = rng;
+    c->noise = noise;
 
-float smoothValueNoise(const float x, const float y) {
-    const int x_int = (int)floorf(x);
-    const int y_int = (int)floorf(y);
-    const float x_frac = ease(x - (float)x_int);
-    float y_frac = ease(y - (float)y_int);
-
-
-    const float v00 = valueNoise(x_int,     y_int);
-    const float v10 = valueNoise(x_int + 1, y_int);
-    const float v01 = valueNoise(x_int,     y_int + 1);
-    const float v11 = valueNoise(x_int + 1, y_int + 1);
-
-    const float i1 = glm_lerp(v00, v10, x_frac);
-    const float i2 = glm_lerp(v01, v11, x_frac);
-    return glm_lerp(i1, i2, y_frac);
-}
-
-/**
- * @brief Creates the mesh from a chunk
- * @param c A pointer to a chunk
- */
-static void chunk_createMesh(chunk_t *c) {
-    static const size_t bytesPerBlock = sizeof(float) * 36 * 5;
-
-    float *buf = (float *)malloc(CHUNK_SIZE_CUBED * bytesPerBlock);
-
-    float *nextPtr = buf;
-    for (int i = 0; i < CHUNK_SIZE; i++) {
-        for (int j = 0; j < CHUNK_SIZE; j++) {
-            for (int k = 0; k < CHUNK_SIZE; k++) {
-                if (c->blocks[i][j][k] == BL_AIR) {
-                    continue;
-                }
-                int ni, nj, nk;
-                bool neighbourIsAir = false;
-                /*
-                    The below is tedious and repetitive, but I didn't
-                    give it its own function because it may change significantly
-                    when implementing greedy meshing.
-                */
-
-
-                /*
-                    back face
-                */
-                ni = i;
-                nj = j;
-                nk = k - 1;
-                neighbourIsAir = false;
-                if (nk < 0) {
-                    neighbourIsAir = true;
-                } else {
-                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
-                }
-                if (neighbourIsAir) {
-                    memcpy(nextPtr, backFaceVertices, faceVerticesSize);
-                    for (int n = 0; n < 6; n++) {
-                        nextPtr[5 * n + 0] += (float)i;
-                        nextPtr[5 * n + 1] += (float)j;
-                        nextPtr[5 * n + 2] += (float)k;
-                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
-                    }
-                    nextPtr += faceVerticesSize / sizeof(float);
-                }
-                /*
-                    front face
-                */
-                ni = i;
-                nj = j;
-                nk = k + 1;
-                neighbourIsAir = false;
-                if (nk >= CHUNK_SIZE) {
-                    neighbourIsAir = true;
-                } else {
-                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
-                }
-                if (neighbourIsAir) {
-                    memcpy(nextPtr, frontFaceVertices, faceVerticesSize);
-                    for (int n = 0; n < 6; n++) {
-                        nextPtr[5 * n + 0] += (float)i;
-                        nextPtr[5 * n + 1] += (float)j;
-                        nextPtr[5 * n + 2] += (float)k;
-                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
-                    }
-                    nextPtr += faceVerticesSize / sizeof(float);
-                }
-                /*
-                    left face
-                */
-                ni = i - 1;
-                nj = j;
-                nk = k;
-                neighbourIsAir = false;
-                if (ni < 0) {
-                    neighbourIsAir = true;
-                } else {
-                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
-                }
-                if (neighbourIsAir) {
-                    memcpy(nextPtr, leftFaceVertices, faceVerticesSize);
-                    for (int n = 0; n < 6; n++) {
-                        nextPtr[5 * n + 0] += (float)i;
-                        nextPtr[5 * n + 1] += (float)j;
-                        nextPtr[5 * n + 2] += (float)k;
-                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
-                    }
-                    nextPtr += faceVerticesSize / sizeof(float);
-                }
-                /*
-                    right face
-                */
-                ni = i + 1;
-                nj = j;
-                nk = k;
-                neighbourIsAir = false;
-                if (ni >= CHUNK_SIZE) {
-                    neighbourIsAir = true;
-                } else {
-                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
-                }
-                if (neighbourIsAir) {
-                    memcpy(nextPtr, rightFaceVertices, faceVerticesSize);
-                    for (int n = 0; n < 6; n++) {
-                        nextPtr[5 * n + 0] += (float)i;
-                        nextPtr[5 * n + 1] += (float)j;
-                        nextPtr[5 * n + 2] += (float)k;
-                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
-                    }
-                    nextPtr += faceVerticesSize / sizeof(float);
-                }
-                /*
-                    bottom face
-                */
-                ni = i;
-                nj = j - 1;
-                nk = k;
-                neighbourIsAir = false;
-                if (nj < 0) {
-                    neighbourIsAir = true;
-                } else {
-                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
-                }
-                if (neighbourIsAir) {
-                    memcpy(nextPtr, bottomFaceVertices, faceVerticesSize);
-                    for (int n = 0; n < 6; n++) {
-                        nextPtr[5 * n + 0] += (float)i;
-                        nextPtr[5 * n + 1] += (float)j;
-                        nextPtr[5 * n + 2] += (float)k;
-                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
-                    }
-                    nextPtr += faceVerticesSize / sizeof(float);
-                }
-                /*
-                    top face
-                */
-                ni = i;
-                nj = j + 1;
-                nk = k;
-                neighbourIsAir = false;
-                if (nj >= CHUNK_SIZE) {
-                    neighbourIsAir = true;
-                } else {
-                    neighbourIsAir = c->blocks[ni][nj][nk] == BL_AIR;
-                }
-                if (neighbourIsAir) {
-                    memcpy(nextPtr, topFaceVertices, faceVerticesSize);
-                    for (int n = 0; n < 6; n++) {
-                        nextPtr[5 * n + 0] += (float)i;
-                        nextPtr[5 * n + 1] += (float)j;
-                        nextPtr[5 * n + 2] += (float)k;
-                        nextPtr[5 * n + 3] = 16.0f * (nextPtr[5 * n + 3] + c->blocks[i][j][k]) / 96.0f;
-                    }
-                    nextPtr += faceVerticesSize / sizeof(float);
-                }
-            }
-        }
-    }
-
-    const GLsizeiptr sizeToWrite = sizeof(float) * (nextPtr - buf);
-    c->meshVertices = sizeToWrite / (sizeof(float) * 5);
-
-    glBindBuffer(GL_ARRAY_BUFFER, c->vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeToWrite, buf, GL_STATIC_DRAW);
-
-    glBindVertexArray(c->vao);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    free(buf);
-}
-
-void chunk_create(chunk_t *c, const int cx, const int cy, const int cz, const block_t block) {
     c->cx = cx;
     c->cy = cy;
     c->cz = cz;
 
+    glGenBuffers(1, &c->vbo);
+    glGenVertexArrays(1, &c->vao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, c->vbo);
+
+    glBindVertexArray(c->vao);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *) 0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribIPointer(1, 1, GL_INT, 4 * sizeof(float), (void *) (3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+}
+
+void chunk_fill(chunk_t *c, const block_t block) {
     int *ptr = c->blocks;
     for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE; i++) {
         ptr[i] = block;
     }
 
-    glGenBuffers(1, &c->vbo);
-    glGenVertexArrays(1, &c->vao);
-    chunk_createMesh(c);
+    c->tainted = true;
 }
 
 void chunk_createDeserialise(chunk_t *c, FILE *fp) {
@@ -234,41 +47,34 @@ void chunk_createDeserialise(chunk_t *c, FILE *fp) {
 
     fread(&c->blocks, sizeof(int), CHUNK_SIZE_CUBED, fp);
 
-    glGenBuffers(1, &c->vbo);
-    glGenVertexArrays(1, &c->vao);
-    chunk_createMesh(c);
+    c->tainted = true;
 }
 
-void chunk_generate(chunk_t *c, int cx, int cy, int cz) {
-    c->cx = cx;
-    c->cy = cy;
-    c->cz = cz;
-
+void chunk_generate(chunk_t *c) {
     int (*ptr)[CHUNK_SIZE][CHUNK_SIZE] = (int (*)[CHUNK_SIZE][CHUNK_SIZE]) c->blocks;
     for (int x = 0; x < CHUNK_SIZE; x++) {
         for (int z = 0; z < CHUNK_SIZE; z++) {
-            float xf = (c->cx * CHUNK_SIZE + x) * 0.015f;
-            float zf = (c->cz * CHUNK_SIZE + z) * 0.015f;
+            const float xf = (c->cx * CHUNK_SIZE + x);
+            const float zf = (c->cz * CHUNK_SIZE + z);
 
-            float n = smoothValueNoise(xf, zf);
-            float height = n * 20.f;
+            const float biome = noise_smoothValue(&c->noise, xf * 0.005f, zf * 0.005f);
+
+            const float n = noise_height(&c->noise, xf, zf);
+            const float height = n * 20.f;
 
             for (int y = 0; y < CHUNK_SIZE; y++) {
                 if (c->cy * CHUNK_SIZE + y == (int)height) {
-                    ptr[x][y][z] = BL_GRASS;
-                }
-                else if (cy * CHUNK_SIZE + y < height) {
-                    ptr[x][y][z] = BL_DIRT;
-                } else {
-                    ptr[x][y][z] = BL_AIR;
+                    ptr[x][y][z] = biome < 0.5f ? BL_GRASS : BL_SAND;
+                } else if (c->cy * CHUNK_SIZE + y < height - 6) {
+                    ptr[x][y][z] = BL_STONE;
+                } else if (c->cy * CHUNK_SIZE + y < height) {
+                    ptr[x][y][z] = biome < 0.5f ? BL_DIRT : BL_SAND;
                 }
             }
         }
     }
 
-    glGenBuffers(1, &c->vbo);
-    glGenVertexArrays(1, &c->vao);
-    chunk_createMesh(c);
+    c->tainted = true;
 }
 
 void chunk_draw(chunk_t *c, const int modelLocation) {

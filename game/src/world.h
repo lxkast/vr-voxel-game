@@ -2,24 +2,55 @@
 
 #include <cglm/cglm.h>
 #include <glad/gl.h>
-#include "chunk.h"
-#include "uthash.h"
 #include "camera.h"
+#include "chunk.h"
+#include "item.h"
+#include "player.h"
+#include "uthash.h"
+#include "noise.h"
 
 #define MAX_CHUNKS 256
 #define MAX_CHUNK_LOADERS 8
 #define C_T 8
 #define LOG_C_T 3
 
-#define CHUNK_LOAD_RADIUS 4
+#define CHUNK_LOAD_RADIUS 7
 
 #define FOG_START 16.f * (CHUNK_LOAD_RADIUS - 2)
 #define FOG_END 16.f * (CHUNK_LOAD_RADIUS - 1)
 
+#define GRAVITY_ACCELERATION (-10.f)
+
+#define MAX_NUM_ENTITIES 64
+#define MAX_NUM_PLAYERS 4
+
+typedef struct entity_t entity_t;
+
+typedef enum {
+    WE_NONE,
+    WE_PLAYER,
+    WE_ITEM,
+    // WE_MOB,   (Not implemented yet)
+} worldEntity_e;
+
+typedef struct {
+    /// What kind of entity it is
+    worldEntity_e type;
+    /// The actual entity_t entity
+    entity_t *entity;
+    /// This is only checked if 'type' is WE_ITEM
+    item_e itemType;
+    /// Stores whether the entity needs to be freed
+    bool needsFreeing;
+    /// Entity VAO and VBO, currently only used for 'item' entities
+    GLuint vao;
+    GLuint vbo;
+} worldEntity_t;
+
 /**
  * @brief A struct that holds data about the world.
  */
-typedef struct {
+typedef struct world_t {
     /// The array of chunk loaders present
     struct {
         bool active;
@@ -31,47 +62,53 @@ typedef struct {
     GLuint highlightVbo;
     mat4 highlightModel;
     bool highlightFound;
+    int numEntities;
+    worldEntity_t entities[MAX_NUM_ENTITIES];
+    int oldestItem;
+    int numPlayers;
+    /// Stores pointers to all current players in the world
+    worldEntity_t *players[MAX_NUM_PLAYERS];
+    uint64_t seed;
+    rng_t generalRng;
+    rng_t worldRng;
+    noise_t noise;
 } world_t;
 
 /**
- * @brief Struct that holds data about a single block.
+ * @brief Contains data about what stage of loading the chunk is
  */
-typedef struct {
-    int x, y, z;
-    block_t type;
-} blockData_t;
-
 typedef enum {
-    POS_X_FACE,
-    NEG_X_FACE,
-    POS_Y_FACE,
-    NEG_Y_FACE,
-    POS_Z_FACE,
-    NEG_Z_FACE,
-} raycastFace_e;
+    LL_INIT = 0,
+    LL_PARTIAL = 1,
+    LL_TOTAL = 2,
+} chunkLoadLevel_e;
 
 /**
- * @brief Struct that holds data about the result of a raycast
+ * @brief Contains data about the reload style of a chunk
  */
-typedef struct {
-    vec3 blockPosition;
-    raycastFace_e face;
-    bool found;
-} raycast_t;
+typedef enum {
+    REL_TOP_RELOAD = 0,
+    REL_CHILD = 2,
+    REL_TOP_UNLOAD = 3,
+    REL_TOMBSTONE = 3
+} reloadData_e;
 
 /**
  * @brief Initialises a world struct.
  * @param w A pointer to a world
  * @param program A shader program for setting effects
+ * @param seed The world seed
  */
-void world_init(world_t *w, GLuint program);
+void world_init(world_t *w, GLuint program, uint64_t seed);
 
 /**
  * @brief Draws the world.
  * @param w A pointer to a world
  * @param modelLocation The model matrix location in the shader program
+ * @param cam A pointer to the camera from which to render from
+ * @param projection The current projection matrix
  */
-void world_draw(const world_t *w, int modelLocation, camera_t *cam);
+void world_draw(const world_t *w, int modelLocation, camera_t *cam, mat4 projection);
 
 /**
  * @brief Frees the world.
@@ -128,11 +165,11 @@ bool world_getBlocki(world_t *w, int x, int y, int z, blockData_t *bd);
  * @param bd A block data struct to allocate to
  * @return Whether the operation was successful
  */
-bool world_getBlock(world_t *w, vec3 pos, blockData_t *bd);
+bool world_getBlock(world_t *w, const vec3 pos, blockData_t *bd);
 
 /**
  * @brief Gets all adjacent blocks to a block at a specific position
- * @param w a pointer to the world
+ * @param w a pointer to the worlda
  * @param position the position of the block
  * @param buf the array where the blocks are stored
  */
@@ -152,10 +189,11 @@ void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, bl
  * @param w a pointer to the world
  * @param startPosition the position to start the raycast from
  * @param viewDirection the direction to raycast along
+ * @param raycastDistance the maximum distance to check with raycasting
  * @return whether the raycast was successful - found = False mean no block was found, otherwise found = true
  *         and block = found block
  */
-raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection);
+raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection, float raycastDistance);
 
 /**
  * @brief Tries to remove a block at a position.
@@ -183,7 +221,7 @@ bool world_placeBlock(world_t *w, int x, int y, int z, block_t block);
 * @param w A pointer to a world
 * @param dir The name of the directory to save the file in
 */
-bool world_save(world_t *w, const char *dir);
+bool world_save(const world_t *w, const char *dir);
 
 /**
 * @brief Highlights the face the camera is looking at
@@ -197,4 +235,27 @@ void world_highlightFace(world_t *w, camera_t *camera);
 * @param w A pointer to a world
 * @param modelLocation The model location
 */
-void world_drawHighlight(world_t *w, int modelLocation);
+void world_drawHighlight(const world_t *w, int modelLocation);
+
+/**
+ * @brief Updates all entities and their positions/velcities
+ * @param w A pointer to a world
+ * @param dt the time since the function was last run
+ */
+void world_processAllEntities(world_t *w, double dt);
+
+/**
+ * @brief Adds an entity to the world
+ * @param w A pointer to a world
+ * @param we A world entity
+ */
+void world_addEntity(world_t *w, worldEntity_t we);
+
+/**
+ * @brief Removes an entity from the world
+ * @param w A pointer to a world
+ * @param entityIndex The index of the entity in the world entity array
+ */
+void world_removeItemEntity(world_t *w, int entityIndex);
+
+void world_drawAllEntities(const world_t *w, int modelLocation);

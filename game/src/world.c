@@ -1,18 +1,18 @@
 #include "world.h"
-
-#include <errno.h>
 #include <cglm/cglm.h>
+#include <errno.h>
 #include <logging.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-
 #include "chunk.h"
 #include "entity.h"
+#include "noise.h"
 #include "uthash.h"
 #include "vertices.h"
 
 #define MAX_RAYCAST_DISTANCE 6.f
 #define RAYCAST_STEP_MAGNITUDE 0.1f
+#define BLOCK_DERENDER_DISTANCE 50.f
 
 /**
  * @brief Key for hash table
@@ -24,11 +24,18 @@ typedef struct {
 /**
  * @brief Value stored in hashmap entry array
  */
-typedef struct {
+typedef struct chunkValue_t {
     /// The pointer to a heap allocated chunk
     chunk_t *chunk;
-    /// Whether the chunk will be reloaded this iteration
-    bool reloaded;
+    /// The current level of loading the chunk is in
+    chunkLoadLevel_e ll;
+
+    struct {
+        reloadData_e reload;
+        size_t nChildren;
+        struct chunkValue_t *children[32];
+    } loadData;
+
 } chunkValue_t;
 
 /**
@@ -93,14 +100,23 @@ static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int c
     return clusterPtr;
 }
 
+static void world_decorateChunk(world_t *w, chunkValue_t *cv);
+
 /**
  * @brief Loads a chunk.
  * @param w A pointer to a world
  * @param cx Chunk x coordinate
  * @param cy Chunk y coordinate
  * @param cz Chunk z coordinate
+ * @param ll The load level to load to if the chunk doesn't exist
+ * @param r The reload style of the chunk
  */
-static void loadChunk(world_t *w, const int cx, const int cy, const int cz) {
+static chunkValue_t *world_loadChunk(world_t *w,
+                     const int cx,
+                     const int cy,
+                     const int cz,
+                     const chunkLoadLevel_e ll,
+                     const reloadData_e r) {
     size_t offset;
 
     cluster_t *cluster = clusterGet(w, cx, cy, cz, true, &offset);
@@ -108,14 +124,141 @@ static void loadChunk(world_t *w, const int cx, const int cy, const int cz) {
     chunkValue_t *cv = &cluster->cells[offset];
 
     if (!cv->chunk) {
-        cv->chunk = (chunk_t *)malloc(sizeof(chunk_t));
-        chunk_generate(cv->chunk, cx, cy, cz);
+        cv->chunk = (chunk_t *)calloc(1, sizeof(chunk_t));
+
+        rng_t chunkRng;
+        rng_init(&chunkRng, w->seed ^
+                            ((uint64_t)cx << 16) ^
+                            ((uint64_t)cy << 32) ^
+                            ((uint64_t)cz << 48));
+
+        chunk_init(cv->chunk, chunkRng, w->noise, cx, cy, cz);
+        cv->ll = LL_INIT;
+        cv->loadData.reload = REL_TOMBSTONE;
+        cv->loadData.nChildren = 0;
+
         cluster->n++;
     }
-    cv->reloaded = true;
+
+    if (ll > cv->ll) {
+        if (ll > LL_PARTIAL) {
+            chunk_generate(cv->chunk);
+            world_decorateChunk(w, cv);
+        }
+        cv->ll = ll;
+    }
+
+    if (r < cv->loadData.reload) cv->loadData.reload = r;
+
+    return cv;
 }
 
-static bool getBlockAddr(world_t *w, int x, int y, int z, block_t **block, chunk_t **chunk) {
+struct decorator {
+    int cacheN;
+    chunkValue_t *cache[3][3][3];
+
+    chunkValue_t *origin;
+    int ox, oy, oz;
+};
+
+static void decorator_init(struct decorator *d, chunkValue_t *origin, const int x, const int y, const int z) {
+    d->cacheN = 0;
+    d->origin = origin;
+    memset(d->cache, 0, 27 * sizeof(chunkValue_t *));
+    d->cache[1][1][1] = origin;
+    d->ox = x;
+    d->oy = y;
+    d->oz = z;
+}
+
+static bool decorator_initSurface(struct decorator *d, chunkValue_t *origin, const int x, const int z, const block_t block) {
+    for (int y = CHUNK_SIZE - 2; y >= 0; y--) {
+        if (origin->chunk->blocks[x][y][z] == block) {
+            decorator_init(d, origin, x, y + 1, z);
+            return true;
+        }
+    }
+    return false;
+}
+
+static void decorator_placeBlock(struct decorator *d,
+                                 world_t *world,
+                                 int x,
+                                 int y,
+                                 int z,
+                                 const block_t block) {
+    x = d->ox + x;
+    y = d->oy + y;
+    z = d->oz + z;
+
+    const int cx = x >> 4;
+    const int cy = y >> 4;
+    const int cz = z >> 4;
+
+    if (-1 <= cx && cx <= 1 && -1 <= cy && cy <= 1 && -1 <= cz && cz <= 1) {
+        chunkValue_t **cacheValue = &d->cache[cx + 1][cy + 1][cz + 1];
+        if (!*cacheValue) {
+            *cacheValue = world_loadChunk(world,
+                                          d->origin->chunk->cx + cx,
+                                          d->origin->chunk->cy + cy,
+                                          d->origin->chunk->cz + cz,
+                                          LL_INIT,
+                                          REL_CHILD);
+            if (d->origin->loadData.nChildren > 31) {
+                LOG_FATAL("Buffer overflow in chunk children");
+            }
+            bool found = false;
+            for (int i = 0; i < d->origin->loadData.nChildren; i++) {
+                if (d->origin->loadData.children[i] == *cacheValue) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                d->origin->loadData.children[d->origin->loadData.nChildren++] = *cacheValue;
+            }
+        }
+
+        (*cacheValue)->chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)] = block;
+        (*cacheValue)->chunk->tainted = true;
+    }
+}
+
+static void decorator_placeTree(struct decorator *d, world_t *world) {
+    for (int y = 2; y < 6; y++) {
+        for (int x = -2; x <= 2; x++) {
+            for (int z = -2; z <= 2; z++) {
+                if (y < 4 || (abs(x) + abs(z) < 2)) {
+                    decorator_placeBlock(d, world, x, y, z, BL_LEAF);
+                }
+            }
+        }
+    }
+
+    decorator_placeBlock(d, world, 0, 0, 0, BL_LOG);
+    decorator_placeBlock(d, world, 0, 1, 0, BL_LOG);
+    decorator_placeBlock(d, world, 0, 2, 0, BL_LOG);
+    decorator_placeBlock(d, world, 0, 3, 0, BL_LOG);
+    decorator_placeBlock(d, world, 0, 4, 0, BL_LOG);
+
+}
+
+
+static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
+    struct decorator d;
+
+    for (int x = 0; x < CHUNK_SIZE; x++) {
+        for (int z = 0; z < CHUNK_SIZE; z++) {
+            if (rng_float(&cv->chunk->rng) < 0.01f) {
+                if (decorator_initSurface(&d, cv, x, z, BL_GRASS)) {
+                    decorator_placeTree(&d, w);
+                }
+            }
+        }
+    }
+}
+
+static bool getBlockAddr(world_t *w, const int x, const int y, const int z, block_t **block, chunk_t **chunk) {
     const int cx = x >> 4;
     const int cy = y >> 4;
     const int cz = z >> 4;
@@ -145,51 +288,91 @@ static void highlightInit(world_t *w) {
     glGenBuffers(1, &w->highlightVbo);
     glBindVertexArray(w->highlightVao);
     glBindBuffer(GL_ARRAY_BUFFER, w->highlightVbo);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *) 0);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
+    glVertexAttribIPointer(1, 2, GL_INT, 4 * sizeof(float), (void *) (3 * sizeof(float)));
     glEnableVertexAttribArray(1);
     glBindVertexArray(0);
 }
 
-void world_init(world_t *w, const GLuint program) {
+void world_init(world_t *w, GLuint program, uint64_t seed) {
+    memset(w, 0, sizeof(world_t));
     w->clusterTable = NULL;
-    for (int i = 0; i < MAX_CHUNK_LOADERS; i++) {
-        w->chunkLoaders[i].active = false;
-    }
     fogInit(w, program);
     highlightInit(w);
+
+    w->numEntities = 0;
+    w->oldestItem = 0;
+    w->numPlayers = 0;
+    
+    w->seed = seed;
+    rng_init(&w->worldRng, seed);
+    rng_init(&w->generalRng, rng_ull(&w->worldRng));
+    w->noise.seed = (uint32_t)rng_ull(&w->worldRng);
 }
 
 vec3 chunkBounds = {15.f, 15.f, 15.f};
 
-// Note - we assume lookVector is normalised
-static bool isChunkInFrontOfCamera(camera_t *cam, const chunk_t *chunk) {
-    vec3 chunkCenter;
-    chunkCenter[0] = (float)(chunk->cx << 4) + 8.f;
-    chunkCenter[1] = (float)(chunk->cy << 4) + 8.f;
-    chunkCenter[2] = (float)(chunk->cz << 4) + 8.f;
-
-    vec3 toChunk;
-    glm_vec3_sub(chunkCenter, cam->eye, toChunk);
-
-    const float dot = glm_vec3_dot(toChunk, cam->ruf[2]);
-
-    return dot < 16.f;
+static bool completelyOutsidePlane(double plane[4], const chunk_t *chunk) {
+    double testPoint[3] = {
+        (chunk->cx << 4) + (plane[0] > 0 ? 16 : 0),
+        (chunk->cy << 4) + (plane[1] > 0 ? 16 : 0),
+        (chunk->cz << 4) + (plane[2] > 0 ? 16 : 0),
+    };
+    double dot = testPoint[0] * plane[0] + testPoint[1] * plane[1] + testPoint[2] * plane[2];
+    return dot < -plane[3];
 }
 
-void world_draw(const world_t *w, const int modelLocation, camera_t *cam) {
+// Note - we assume lookVector is normalised
+static bool shouldRender(camera_t *cam, const chunk_t *chunk, double planes[6][4]) {
+    for (int i = 0; i < 6; i++) {
+        if (completelyOutsidePlane(planes[i], chunk)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static void calculatePlanes(camera_t *cam, mat4 projection, double res[6][4]) {
+    mat4 view;
+    camera_createView(cam, view);
+    mat4 projview;
+    glm_mat4_mul(projection, view, projview);
+
+    for (int i = 0; i < 3; i++) {
+        res[i*2][0] = projview[0][3] + projview[0][i];
+        res[i*2][1] = projview[1][3] + projview[1][i];
+        res[i*2][2] = projview[2][3] + projview[2][i];
+        res[i*2][3] = projview[3][3] + projview[3][i];
+
+        res[i*2+1][0] = projview[0][3] - projview[0][i];
+        res[i*2+1][1] = projview[1][3] - projview[1][i];
+        res[i*2+1][2] = projview[2][3] - projview[2][i];
+        res[i*2+1][3] = projview[3][3] - projview[3][i];
+    }
+}
+
+void world_draw(const world_t *w, const int modelLocation, camera_t *cam, mat4 projection) {
     cluster_t *cluster, *tmp;
+    double planes[6][4];
+    calculatePlanes(cam, projection, planes);
+
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
         for (int i = 0; i < C_T * C_T * C_T; i++) {
-            if (!cluster->cells[i].chunk) {continue;}
-            const bool renderingChunk = isChunkInFrontOfCamera(cam, cluster->cells[i].chunk);
+            if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
+            const bool renderingChunk = shouldRender(cam, cluster->cells[i].chunk, planes);
 
             if (cluster->cells[i].chunk && renderingChunk) {
                 chunk_draw(cluster->cells[i].chunk, modelLocation);
             }
         }
     }
+}
+
+static void freeEntity(const worldEntity_t *e) {
+    glDeleteBuffers(1, &e->vbo);
+    glDeleteVertexArrays(1, &e->vao);
+    free(e->entity);
 }
 
 void world_free(world_t *w) {
@@ -204,6 +387,12 @@ void world_free(world_t *w) {
         }
         free(cluster->cells);
         free(cluster);
+    }
+
+    for (int i = 0; i < w->numEntities; i++) {
+        if (w->entities[i].needsFreeing) {
+            freeEntity(&w->entities[i]);
+        }
     }
 }
 
@@ -227,6 +416,27 @@ void world_delChunkLoader(world_t *w, const unsigned int id) {
     w->chunkLoaders[id].active = false;
 }
 
+static bool freeCv(world_t *w, cluster_t *cluster, const int i) {
+    chunkValue_t *cv = &cluster->cells[i];
+
+    for (int j = 0; j < cv->loadData.nChildren; j++) {
+        reloadData_e *r = &cv->loadData.children[j]->loadData.reload;
+        if (*r == REL_CHILD) *r = REL_TOMBSTONE;
+    }
+
+    chunk_free(cv->chunk);
+    free(cv->chunk);
+    cv->chunk = NULL;
+    cluster->n--;
+    if (cluster->n <= 0) {
+        HASH_DEL(w->clusterTable, cluster);
+        free(cluster->cells);
+        free(cluster);
+        return false;
+    }
+    return true;
+}
+
 void world_doChunkLoading(world_t *w) {
     // Iterate through chunk loaders, loading any chunk in their radius
     for (int i = 0; i < MAX_CHUNK_LOADERS; i++) {
@@ -240,7 +450,7 @@ void world_doChunkLoading(world_t *w) {
             for (int y = -CHUNK_LOAD_RADIUS; y <= CHUNK_LOAD_RADIUS; y++) {
                 for (int z = -CHUNK_LOAD_RADIUS; z <= CHUNK_LOAD_RADIUS; z++) {
                     if (x * x + y * y + z * z <= CHUNK_LOAD_RADIUS * CHUNK_LOAD_RADIUS) {
-                        loadChunk(w, cx + x, cy + y, cz + z);
+                        world_loadChunk(w, cx + x, cy + y, cz + z, LL_TOTAL, REL_TOP_RELOAD);
                     }
                 }
             }
@@ -251,25 +461,18 @@ void world_doChunkLoading(world_t *w) {
     cluster_t *cluster, *tmp;
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
         for (int i = 0; i < C_T * C_T * C_T; i++) {
-            if (cluster->cells[i].chunk && !cluster->cells[i].reloaded) {
-                chunk_free(cluster->cells[i].chunk);
-                free(cluster->cells[i].chunk);
-                cluster->cells[i].chunk = NULL;
-                cluster->n--;
-                if (cluster->n <= 0) {
-                    HASH_DEL(w->clusterTable, cluster);
-                    free(cluster->cells);
-                    free(cluster);
-                    break;
-                }
-            } else {
-                cluster->cells[i].reloaded = false;
+            chunkValue_t *cv = &cluster->cells[i];
+            if (!cv->chunk) continue;
+            if (cv->loadData.reload == REL_TOP_UNLOAD || cv->loadData.reload == REL_TOMBSTONE) {
+                if (!freeCv(w, cluster, i)) break;
+            } else if (cv->loadData.reload == REL_TOP_RELOAD) {
+                cv->loadData.reload = REL_TOP_UNLOAD;
             }
         }
     }
 }
 
-bool world_getBlocki(world_t *w, int x, int y, int z, blockData_t *bd) {
+bool world_getBlocki(world_t *w, const int x, const int y, const int z, blockData_t *bd) {
     block_t *block;
     chunk_t *chunk;
     if (!getBlockAddr(w, x, y, z, &block, &chunk)) return false;
@@ -282,7 +485,7 @@ bool world_getBlocki(world_t *w, int x, int y, int z, blockData_t *bd) {
     return true;
 }
 
-bool world_getBlock(world_t *w, vec3 pos, blockData_t *bd) {
+bool world_getBlock(world_t *w, const vec3 pos, blockData_t *bd) {
     const int x = (int)floorf(pos[0]);
     const int y = (int)floorf(pos[1]);
     const int z = (int)floorf(pos[2]);
@@ -328,6 +531,110 @@ void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, bl
     }
 }
 
+static void meshItemEntity(worldEntity_t *e) {
+    glGenVertexArrays(1, &e->vao);
+    glGenBuffers(1, &e->vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, e->vbo);
+    glBindVertexArray(e->vao);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    float *mesh = malloc(itemBlockVerticesSize);
+    memcpy(mesh, itemBlockVertices, itemBlockVerticesSize);
+    const block_t type = ITEM_TO_BLOCK[e->itemType];
+    for (int i = 0; i < 36; ++i) {
+        mesh[5 * i + 0] *= e->entity->size[0];
+        mesh[5 * i + 1] *= e->entity->size[1];
+        mesh[5 * i + 2] *= e->entity->size[2];
+        mesh[5 * i + 3] = TEXTURE_LENGTH * (mesh[5 * i + 3] + (float)type) / ATLAS_LENGTH;
+    }
+    glBufferData(GL_ARRAY_BUFFER, itemBlockVerticesSize, mesh, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    free(mesh);
+}
+
+
+static worldEntity_t createItemEntity(world_t *w, const vec3 pos, const item_e item) {
+    worldEntity_t newWorldEntity;
+    newWorldEntity.type = WE_ITEM;
+    entity_t *newEntity = malloc(sizeof(entity_t));
+    newEntity->position[0] = pos[0];
+    newEntity->position[1] = pos[1];
+    newEntity->position[2] = pos[2];
+    newEntity->acceleration[0] = 0;
+    newEntity->acceleration[1] = GRAVITY_ACCELERATION;
+    newEntity->acceleration[2] = 0;
+    newEntity->velocity[0] = rng_floatRange(&w->generalRng, -0.55f, 0.55f);
+    newEntity->velocity[1] = 0.5f;
+    newEntity->velocity[2] = rng_floatRange(&w->generalRng, -0.55f, 0.55f);
+    newEntity->grounded = false;
+    newEntity->size[0] = 0.25f;
+    newEntity->size[1] = 0.25f;
+    newEntity->size[2] = 0.25f;
+    newEntity->yaw = 0.f;
+
+    newWorldEntity.entity = newEntity;
+    newWorldEntity.itemType = item;
+    newWorldEntity.needsFreeing = true;
+    meshItemEntity(&newWorldEntity);
+    return newWorldEntity;
+}
+
+
+/**
+ * @brief Adds an entity to the world
+ * @param w A pointer to a world
+ * @param entity The world entity to add
+ */
+void world_addEntity(world_t *w, worldEntity_t entity) {
+    if (w->numEntities == MAX_NUM_ENTITIES) {
+        for (int i = 0; i < MAX_NUM_ENTITIES; i++) {
+            const int entityIndex = (w->oldestItem + i) % w->numEntities;
+            if (w->entities[entityIndex].type == WE_ITEM) {
+                w->entities[entityIndex] = entity;
+                w->entities[entityIndex];
+                w->oldestItem = entityIndex+1;
+                if (entity.type == WE_PLAYER) {
+                    if (w->numPlayers < MAX_NUM_PLAYERS) {
+                        w->players[w->numPlayers++] = &w->entities[entityIndex];
+                    } else {
+                        LOG_FATAL("Max number of players reached, cannot add another");
+                    }
+                }
+                return;
+            }
+        }
+    } else {
+        w->entities[w->numEntities++] = entity;
+        if (entity.type == WE_PLAYER) {
+            if (w->numPlayers < MAX_NUM_PLAYERS) {
+                w->players[w->numPlayers++] = &w->entities[w->numEntities-1];
+            } else {
+                LOG_FATAL("Max number of players reached, cannot add another");
+            }
+        }
+    }
+}
+
+void world_removeItemEntity(world_t *w, const int entityIndex) {
+    if (entityIndex >= w->numEntities) {
+        LOG_FATAL("Entity index out of range");
+    }
+
+    if (w->entities[entityIndex].type == WE_ITEM) {
+        freeEntity(&w->entities[entityIndex]);
+    }
+
+    if (entityIndex == w->numEntities - 1) {
+        w->numEntities--;
+    } else {
+        w->entities[entityIndex] = w->entities[--w->numEntities];
+        w->oldestItem = (entityIndex + 1) % w->numEntities;
+    }
+}
+
 bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
     block_t *bp;
     chunk_t *cp;
@@ -335,11 +642,16 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
 
     if (*bp == BL_AIR) return false;
 
+    const worldEntity_t entity = createItemEntity(w, (vec3){(float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f}, BLOCK_TO_ITEM[*bp]);
+    world_addEntity(w, entity);
+
     *bp = BL_AIR;
     cp->tainted = true;
+
+    return true;
 }
 
-bool world_placeBlock(world_t *w, int x, int y, int z, block_t block) {
+bool world_placeBlock(world_t *w, const int x, const int y, const int z, const block_t block) {
     block_t *bp;
     chunk_t *cp;
     if (!getBlockAddr(w, x, y, z, &bp, &cp)) return false;
@@ -348,10 +660,12 @@ bool world_placeBlock(world_t *w, int x, int y, int z, block_t block) {
 
     *bp = block;
     cp->tainted = true;
+
+    return true;
 }
 
-bool world_save(world_t *w, const char *dir) {
-    struct stat st = { 0 };
+bool world_save(const world_t *w, const char *dir) {
+    struct stat st = {0};
     if (stat(dir, &st) == -1) {
         LOG_INFO("World save does not exist, creating directory...");
 #if defined(_WIN32) || defined(_WIN64)
@@ -414,7 +728,7 @@ static block_t getBlockType(world_t *w, vec3 position) {
     return bd.type;
 }
 
-raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection) {
+raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection, const float raycastDistance) {
     vec3 viewNormalised;
     glm_vec3_copy(viewDirection, viewNormalised);
     glm_normalize(viewNormalised);
@@ -451,7 +765,16 @@ raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection) {
 
     raycastFace_e currentFace = POS_X_FACE;
 
-    while (totalDistance < MAX_RAYCAST_DISTANCE) {
+    // Check starting block first
+    if (getBlockType(w, currentBlock) != BL_AIR) {
+        return (raycast_t){
+            .blockPosition = {currentBlock[0], currentBlock[1], currentBlock[2]},
+            .face = currentFace,
+            .found = true
+        };
+    }
+
+    while (totalDistance < raycastDistance) {
         // checks for a solid block
         if (getBlockType(w, currentBlock) != BL_AIR) {
             return (raycast_t){
@@ -506,43 +829,35 @@ void world_highlightFace(world_t *w, camera_t *camera) {
     vec3 ray;
     glm_vec3_scale(camera->ruf[2], -1.0f, ray);
 
-    raycast_t res = world_raycast(w, camera->eye, ray);
+    raycast_t res = world_raycast(w, camera->eye, ray, MAX_RAYCAST_DISTANCE);
     w->highlightFound = res.found;
     if (!res.found) {
         return;
     }
-    float *buffer = malloc(faceVerticesSize);
+    vertex_t *buffer = malloc(faceVerticesSize);
 
-    vec3 delta = {0.f, 0.f, 0.f};
+    vec3 delta = { 0.f, 0.f, 0.f };
+    memcpy(buffer, blockVertices[res.face], faceVerticesSize);
     switch (res.face) {
         case POS_X_FACE:
-            delta[0] += 0.01f;
-            memcpy(buffer, rightFaceVertices, faceVerticesSize);
+            delta[0] += 0.001f;
             break;
         case NEG_X_FACE:
-            delta[0] -= 0.01f;
-            memcpy(buffer, leftFaceVertices, faceVerticesSize);
+            delta[0] -= 0.001f;
             break;
         case POS_Y_FACE:
-            delta[1] += 0.01f;
-            memcpy(buffer, topFaceVertices, faceVerticesSize);
+            delta[1] += 0.001f;
             break;
         case NEG_Y_FACE:
-            delta[1] -= 0.01f;
-            memcpy(buffer, bottomFaceVertices, faceVerticesSize);
+            delta[1] -= 0.001f;
             break;
         case POS_Z_FACE:
-            delta[2] += 0.01f;
-            memcpy(buffer, frontFaceVertices, faceVerticesSize);
+            delta[2] += 0.001f;
             break;
         case NEG_Z_FACE:
-            delta[2] -= 0.01f;
-            memcpy(buffer, backFaceVertices, faceVerticesSize);
+            delta[2] -= 0.001f;
             break;
         default: LOG_FATAL("invalid face type");
-    }
-    for (int i = 0; i < 6; ++i) {
-        buffer[5 * i + 3] *= (16.0f / 96.0f);
     }
 
     glm_vec3_add(res.blockPosition, delta, res.blockPosition);
@@ -556,7 +871,7 @@ void world_highlightFace(world_t *w, camera_t *camera) {
     free(buffer);
 }
 
-void world_drawHighlight(world_t *w, int modelLocation) {
+void world_drawHighlight(const world_t *w, const int modelLocation) {
     if (!w->highlightFound) {
         return;
     }
@@ -564,6 +879,36 @@ void world_drawHighlight(world_t *w, int modelLocation) {
 
     glUniformMatrix4fv(modelLocation, 1, GL_FALSE, w->highlightModel);
 
-    glDrawArrays(GL_TRIANGLES, 0, faceVerticesSize / (5 * sizeof(float)));
+    glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
+}
+
+void world_processAllEntities(world_t *w, const double dt) {
+    for (int i = 0; i < w->numEntities; i++) {
+        if (w->entities[i].type != WE_NONE) {
+            if (w->entities[i].type == WE_ITEM) {
+                for (int j = 0; j < w->numPlayers; j++) {
+                    if (glm_vec3_distance(w->entities[i].entity->position, w->players[j]->entity->position) > BLOCK_DERENDER_DISTANCE) {
+                        world_removeItemEntity(w, i);
+                        i--;
+                    }
+                }
+            }
+            w->entities[i].entity->acceleration[1] = GRAVITY_ACCELERATION;
+            processEntity(w, w->entities[i].entity, dt);
+        }
+    }
+}
+
+void world_drawAllEntities(const world_t *w, const int modelLocation) {
+    for (int i = 0; i < w->numEntities; i++) {
+        if (w->entities[i].type == WE_ITEM) {
+            mat4 model;
+            glm_translate_make(model, w->entities[i].entity->position);
+            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
+            glBindVertexArray(w->entities[i].vao);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+            glBindVertexArray(0);
+        }
+    }
 }
