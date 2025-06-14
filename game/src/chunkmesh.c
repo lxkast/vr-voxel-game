@@ -23,46 +23,75 @@ static bool faceIsVisible(chunk_t *c, ivec3 blockPos, direction_e dir) {
 
 // computes the light value of a vertex by averaging the 4 light values in the direction of the normal
 static float computeVertexLight(chunk_t *c, int vx, int vy, int vz, direction_e dir) {
-    int offsets[] = { 0, -1 };
+    const int offsets[2] = { 0, -1 };
+
     int count = 0;
-    float sum = 0;
+    int sum = 0;
+
     switch (dir) {
         case DIR_PLUSZ:
-        case DIR_MINUSZ:
+        case DIR_MINUSZ: {
+            int dz = 1;
             for (int i = 0; i < 2; ++i) {
                 for (int j = 0; j < 2; ++j) {
                     int nx = vx + offsets[i];
                     int ny = vy + offsets[j];
-                    if (nx >= 0 && nx < CHUNK_SIZE && ny >= 0 && ny < CHUNK_SIZE && vz >= 0 && vz < CHUNK_SIZE) {
-                        sum += c->lightMap[nx][ny][vz];
+                    int nz = vz + dz;
+                    if (nx >= 0 && nx < CHUNK_SIZE && ny >= 0 && ny < CHUNK_SIZE && nz >= 0 && nz < CHUNK_SIZE) {
+                        sum += c->lightMap[nx][ny][nz];
+                        if (c->lightMap[nx][ny][nz] == LIGHT_MAX_VALUE - 1) {
+                            return LIGHT_MAX_VALUE - 1;
+                        }
                         count++;
                     }
                 }
             }
+            break;
+        }
         case DIR_PLUSY:
-        case DIR_MINUSY:
+        case DIR_MINUSY: {
+            int dy = 1;
             for (int i = 0; i < 2; ++i) {
                 for (int j = 0; j < 2; ++j) {
                     int nx = vx + offsets[i];
-                    int nz = vy + offsets[j];
-                    if (nx >= 0 && nx < CHUNK_SIZE && vy >= 0 && vy < CHUNK_SIZE && nz >= 0 && nz < CHUNK_SIZE) {
-                        sum += c->lightMap[nx][vy][nz];
+                    int nz = vz + offsets[j];
+                    int ny = vy + dy;
+                    if (nx >= 0 && nx < CHUNK_SIZE && ny >= 0 && ny < CHUNK_SIZE && nz >= 0 && nz < CHUNK_SIZE) {
+                        sum += c->lightMap[nx][ny][nz];
+                        if (c->lightMap[nx][ny][nz] == LIGHT_MAX_VALUE - 1) {
+                            return LIGHT_MAX_VALUE - 1;
+                        }
                         count++;
                     }
                 }
             }
+            break;
+        }
         case DIR_PLUSX:
-        case DIR_MINUSX:
+        case DIR_MINUSX: {
+            int dx = 1;
             for (int i = 0; i < 2; ++i) {
                 for (int j = 0; j < 2; ++j) {
-                    int ny = vx + offsets[i];
-                    int nz = vy + offsets[j];
-                    if (vx >= 0 && vx < CHUNK_SIZE && ny >= 0 && ny < CHUNK_SIZE && nz >= 0 && nz < CHUNK_SIZE) {
-                        sum += c->lightMap[vx][ny][nz];
+                    int ny = vy + offsets[i];
+                    int nz = vz + offsets[j];
+                    int nx = vx + dx;
+                    if (nx >= 0 && nx < CHUNK_SIZE && ny >= 0 && ny < CHUNK_SIZE && nz >= 0 && nz < CHUNK_SIZE) {
+                        sum += c->lightMap[nx][ny][nz];
+                        if (c->lightMap[nx][ny][nz] == LIGHT_MAX_VALUE - 1) {
+                            return LIGHT_MAX_VALUE - 1;
+                        }
                         count++;
                     }
                 }
             }
+            break;
+        }
+        default:
+            LOG_FATAL("Invalid direction enum in computeVertexLight");
+    }
+
+    if (count == 0) {
+        return 0.0f;
     }
     return sum / (float)count;
 }
@@ -137,6 +166,8 @@ static void getNextCoord(ivec3 out, int i, int j, int k, direction_e dir, int wi
 
 // greedy meshing in one direction, writes quads to buf, returns updated pointer
 static vertex_t *greedyMeshDirection(chunk_t *c, direction_e dir, vertex_t *buf) {
+    ivec3 dirVec;
+    memcpy(&dirVec, &directions[dir], sizeof(ivec3));
     vertex_t *nextPtr = buf;
     bool seen[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE] = {0};
     for (int i = 0; i < CHUNK_SIZE; ++i) {
@@ -148,17 +179,26 @@ static vertex_t *greedyMeshDirection(chunk_t *c, direction_e dir, vertex_t *buf)
                     continue;
                 }
                 seen[i][j][k] = true;
+                float light = c->lightMap[i][j][k];
                 int width = 1;
                 int height = 1;
                 // expand width
                 for (; width < CHUNK_SIZE; ++width) {
                     ivec3 nextCoord;
                     getNextCoord(nextCoord, i, j, k, dir, width, 0);
+                    ivec3 normalNextCoord;
+                    glm_ivec3_add(nextCoord, dirVec, normalNextCoord);
                     int nx = nextCoord[0], ny = nextCoord[1], nz = nextCoord[2];
                     if (nx < 0 || ny < 0 || nz < 0 || nx >= CHUNK_SIZE || ny >= CHUNK_SIZE || nz >= CHUNK_SIZE) {
                         break;
                     }
-                    if (seen[nx][ny][nz] || c->blocks[nx][ny][nz] != type || !faceIsVisible(c, nextCoord, dir)) {
+                    if (normalNextCoord[0] >= 0 && normalNextCoord[1] >= 0 && normalNextCoord[2] >= 0 &&
+                        normalNextCoord[0] < CHUNK_SIZE && normalNextCoord[1] < CHUNK_SIZE && normalNextCoord[2] < CHUNK_SIZE) {
+                        if (light != c->lightMap[normalNextCoord[0]][normalNextCoord[1]][normalNextCoord[2]]) {
+                            break;
+                        }
+                    }
+                    if (seen[nx][ny][nz] || c->blocks[nx][ny][nz] != type || !faceIsVisible(c, nextCoord, dir) || light != c->lightMap[nextCoord[0]][nextCoord[1]][nextCoord[2]]) {
                         break;
                     }
                     seen[nx][ny][nz] = true;
@@ -170,10 +210,19 @@ static vertex_t *greedyMeshDirection(chunk_t *c, direction_e dir, vertex_t *buf)
                     for (int w = 0; w < width; ++w) {
                         ivec3 nextCoord;
                         getNextCoord(nextCoord, i, j, k, dir, w, height);
+                        ivec3 normalNextCoord;
+                        glm_ivec3_add(nextCoord, dirVec, normalNextCoord);
                         int nx = nextCoord[0], ny = nextCoord[1], nz = nextCoord[2];
                         if (nx < 0 || ny < 0 || nz < 0 || nx >= CHUNK_SIZE || ny >= CHUNK_SIZE || nz >= CHUNK_SIZE) {
                             ok = false;
                             break;
+                        }
+                        if (normalNextCoord[0] >= 0 && normalNextCoord[1] >= 0 && normalNextCoord[2] >= 0 &&
+                            normalNextCoord[0] < CHUNK_SIZE && normalNextCoord[1] < CHUNK_SIZE && normalNextCoord[2] < CHUNK_SIZE) {
+                            if (light != c->lightMap[normalNextCoord[0]][normalNextCoord[1]][normalNextCoord[2]]) {
+                                ok = false;
+                                break;
+                            }
                         }
                         if (seen[nx][ny][nz] || c->blocks[nx][ny][nz] != type || !faceIsVisible(c, nextCoord, dir)) {
                             ok = false;
@@ -189,13 +238,6 @@ static vertex_t *greedyMeshDirection(chunk_t *c, direction_e dir, vertex_t *buf)
                         int nx = nextCoord[0], ny = nextCoord[1], nz = nextCoord[2];
                         seen[nx][ny][nz] = true;
                     }
-                }
-                ivec3 neighbourCoord;
-                glm_ivec3_add(directions[dir], base, neighbourCoord);
-                int nx = neighbourCoord[0], ny = neighbourCoord[1], nz = neighbourCoord[2];
-                float light = 0;
-                if (nx >= 0 && ny >= 0 && nz >= 0 && nx < CHUNK_SIZE && ny < CHUNK_SIZE && nz < CHUNK_SIZE) {
-                    light = c->lightMap[nx][ny][nz];
                 }
                 nextPtr = writeFace(c, nextPtr, base, dir, width, height, type);
             }
