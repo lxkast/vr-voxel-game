@@ -12,8 +12,6 @@
 int main()
 {
     stdio_init_all();
-    printf("Press any key to start...\n");
-    getchar();
     
     printf("Starting controller program...\n");
     if (cyw43_arch_init()) {
