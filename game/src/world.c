@@ -728,7 +728,7 @@ static block_t getBlockType(world_t *w, vec3 position) {
     return bd.type;
 }
 
-raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection) {
+raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection, const float raycastDistance) {
     vec3 viewNormalised;
     glm_vec3_copy(viewDirection, viewNormalised);
     glm_normalize(viewNormalised);
@@ -765,7 +765,16 @@ raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection) {
 
     raycastFace_e currentFace = POS_X_FACE;
 
-    while (totalDistance < MAX_RAYCAST_DISTANCE) {
+    // Check starting block first
+    if (getBlockType(w, currentBlock) != BL_AIR) {
+        return (raycast_t){
+            .blockPosition = {currentBlock[0], currentBlock[1], currentBlock[2]},
+            .face = currentFace,
+            .found = true
+        };
+    }
+
+    while (totalDistance < raycastDistance) {
         // checks for a solid block
         if (getBlockType(w, currentBlock) != BL_AIR) {
             return (raycast_t){
@@ -820,7 +829,7 @@ void world_highlightFace(world_t *w, camera_t *camera) {
     vec3 ray;
     glm_vec3_scale(camera->ruf[2], -1.0f, ray);
 
-    raycast_t res = world_raycast(w, camera->eye, ray);
+    raycast_t res = world_raycast(w, camera->eye, ray, MAX_RAYCAST_DISTANCE);
     w->highlightFound = res.found;
     if (!res.found) {
         return;

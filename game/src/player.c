@@ -103,7 +103,7 @@ void player_removeBlock(player_t *p, world_t *w) {
     vec3 lookVector;
     glm_vec3_scale(p->lookVector, -1, lookVector);
 
-    const raycast_t raycastBlock = world_raycast(w, camPos, lookVector);
+    const raycast_t raycastBlock = world_raycast(w, camPos, lookVector, 6.f);
 
     if (raycastBlock.found) {
         world_removeBlock(w,(int)raycastBlock.blockPosition[0], (int)raycastBlock.blockPosition[1], (int)raycastBlock.blockPosition[2]);
@@ -123,7 +123,7 @@ void player_placeBlock(player_t *p, world_t *w) {
     vec3 lookVector;
     glm_vec3_scale(p->lookVector, -1, lookVector);
 
-    const raycast_t raycastBlock = world_raycast(w, camPos, lookVector);
+    const raycast_t raycastBlock = world_raycast(w, camPos, lookVector, 6.f);
 
     if (raycastBlock.found) {
         const int *moveDelta = faceToBlock[raycastBlock.face];
