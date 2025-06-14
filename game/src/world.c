@@ -9,6 +9,7 @@
 #include "noise.h"
 #include "uthash.h"
 #include "vertices.h"
+#include "structure.h"
 
 #define MAX_RAYCAST_DISTANCE 6.f
 #define RAYCAST_STEP_MAGNITUDE 0.1f
@@ -153,60 +154,6 @@ static chunkValue_t *world_loadChunk(world_t *w,
     return cv;
 }
 
-typedef struct {
-    int cacheN;
-    chunkValue_t *cache[3][3][3];
-
-    chunkValue_t *origin;
-    int ox, oy, oz;
-} decorator_t;
-
-typedef struct {
-    block_t type;
-    int x,y,z;
-} structure_block_t;
-
-typedef struct {
-    decorator_t decorator;
-    int numBlocks;
-    structure_block_t *blocks;
-} structure_t;
-
-structure_block_t treePattern[] = {
-    {BL_LOG, 0,0,0},
-    {BL_LOG, 0,1,0},
-    {BL_LOG, 0,2,0},
-    {BL_LOG, 0,3,0},
-    {BL_LOG, 0,4,0},
-
-    // y=2 layer
-    {BL_LEAF, -2,2,-2}, {BL_LEAF, -1,2,-2}, {BL_LEAF, 0,2,-2}, {BL_LEAF, 1,2,-2}, {BL_LEAF, 2,2,-2},
-    {BL_LEAF, -2,2,-1}, {BL_LEAF, -1,2,-1}, {BL_LEAF, 0,2,-1}, {BL_LEAF, 1,2,-1}, {BL_LEAF, 2,2,-1},
-    {BL_LEAF, -2,2,0},  {BL_LEAF, 0,2,0},  {BL_LEAF, 1,2,0},  {BL_LEAF, 2,2,0},
-    {BL_LEAF, -2,2,1},  {BL_LEAF, -1,2,1},  {BL_LEAF, 0,2,1},  {BL_LEAF, 1,2,1},  {BL_LEAF, 2,2,1},
-    {BL_LEAF, -2,2,2},  {BL_LEAF, -1,2,2},  {BL_LEAF, 0,2,2},  {BL_LEAF, 1,2,2},  {BL_LEAF, 2,2,2},
-
-    // y=3 layer
-    {BL_LEAF, -2,3,-2}, {BL_LEAF, -1,3,-2}, {BL_LEAF, 0,3,-2}, {BL_LEAF, 1,3,-2}, {BL_LEAF, 2,3,-2},
-    {BL_LEAF, -2,3,-1}, {BL_LEAF, -1,3,-1}, {BL_LEAF, 0,3,-1}, {BL_LEAF, 1,3,-1}, {BL_LEAF, 2,3,-1},
-    {BL_LEAF, -2,3,0},  {BL_LEAF, 0,3,0},  {BL_LEAF, 1,3,0},  {BL_LEAF, 2,3,0},
-    {BL_LEAF, -2,3,1},  {BL_LEAF, -1,3,1},  {BL_LEAF, 0,3,1},  {BL_LEAF, 1,3,1},  {BL_LEAF, 2,3,1},
-    {BL_LEAF, -2,3,2},  {BL_LEAF, -1,3,2},  {BL_LEAF, 0,3,2},  {BL_LEAF, 1,3,2},  {BL_LEAF, 2,3,2},
-
-    // y=4 layer
-    {BL_LEAF, -1,4,0}, {BL_LEAF, 0,4,-1}, {BL_LEAF, 0,4,0}, {BL_LEAF, 0,4,1}, {BL_LEAF, 1,4,0},
-
-    // y=5 layer
-    {BL_LEAF, -1,5,0}, {BL_LEAF, 0,5,-1}, {BL_LEAF, 0,5,0}, {BL_LEAF, 0,5,1}, {BL_LEAF, 1,5,0}
-};
-
-structure_t treeStructure = {
-    .numBlocks = 63,
-    .blocks = treePattern,
-};
-
-
-
 static void decorator_init(decorator_t *d, chunkValue_t *origin, const int x, const int y, const int z) {
     d->cacheN = 0;
     d->origin = origin;
@@ -232,7 +179,8 @@ static void decorator_placeBlock(decorator_t *d,
                                  int x,
                                  int y,
                                  int z,
-                                 const block_t block) {
+                                 const block_t block,
+                                 float chance) {
     x = d->ox + x;
     y = d->oy + y;
     z = d->oz + z;
@@ -265,6 +213,10 @@ static void decorator_placeBlock(decorator_t *d,
             }
         }
 
+        if (rng_floatRange(&(*cacheValue)->chunk->rng, 0.f, 1.0f) > chance) {
+            return;
+        }
+
         (*cacheValue)->chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)] = block;
         (*cacheValue)->chunk->tainted = true;
     }
@@ -275,23 +227,23 @@ static void decorator_placeTree(decorator_t *d, world_t *world) {
         for (int x = -2; x <= 2; x++) {
             for (int z = -2; z <= 2; z++) {
                 if (y < 4 || (abs(x) + abs(z) < 2)) {
-                    decorator_placeBlock(d, world, x, y, z, BL_LEAF);
+                    decorator_placeBlock(d, world, x, y, z, BL_LEAF,1);
                 }
             }
         }
     }
 
-    decorator_placeBlock(d, world, 0, 0, 0, BL_LOG);
-    decorator_placeBlock(d, world, 0, 1, 0, BL_LOG);
-    decorator_placeBlock(d, world, 0, 2, 0, BL_LOG);
-    decorator_placeBlock(d, world, 0, 3, 0, BL_LOG);
-    decorator_placeBlock(d, world, 0, 4, 0, BL_LOG);
+    decorator_placeBlock(d, world, 0, 0, 0, BL_LOG,1);
+    decorator_placeBlock(d, world, 0, 1, 0, BL_LOG,1);
+    decorator_placeBlock(d, world, 0, 2, 0, BL_LOG,1);
+    decorator_placeBlock(d, world, 0, 3, 0, BL_LOG,1);
+    decorator_placeBlock(d, world, 0, 4, 0, BL_LOG,1);
 }
 
 static void world_placeStructure(world_t *world, structure_t *structure) {
     for (int i = 0; i < structure->numBlocks; i++) {
         const structure_block_t block = structure->blocks[i];
-        decorator_placeBlock(&structure->decorator, world, block.x, block.y, block.z, block.type);
+        decorator_placeBlock(&structure->decorator, world, block.x, block.y, block.z, block.type, block.chanceToAppear);
     }
 }
 

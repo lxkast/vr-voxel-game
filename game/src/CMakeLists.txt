@@ -5,6 +5,7 @@ file(GLOB_RECURSE SRC_FILES
 add_executable(extension
         ${SRC_FILES}
         item.h
+        structure.h
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE logging)
