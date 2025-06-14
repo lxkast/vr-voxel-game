@@ -86,8 +86,8 @@ static void handleAxisCollision(world_t *w, entity_t *entity, const aabb_t aabb,
     if (aabb.min[axisNum] + deltaP[axisNum] < block.aabb.max[axisNum] && aabb.max[axisNum] + deltaP[axisNum] > block.aabb.min[axisNum]) {
         if (deltaP[axisNum] < 0) {
             // if velocity is negative, makes the entity's min point end up at the block's max point
-            //deltaP[axisNum] = block.aabb.max[axisNum] - aabb.min[axisNum];
-            LOG_DEBUG("Updating Position");
+            deltaP[axisNum] = block.aabb.max[axisNum] - aabb.min[axisNum];
+
             if (axisNum == 1) {
                 // if the entity lands on a block from above, set grounded to true
                 entity->grounded = true;
@@ -170,15 +170,19 @@ static void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
         if (intersectsX(aabb, blocks[i].aabb) && intersectsZ(aabb, blocks[i].aabb)) {
             handleAxisCollision(w, entity, aabb, blocks[i], deltaP, 1);
         }
+    }
+
+    if (deltaP[1] < -2) {
         vec3 centerUnderside = {entity->position[0] + entity->size[0] / 2, entity->position[1], entity->position[2] + entity->size[2] / 2};
 
-        const raycast_t raycast = world_raycast(w, centerUnderside, (vec3){0.f, -1.f, 0.f}, fabsf(deltaP[1]));
+        const raycast_t raycast = world_raycast(w, centerUnderside, (vec3){0.f, -1.f, 0.f}, fabsf(deltaP[1])+1);
 
         if (raycast.found) {
-            if (fabsf(entity->position[1] - (raycast.blockPosition[1] + 1)) < fabsf(deltaP[1]) + 1) {
+            if (fabsf(entity->position[1] - (raycast.blockPosition[1] + 1)) < fabsf(deltaP[1])) {
                 deltaP[1] = (raycast.blockPosition[1] + 1) - entity->position[1];
             }
         }
+        entity->grounded = true;
     }
 
     // resolves collisions in X-axis
