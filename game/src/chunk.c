@@ -20,8 +20,8 @@ static float getHumidity(chunk_t *c, const float h, const int x, const int z) {
 }
 
 static float getTemperature(chunk_t *c, const float h, const int x, const int z) {
-    const float n = noise_smoothValue(&c->noise, 0.005f * (float)x + 1024.f, 0.005f * (float)z - 1024.f);
-    return 25.f * n;
+    const float n = noise_smoothValue(&c->noise, 0.003f * (float)x + 1024.f, 0.003f * (float)z - 1024.f);
+    return 15.f * n;
 }
 
 static float getHeight(chunk_t *c, const int x, const int z) {
@@ -29,15 +29,15 @@ static float getHeight(chunk_t *c, const int x, const int z) {
     const float zf = (float)z;
 
     const float biome = 0.5f + (0.5f * noise_fbm(&c->noise, xf, zf, 2, 0.5f, 0.005f));
-    const float biomeMask = smoothstep(0.4f, 0.6f, biome);
+    const float biomeMask = smoothstep(0.4f, 0.8f, biome);
 
     const float hills = 0.5f + (0.5f * noise_fbm(&c->noise, xf, zf, 5, 0.4f, 0.01f));
 
-    const float flat = 0.05f + (0.05f * noise_fbm(&c->noise, xf, zf, 3, 0.4f, 0.01f));
+    const float flat = 0.1f + (0.1f * noise_fbm(&c->noise, xf, zf, 3, 0.4f, 0.01f));
 
     const float h = glm_lerp(flat, hills, biomeMask);
 
-    return h * 100.f;
+    return h * 50.f;
 }
 
 void chunk_init(chunk_t *c, const rng_t rng, const noise_t noise, const int cx, const int cy, const int cz) {
@@ -93,13 +93,12 @@ void chunk_generate(chunk_t *c) {
             const float humidityOffset = getHumidity(c, height, xg, zg);
             const float temperatureOffset = getTemperature(c, height, xg, zg);
 
-
             for (int y = 0; y < CHUNK_SIZE; y++) {
                 const int yg = c->cy * CHUNK_SIZE + y;
 
                 if (yg == (int)height) {
                     const float humidity = 90.f - 0.6f * (float)yg + humidityOffset;
-                    const float temperature = 25.f - 0.25f * (float)yg + temperatureOffset;
+                    const float temperature = 30.f - 0.50f * (float)yg + temperatureOffset;
 
                     if (temperature > 30.f) {
                         ptr[x][y][z] = BL_SAND;
