@@ -4,3 +4,6 @@
 [submodule "extension/external/cglm"]
 	path = extension/external/cglm
 	url = https://github.com/recp/cglm
+[submodule "external/miniaudio"]
+	path = external/miniaudio
+	url = https://github.com/mackron/miniaudio.git
