@@ -81,21 +81,19 @@ void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
         }
     }
 
-    int present = glfwJoystickPresent(GLFW_JOYSTICK_1);
+#define JOYSTICK GLFW_JOYSTICK_4
+    int present = glfwJoystickPresent(JOYSTICK);
     if (present) {
-
+	LOG_DEBUG("Joystick name %s", glfwGetJoystickName(JOYSTICK));
         int axisCount;
-        const float* axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axisCount);
+        const float* axes = glfwGetJoystickAxes(JOYSTICK, &axisCount);
 
         int buttonCount;
-        const unsigned char *buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttonCount);
+        const unsigned char *buttons = glfwGetJoystickButtons(JOYSTICK, &buttonCount);
         if (buttonCount != 5 || axisCount != 2) {
-            LOG_FATAL("Joystick is not our controller");
+            LOG_FATAL("Joystick is not our controller, buttons: %d, axis: %d", buttonCount, axisCount);
         }
         const float joySprintMultiplier = buttons[3] ? SPRINT_MULTIPLIER : 1.f;
-
-
-        LOG_DEBUG("Setting %f %d", joySprintMultiplier, buttons[3]);
         acceleration[2] += -axes[1] * (player->entity.grounded ? GROUND_ACCELERATION : AIR_ACCELERATION) * joySprintMultiplier;
         acceleration[0] += axes[0] * (player->entity.grounded ? GROUND_ACCELERATION : AIR_ACCELERATION) * joySprintMultiplier;
 
