@@ -21,7 +21,7 @@ typedef struct {
     /// The array of light levels in the chunk.
     float lightMap[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
     /// The queue of light values used for generated the lightMap
-    lightQueue_t lightQueue;
+    lightQueue_t lightInsertionQueue;
     /// The VBO that holds the mesh.
     GLuint vbo;
     /// The VAO that is used for drawing.

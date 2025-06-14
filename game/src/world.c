@@ -607,8 +607,7 @@ bool world_placeBlock(world_t *w, const int x, const int y, const int z, const b
         lightQueueItem_t qi = {
             .pos = { x - ((x >> 4) << 4), y - ((y >> 4) << 4), z - ((z >> 4) << 4) },
             .lightValue = LIGHT_MAX_VALUE };
-        queue_push(&cp->lightQueue, qi);
-        cp->lightMap[qi.pos[0]][qi.pos[1]][qi.pos[2]] = LIGHT_MAX_VALUE;
+        queue_push(&cp->lightInsertionQueue, qi);
     }
     *bp = block;
     cp->tainted = true;
