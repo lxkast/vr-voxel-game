@@ -141,16 +141,60 @@ float computeVertexLight(chunk_t *c, int vx, int vy, int vz, direction_e dir) {
 
 // performs a BFS flood-fill to approximate the light values of each chunk
 void chunk_processLighting(chunk_t *c) {
+    // propagate darkness
+    while (c->lightDeletionQueue.size > 0) {
+        lightQueueItem_t head = queue_pop(&c->lightDeletionQueue);
+        float lightLevel = c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]];
+        if (lightLevel <= 0.0f) {
+            continue;
+        }
+        lightLevel = head.lightValue;
+        c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]] = 0.0f;
+
+        for (int dir = 0; dir < 6; ++dir) {
+            ivec3 dirVec;
+            memcpy(&dirVec, &directions[dir], sizeof(ivec3));
+            ivec3 nPos;
+            glm_ivec3_add(head.pos, dirVec, nPos);
+
+            bool validNeighbour = true;
+            for (int i = 0; i < 3; i++) {
+                if (nPos[i] < 0 || nPos[i] >= CHUNK_SIZE) {
+                    validNeighbour = false;
+                    break;
+                }
+            }
+            if (!validNeighbour) {
+                continue;
+            }
+            float neighbourLight = c->lightMap[nPos[0]][nPos[1]][nPos[2]];
+            if ((c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_AIR || c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_LEAF)) {
+                lightQueueItem_t nItem = { .lightValue = neighbourLight };
+                memcpy(&nItem.pos, &nPos, sizeof(ivec3));
+                if (neighbourLight < lightLevel && neighbourLight != 0.0f) {
+                    queue_push(&c->lightDeletionQueue, nItem);
+                } else if (neighbourLight >= lightLevel){
+                    queue_push(&c->lightInsertionQueue, nItem);
+                }
+            }
+        }
+    }
+    // propagate light
     while (c->lightInsertionQueue.size > 0) {
         lightQueueItem_t head = queue_pop(&c->lightInsertionQueue);
         float lightLevel = c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]];
-        if (lightLevel >= head.lightValue) {
+
+        if (lightLevel < head.lightValue) {
+            c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]] = head.lightValue;
+            lightLevel = head.lightValue;
+        }
+
+        float newLight = lightLevel - 1;
+        if (newLight <= 0) {
             continue;
         }
-        c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]] = head.lightValue;
-        lightLevel = head.lightValue;
 
-        // check each direction and add to queue if transparent
+        // check each direction and add to queue if transparent and lightValue less than current
         for (int dir = 0; dir < 6; ++dir) {
             ivec3 dirVec;
             memcpy(&dirVec, &directions[dir], sizeof(ivec3));
@@ -168,10 +212,9 @@ void chunk_processLighting(chunk_t *c) {
                 continue;
             }
 
-            float newLight = lightLevel - 1;
             if ((c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_AIR || c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_LEAF) &&
-                newLight > 0 &&
                 c->lightMap[nPos[0]][nPos[1]][nPos[2]] < newLight) {
+                c->lightMap[nPos[0]][nPos[1]][nPos[2]] = newLight;
                 lightQueueItem_t nItem = { .lightValue = newLight };
                 memcpy(&nItem.pos, &nPos, sizeof(ivec3));
                 queue_push(&c->lightInsertionQueue, nItem);

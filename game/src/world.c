@@ -644,6 +644,12 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
     if (!getBlockAddr(w, x, y, z, &bp, &cp)) return false;
 
     if (*bp == BL_AIR) return false;
+    if (*bp == BL_GLOWSTONE) {
+        lightQueueItem_t qi = {
+            .pos = { x - ((x >> 4) << 4), y - ((y >> 4) << 4), z - ((z >> 4) << 4) },
+            .lightValue = LIGHT_MAX_VALUE };
+        queue_push(&cp->lightDeletionQueue, qi);
+    }
 
     const worldEntity_t entity = createItemEntity(w, (vec3){(float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f}, BLOCK_TO_ITEM[*bp]);
     world_addEntity(w, entity);
