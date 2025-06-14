@@ -546,9 +546,7 @@ static void world_placeStructure(world_t *world, structure_t *structure) {
 }
 
 
-static void world_decorateChunk(world_t *w, chunkValue_t *cv, int cx, int cy, int cz) {
-    //decorator_t d;
-
+static void world_decorateChunk(world_t *w, chunkValue_t *cv, const int cx, const int cy, const int cz) {
     for (int x = 0; x < CHUNK_SIZE; x++) {
         for (int z = 0; z < CHUNK_SIZE; z++) {
             if (rng_float(&cv->chunk->rng) < treeStructure.chance) {
@@ -561,6 +559,13 @@ static void world_decorateChunk(world_t *w, chunkValue_t *cv, int cx, int cy, in
             if (rng_float(&cv->chunk->rng) < stoneTStructure.chance) {
                 if (world_initStructure(w, &stoneTStructure, cv, x, z, stoneTStructure.base, cx, cy, cz)) {
                     world_placeStructure(w, &stoneTStructure);
+                    continue;
+                }
+            }
+
+            if (rng_float(&cv->chunk->rng) < woodenHouseStructure.chance) {
+                if (world_initStructure(w, &woodenHouseStructure, cv, x, z, woodenHouseStructure.base, cx, cy, cz)) {
+                    world_placeStructure(w, &woodenHouseStructure);
                 }
             }
         }

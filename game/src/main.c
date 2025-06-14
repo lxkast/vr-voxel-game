@@ -30,6 +30,10 @@
 
 static double previousMouse[2];
 
+vec3 bottomLeft = {0.f, 0.f, 0.f};
+vec3 topRight = {0.f,0.f,0.f};
+vec3 origin = {0.f,0.f,0.f};
+
 static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
     vec3 acceleration = { 0.f, GRAVITY_ACCELERATION, 0.f };
 
@@ -63,6 +67,66 @@ static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w)
             acceleration[0] += AIR_ACCELERATION * sprintMultiplier;  // Right
         }
     }
+
+    if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
+        vec3 startPos;
+        vec3 lookDirection;
+        glm_vec3_scale(player->lookVector, -1.f, lookDirection);
+        glm_vec3_add(player->entity.position, player->cameraOffset, startPos);
+        raycast_t raycast = world_raycast(w, startPos, lookDirection, 10);
+        glm_vec3_copy(raycast.blockPosition, bottomLeft);
+        LOG_DEBUG("FOUND BLOCK: %f, %f, %f", bottomLeft[0], bottomLeft[1], bottomLeft[2]);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS) {
+        vec3 startPos;
+        vec3 lookDirection;
+        glm_vec3_scale(player->lookVector, -1.f, lookDirection);
+        glm_vec3_add(player->entity.position, player->cameraOffset, startPos);
+        raycast_t raycast = world_raycast(w, startPos, lookDirection, 10);
+        glm_vec3_copy(raycast.blockPosition, topRight);
+        LOG_DEBUG("FOUND BLOCK: %f, %f, %f", topRight[0], topRight[1], topRight[2]);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) {
+        vec3 startPos;
+        vec3 lookDirection;
+        glm_vec3_scale(player->lookVector, -1.f, lookDirection);
+        glm_vec3_add(player->entity.position, player->cameraOffset, startPos);
+        raycast_t raycast = world_raycast(w, startPos, lookDirection, 10);
+        glm_vec3_copy(raycast.blockPosition, origin);
+        LOG_DEBUG("FOUND BLOCK: %f, %f, %f", origin[0], origin[1], origin[2]);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) {
+        vec3 minPoint;
+        vec3 maxPoint;
+        for (int i = 0; i < 3; i++) {
+            if (bottomLeft[i] < topRight[i]) {
+                minPoint[i] = bottomLeft[i];
+                maxPoint[i] = topRight[i] + 1;
+            } else {
+                minPoint[i] = topRight[i];
+                maxPoint[i] = bottomLeft[i] + 1;
+            }
+        }
+        const int numBlocks = (int)(maxPoint[0] - minPoint[0]) *
+                          (int)(maxPoint[1] - minPoint[1]) *
+                          (int)(maxPoint[2] - minPoint[2]);
+
+        // getting all the blocks in the range
+        blockData_t buf[numBlocks];
+
+        world_getBlocksInRange(w, minPoint, maxPoint, buf);
+
+        LOG_DEBUG("PRINTING BLOCKS");
+
+        for (int i = 0; i < numBlocks; i++) {
+            const blockData_t block = buf[i];
+            if (block.type!= BL_AIR) {
+                printf("{%d, %d, %d, %d, 1.f},\n", block.type, block.x - (int)origin[0], block.y - (int)origin[1], block.z - (int)origin[2]);
+            }
+        }}
 
 
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && player->entity.grounded) {
