@@ -14,7 +14,7 @@ static pthread_t thread;
 
 static state_t currentState = {1, 0, 0, 0};
 
-static double accelSensorToLocal[3][3] = {{-1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+static double accelSensorToLocal[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, -1}};
 static double rotationSensorToLocal[3][3] = {{-1, 0, 0}, {0, -1, 0}, {0, 0, 1}};
 
 static double gravityDir[3] = {0, -1, 0};
@@ -29,9 +29,9 @@ static double Q[4][4] =  {
 
 
 static double R[3][3] =  {
-    {1e-2, 0, 0},
-    {0, 1e-2, 0},
-    {0, 0, 1e-2}
+    {1, 0, 0},
+    {0, 1, 0},
+    {0, 0, 1}
 };
 
 
@@ -49,6 +49,7 @@ static void orientation_init(double accels[3]) {
     currentState[2] *= sin(angle/2);
     currentState[3] *= sin(angle/2);
     quat_normalise(currentState, currentState);
+ //   quat_conjugate(currentState, currentState);
 }
 
 void imu_getOrientation(quaternion res) {
@@ -83,12 +84,21 @@ static void update(double accels[3]) {
     // predict measurements
     double predicted[3];
     quat_vecmul(currentState, gravityDir, predicted);
-    
+
+    quaternion inv;
+    quat_conjugate(currentState, inv);
+    double other[3];
+    quat_vecmul(inv, gravityDir, predicted);
+
+    LOG_DEBUG("Predicted: \t%f %f %f", predicted[0], predicted[1], predicted[2]);
+    LOG_DEBUG("Actual: \t%f %f %f", accels[0], accels[1], accels[2]);
+    LOG_DEBUG("Other:  \t%f %f %f", other[0], other[1], other[2]);    
+//    return; 
     double yk[3] = {accels[0] - predicted[0], accels[1] - predicted[1], accels[2] - predicted[2]};
     double H[3][4] = {
-        {currentState[3] * 2, currentState[2] * -2, currentState[1] * -2, currentState[0] * 2},
-        {currentState[0] * -2, currentState[1] * 2, currentState[2] * -2, currentState[3] * -2},
-        {-2 * currentState[1], -2 * currentState[0], -2 * currentState[3], -2 * currentState[2]}
+        {-currentState[3] * 2, -currentState[2] * 2, -currentState[1] * 2, -currentState[0] * 2},
+        {currentState[0] * -2, -currentState[1] * -2, -currentState[2] * 2, -currentState[3] * 2},
+        {2 * currentState[1], 2 * currentState[0], -2 * currentState[3], 2 * -currentState[2]}
     };
 
     double temp[3][4];
