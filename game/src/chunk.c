@@ -8,7 +8,22 @@
 
 extern void chunk_createMesh(chunk_t *c);
 
-void chunk_init(chunk_t *c, rng_t rng, noise_t noise, int cx, int cy, int cz) {
+static float getHumidity(chunk_t *c, const float h, const int x, const int z) {
+    const float n = noise_smoothValue(&c->noise, 0.005f * (float)x - 1024.f, 0.005f * (float)z + 1024.f);
+    return 20.f * n;
+}
+
+static float getTemperature(chunk_t *c, const float h, const int x, const int z) {
+    const float n = noise_smoothValue(&c->noise, 0.005f * (float)x + 1024.f, 0.005f * (float)z - 1024.f);
+    return 25.f * n;
+}
+
+static float getHeight(chunk_t *c, const int x, const int z) {
+    const float n = noise_fbm(&c->noise, (float)x, (float)z, 4, 0.5f, 0.01f);
+    return (50.f + n * 50.f);
+}
+
+void chunk_init(chunk_t *c, const rng_t rng, const noise_t noise, const int cx, const int cy, const int cz) {
     c->rng = rng;
     c->noise = noise;
 
@@ -54,21 +69,34 @@ void chunk_generate(chunk_t *c) {
     int (*ptr)[CHUNK_SIZE][CHUNK_SIZE] = (int (*)[CHUNK_SIZE][CHUNK_SIZE]) c->blocks;
     for (int x = 0; x < CHUNK_SIZE; x++) {
         for (int z = 0; z < CHUNK_SIZE; z++) {
-            const float xf = (c->cx * CHUNK_SIZE + x);
-            const float zf = (c->cz * CHUNK_SIZE + z);
+            const int xg = (c->cx * CHUNK_SIZE + x);
+            const int zg = (c->cz * CHUNK_SIZE + z);
 
-            const float biome = noise_smoothValue(&c->noise, xf * 0.005f, zf * 0.005f);
+            const float height = getHeight(c, xg, zg);
+            const float humidityOffset = getHumidity(c, height, xg, zg);
+            const float temperatureOffset = getTemperature(c, height, xg, zg);
 
-            const float n = noise_height(&c->noise, xf, zf);
-            const float height = n * 20.f;
 
             for (int y = 0; y < CHUNK_SIZE; y++) {
-                if (c->cy * CHUNK_SIZE + y == (int)height) {
-                    ptr[x][y][z] = biome < 0.5f ? BL_GRASS : BL_SAND;
-                } else if (c->cy * CHUNK_SIZE + y < height - 6) {
+                const int yg = c->cy * CHUNK_SIZE + y;
+
+                if (yg == (int)height) {
+                    const float humidity = 90.f - 0.6f * (float)yg + humidityOffset;
+                    const float temperature = 25.f - 0.25f * (float)yg + temperatureOffset;
+
+                    if (temperature > 30.f) {
+                        ptr[x][y][z] = BL_SAND;
+                    } else if (temperature > 10.f) {
+                        ptr[x][y][z] = BL_GRASS;
+                    } else if (temperature > 5.f) {
+                        ptr[x][y][z] = BL_STONE;
+                    } else {
+                        ptr[x][y][z] = BL_SNOW;
+                    }
+                } else if (yg < (int)height - 6) {
                     ptr[x][y][z] = BL_STONE;
-                } else if (c->cy * CHUNK_SIZE + y < height) {
-                    ptr[x][y][z] = biome < 0.5f ? BL_DIRT : BL_SAND;
+                } else if (yg < (int)height) {
+                    ptr[x][y][z] = BL_DIRT;
                 }
             }
         }

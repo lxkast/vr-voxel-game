@@ -78,11 +78,14 @@ float noise_value(noise_t *n, int x, int z);
 float noise_smoothValue(noise_t *n, float x, float y);
 
 /**
- * @brief A function representing a heightmap
- * 
+ * @brief A fractal brownian motion function
+ *
  * @param n A pointer to a noise object
  * @param x The first input
- * @param z The second input
- * @return float The random noise value
+ * @param y The second input
+ * @param octaves The number of octaves of noise
+ * @param persistence The persistence
+ * @param baseFrequency The base frequency
+ * @return float The value from the noise
  */
-float noise_height(noise_t *n, int x, int z);
+float noise_fbm(noise_t *n, float x, float y, int octaves, float persistence, float baseFrequency);

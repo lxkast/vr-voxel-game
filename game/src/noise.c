@@ -66,18 +66,18 @@ float noise_smoothValue(noise_t *n, const float x, const float y) {
     return glm_lerp(i1, i2, yFrac);
 }
 
-float noise_height(noise_t *n, const int x, const int z) {
-    float totalHeight = 0.f;
-    float frequency = 0.01f;
+float noise_fbm(noise_t *n, float x, float y, int octaves, float persistence, float baseFrequency) {
+    float total = 0.f;
+    float frequency = baseFrequency;
     float amplitude = 1.f;
     float maxAmplitude = 0.f;
 
-    for (int octave = 0; octave < 4; octave++) {
-        totalHeight += noise_smoothValue(n, (float)x * frequency, (float)z * frequency) * amplitude;
+    for (int i = 0; i < octaves; i++) {
+        total += noise_smoothValue(n, x * frequency, y * frequency) * amplitude;
         maxAmplitude += amplitude;
-        amplitude *= 0.5f;
+        amplitude *= persistence;
         frequency *= 2.f;
     }
 
-    return totalHeight / maxAmplitude;
+    return total / maxAmplitude;
 }
