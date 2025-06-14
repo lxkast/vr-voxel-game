@@ -19,13 +19,6 @@ void camera_init(camera_t *c) {
 }
 
 void camera_update(camera_t *c) {
-    quaternion orientation;
-    imu_getOrientation(orientation);
-    c->ori[0] = orientation[1];
-    c->ori[1] = orientation[2];
-    c->ori[2] = orientation[3];
-    c->ori[3] = orientation[0];
-
     camera_setRuf(c);
 }
 
@@ -56,7 +49,6 @@ void camera_translateZ(camera_t *c, const float dZ) {
 }
 
 void camera_fromMouse(camera_t *c, const float dX, const float dY) {
-    return;
     versor qYaw;
     glm_quat(qYaw, dX * 0.01f, 0.0f, 1.0f, 0.0f);
     glm_quat_mul(qYaw, c->ori, c->ori);

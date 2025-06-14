@@ -4,20 +4,19 @@
 #include <GLFW/glfw3.h>
 #include <logging.h>
 #include <stdio.h>
-#include "analytics.h"
 #include "camera.h"
 #include "entity.h"
 #include "player.h"
-#include "postprocess.h"
-#include "shaderutil.h"
-#include "texture.h"
 #include "world.h"
+
+#ifdef BUILD_FOR_RPI
+#include "hardware/orientation.h"
+#endif
 
 #define SPRINT_MULTIPLIER 1.3f
 #define GROUND_ACCELERATION 35.f
 #define AIR_ACCELERATION 10.f
 
-static double previousMouse[2];
 static int joystickID = -1;
 
 static void (*toggle_wireframe)();
@@ -128,18 +127,25 @@ void joystickEvent(int jid, int event) {
     }
 }
 
+static double previousMouse[2];
 void processCameraInput(GLFWwindow *window, camera_t *camera) {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
-
-    double currentMouse[2];
-    glfwGetCursorPos(window, &currentMouse[0], &currentMouse[1]);
-    const float dX = (float)(currentMouse[0] - previousMouse[0]);
-    const float dY = (float)(currentMouse[1] - previousMouse[1]);
-    previousMouse[0] = currentMouse[0];
-    previousMouse[1] = currentMouse[1];
-    camera_fromMouse(camera, -dX, -dY);
+    #ifdef BUILD_FOR_RPI
+        quaternion orientation;
+        imu_getOrientation(orientation);
+        c->ori[0] = orientation[1];
+        c->ori[1] = orientation[2];
+        c->ori[2] = orientation[3];
+        c->ori[3] = orientation[0];
+        camera_setRuf(c);
+    #else
+        double currentMouse[2];
+        glfwGetCursorPos(window, &currentMouse[0], &currentMouse[1]);
+        const float dX = (float)(currentMouse[0] - previousMouse[0]);
+        const float dY = (float)(currentMouse[1] - previousMouse[1]);
+        previousMouse[0] = currentMouse[0];
+        previousMouse[1] = currentMouse[1];
+        camera_fromMouse(camera, -dX, -dY);
+    #endif
 }
 
 /*
@@ -162,6 +168,10 @@ void initialiseInput(GLFWwindow *window, void (*wireframe)(), void (*vr)()) {
     glfwGetCursorPos(window, previousMouse, previousMouse + 1);
     glfwSetJoystickCallback(joystickEvent);
     glfwSetKeyCallback(window, key_callback);
+
+    #ifdef BUILD_FOR_RPI
+        startOrientationThread();
+    #endif
 
     for (int i = GLFW_JOYSTICK_1; i < GLFW_JOYSTICK_LAST; i++) {
         if (glfwJoystickPresent(i)) {

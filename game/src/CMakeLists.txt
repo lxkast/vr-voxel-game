@@ -1,8 +1,10 @@
-file(GLOB_RECURSE SRC_FILES
+file(GLOB SRC_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/*.c"
 )
+if (BUILD_FOR_RPI)
+    add_subdirectory(hardware)
+endif()
 
-add_subdirectory(hardware)
 list(REMOVE_ITEM SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/hardware/test.c")
 add_executable(extension
         ${SRC_FILES}

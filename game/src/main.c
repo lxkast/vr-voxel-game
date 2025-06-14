@@ -11,7 +11,6 @@
 #include "shaderutil.h"
 #include "texture.h"
 #include "world.h"
-#include "hardware/orientation.h"
 #include "entity.h"
 #include "player.h"
 
@@ -54,8 +53,6 @@ int main(void) {
     */
 
     log_init(stdout);
-
-    startOrientationThread();
 
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
