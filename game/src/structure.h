@@ -21,6 +21,8 @@ typedef struct {
     decorator_t decorator;
     int numBlocks;
     structure_block_t *blocks;
+    float chance;
+    block_t base;
 } structure_t;
 
 structure_block_t treePattern[] = {
@@ -55,4 +57,22 @@ structure_block_t treePattern[] = {
 structure_t treeStructure = {
     .numBlocks = 63,
     .blocks = treePattern,
+    .chance = 0.01f,
+    .base = BL_GRASS,
+};
+
+// second structure for testing purposes
+structure_block_t stoneT[] = {
+    {BL_STONE, 0, 0, 0, 1.f},
+    {BL_STONE, 0, 1, 0, 1.f},
+    {BL_STONE, 0, 2, 0, 1.f},
+    {BL_STONE, -1, 2, 0, 1.f},
+    {BL_STONE, 1, 2, 0, 1.f},
+};
+
+structure_t stoneTStructure = {
+    .numBlocks = 5,
+    .blocks = stoneT,
+    .chance = 0.005f,
+    .base = BL_GRASS,
 };
