@@ -12,6 +12,7 @@
 
 #define MAX_RAYCAST_DISTANCE 6.f
 #define RAYCAST_STEP_MAGNITUDE 0.1f
+#define BLOCK_DERENDER_DISTANCE 50.f
 
 /**
  * @brief Key for hash table
@@ -124,7 +125,14 @@ static chunkValue_t *world_loadChunk(world_t *w,
 
     if (!cv->chunk) {
         cv->chunk = (chunk_t *)calloc(1, sizeof(chunk_t));
-        chunk_init(cv->chunk, cx, cy, cz);
+
+        rng_t chunkRng;
+        rng_init(&chunkRng, w->seed ^
+                            ((uint64_t)cx << 16) ^
+                            ((uint64_t)cy << 32) ^
+                            ((uint64_t)cz << 48));
+
+        chunk_init(cv->chunk, chunkRng, w->noise, cx, cy, cz);
         cv->ll = LL_INIT;
         cv->loadData.reload = REL_TOMBSTONE;
         cv->loadData.nChildren = 0;
@@ -164,15 +172,13 @@ static void decorator_init(struct decorator *d, chunkValue_t *origin, const int 
 }
 
 static bool decorator_initSurface(struct decorator *d, chunkValue_t *origin, const int x, const int z, const block_t block) {
-    int y;
-    for (y = CHUNK_SIZE - 1; y > 0; y--) {
+    for (int y = CHUNK_SIZE - 2; y >= 0; y--) {
         if (origin->chunk->blocks[x][y][z] == block) {
-            y++;
-            break;
+            decorator_init(d, origin, x, y + 1, z);
+            return true;
         }
     }
-    decorator_init(d, origin, x, y, z);
-    return y != 0;
+    return false;
 }
 
 static void decorator_placeBlock(struct decorator *d,
@@ -183,28 +189,38 @@ static void decorator_placeBlock(struct decorator *d,
                                  const block_t block) {
     x = d->ox + x;
     y = d->oy + y;
-    z = d->ox + z;
+    z = d->oz + z;
 
     const int cx = x >> 4;
     const int cy = y >> 4;
     const int cz = z >> 4;
 
     if (-1 <= cx && cx <= 1 && -1 <= cy && cy <= 1 && -1 <= cz && cz <= 1) {
-        if (!d->cache[cx + 1][cy + 1][cz + 1]) {
-            d->cache[cx + 1][cy + 1][cz + 1] = world_loadChunk(world,
-                                                   d->origin->chunk->cx + cx,
-                                                   d->origin->chunk->cy + cy,
-                                                   d->origin->chunk->cz + cz,
-                                                   LL_INIT,
-                                                   REL_CHILD);
+        chunkValue_t **cacheValue = &d->cache[cx + 1][cy + 1][cz + 1];
+        if (!*cacheValue) {
+            *cacheValue = world_loadChunk(world,
+                                          d->origin->chunk->cx + cx,
+                                          d->origin->chunk->cy + cy,
+                                          d->origin->chunk->cz + cz,
+                                          LL_INIT,
+                                          REL_CHILD);
             if (d->origin->loadData.nChildren > 31) {
-                LOG_FATAL("it's so over");
+                LOG_FATAL("Buffer overflow in chunk children");
             }
-            d->origin->loadData.children[d->origin->loadData.nChildren++] = d->cache[cx + 1][cy + 1][cz + 1];
+            bool found = false;
+            for (int i = 0; i < d->origin->loadData.nChildren; i++) {
+                if (d->origin->loadData.children[i] == *cacheValue) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                d->origin->loadData.children[d->origin->loadData.nChildren++] = *cacheValue;
+            }
         }
 
-        d->cache[cx + 1][cy + 1][cz + 1]->chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)] = block;
-        d->cache[cx + 1][cy + 1][cz + 1]->chunk->tainted = true;
+        (*cacheValue)->chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)] = block;
+        (*cacheValue)->chunk->tainted = true;
     }
 }
 
@@ -233,7 +249,7 @@ static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
 
     for (int x = 0; x < CHUNK_SIZE; x++) {
         for (int z = 0; z < CHUNK_SIZE; z++) {
-            if (x == 7 && z == 7) {
+            if (rng_float(&cv->chunk->rng) < 0.01f) {
                 if (decorator_initSurface(&d, cv, x, z, BL_GRASS)) {
                     decorator_placeTree(&d, w);
                 }
@@ -279,9 +295,7 @@ static void highlightInit(world_t *w) {
     glBindVertexArray(0);
 }
 
-void world_init(world_t *w, const GLuint program) {
-    srand(1);
-
+void world_init(world_t *w, GLuint program, uint64_t seed) {
     memset(w, 0, sizeof(world_t));
     w->clusterTable = NULL;
     fogInit(w, program);
@@ -289,37 +303,76 @@ void world_init(world_t *w, const GLuint program) {
 
     w->numEntities = 0;
     w->oldestItem = 0;
+    w->numPlayers = 0;
+    
+    w->seed = seed;
+    rng_init(&w->worldRng, seed);
+    rng_init(&w->generalRng, rng_ull(&w->worldRng));
+    w->noise.seed = (uint32_t)rng_ull(&w->worldRng);
 }
 
 vec3 chunkBounds = {15.f, 15.f, 15.f};
 
-// Note - we assume lookVector is normalised
-static bool isChunkInFrontOfCamera(camera_t *cam, const chunk_t *chunk) {
-    vec3 chunkCenter;
-    chunkCenter[0] = (float)(chunk->cx << 4) + 8.f;
-    chunkCenter[1] = (float)(chunk->cy << 4) + 8.f;
-    chunkCenter[2] = (float)(chunk->cz << 4) + 8.f;
-
-    vec3 toChunk;
-    glm_vec3_sub(chunkCenter, cam->eye, toChunk);
-
-    const float dot = glm_vec3_dot(toChunk, cam->ruf[2]);
-
-    return dot < 16.f;
+static bool completelyOutsidePlane(double plane[4], const chunk_t *chunk) {
+    double testPoint[3] = {
+        (chunk->cx << 4) + (plane[0] > 0 ? 16 : 0),
+        (chunk->cy << 4) + (plane[1] > 0 ? 16 : 0),
+        (chunk->cz << 4) + (plane[2] > 0 ? 16 : 0),
+    };
+    double dot = testPoint[0] * plane[0] + testPoint[1] * plane[1] + testPoint[2] * plane[2];
+    return dot < -plane[3];
 }
 
-void world_draw(const world_t *w, const int modelLocation, camera_t *cam) {
+// Note - we assume lookVector is normalised
+static bool shouldRender(camera_t *cam, const chunk_t *chunk, double planes[6][4]) {
+    for (int i = 0; i < 6; i++) {
+        if (completelyOutsidePlane(planes[i], chunk)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static void calculatePlanes(camera_t *cam, mat4 projection, double res[6][4]) {
+    mat4 view;
+    camera_createView(cam, view);
+    mat4 projview;
+    glm_mat4_mul(projection, view, projview);
+
+    for (int i = 0; i < 3; i++) {
+        res[i*2][0] = projview[0][3] + projview[0][i];
+        res[i*2][1] = projview[1][3] + projview[1][i];
+        res[i*2][2] = projview[2][3] + projview[2][i];
+        res[i*2][3] = projview[3][3] + projview[3][i];
+
+        res[i*2+1][0] = projview[0][3] - projview[0][i];
+        res[i*2+1][1] = projview[1][3] - projview[1][i];
+        res[i*2+1][2] = projview[2][3] - projview[2][i];
+        res[i*2+1][3] = projview[3][3] - projview[3][i];
+    }
+}
+
+void world_draw(const world_t *w, const int modelLocation, camera_t *cam, mat4 projection) {
     cluster_t *cluster, *tmp;
+    double planes[6][4];
+    calculatePlanes(cam, projection, planes);
+
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
         for (int i = 0; i < C_T * C_T * C_T; i++) {
             if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
-            const bool renderingChunk = isChunkInFrontOfCamera(cam, cluster->cells[i].chunk);
+            const bool renderingChunk = shouldRender(cam, cluster->cells[i].chunk, planes);
 
             if (cluster->cells[i].chunk && renderingChunk) {
                 chunk_draw(cluster->cells[i].chunk, modelLocation);
             }
         }
     }
+}
+
+static void freeEntity(const worldEntity_t *e) {
+    glDeleteBuffers(1, &e->vbo);
+    glDeleteVertexArrays(1, &e->vao);
+    free(e->entity);
 }
 
 void world_free(world_t *w) {
@@ -334,6 +387,12 @@ void world_free(world_t *w) {
         }
         free(cluster->cells);
         free(cluster);
+    }
+
+    for (int i = 0; i < w->numEntities; i++) {
+        if (w->entities[i].needsFreeing) {
+            freeEntity(&w->entities[i]);
+        }
     }
 }
 
@@ -483,7 +542,7 @@ static void meshItemEntity(worldEntity_t *e) {
     glEnableVertexAttribArray(1);
     float *mesh = malloc(itemBlockVerticesSize);
     memcpy(mesh, itemBlockVertices, itemBlockVerticesSize);
-    block_t type = ITEM_TO_BLOCK[e->itemType];
+    const block_t type = ITEM_TO_BLOCK[e->itemType];
     for (int i = 0; i < 36; ++i) {
         mesh[5 * i + 0] *= e->entity->size[0];
         mesh[5 * i + 1] *= e->entity->size[1];
@@ -496,19 +555,10 @@ static void meshItemEntity(worldEntity_t *e) {
     free(mesh);
 }
 
-/**
- * @brief Generates a random number in the range (min, max)
- * @param min The minimum value the random number can take
- * @param max The maximum value the random number can take
- * @return the random number
- */
-float getRandRange(const float min, const float max) {
-    return min + (max - min) * ((float)rand() / RAND_MAX);
-}
 
 static worldEntity_t createItemEntity(world_t *w, const vec3 pos, const item_e item) {
     worldEntity_t newWorldEntity;
-    newWorldEntity.type = ITEM;
+    newWorldEntity.type = WE_ITEM;
     entity_t *newEntity = malloc(sizeof(entity_t));
     newEntity->position[0] = pos[0];
     newEntity->position[1] = pos[1];
@@ -516,9 +566,9 @@ static worldEntity_t createItemEntity(world_t *w, const vec3 pos, const item_e i
     newEntity->acceleration[0] = 0;
     newEntity->acceleration[1] = GRAVITY_ACCELERATION;
     newEntity->acceleration[2] = 0;
-    newEntity->velocity[0] = getRandRange(-0.55f, 0.55f);
+    newEntity->velocity[0] = rng_floatRange(&w->generalRng, -0.55f, 0.55f);
     newEntity->velocity[1] = 0.5f;
-    newEntity->velocity[2] = getRandRange(-0.55f, 0.55f);
+    newEntity->velocity[2] = rng_floatRange(&w->generalRng, -0.55f, 0.55f);
     newEntity->grounded = false;
     newEntity->size[0] = 0.25f;
     newEntity->size[1] = 0.25f;
@@ -527,6 +577,7 @@ static worldEntity_t createItemEntity(world_t *w, const vec3 pos, const item_e i
 
     newWorldEntity.entity = newEntity;
     newWorldEntity.itemType = item;
+    newWorldEntity.needsFreeing = true;
     meshItemEntity(&newWorldEntity);
     return newWorldEntity;
 }
@@ -535,28 +586,36 @@ static worldEntity_t createItemEntity(world_t *w, const vec3 pos, const item_e i
 /**
  * @brief Adds an entity to the world
  * @param w A pointer to a world
- * @param type The type of entity
- * @param entity The actual entity
- * @param itemType The type of item, if the entity's type is ITEM
+ * @param entity The world entity to add
  */
-void world_addEntity(world_t *w, const worldEntity_t entity) {
+void world_addEntity(world_t *w, worldEntity_t entity) {
     if (w->numEntities == MAX_NUM_ENTITIES) {
         for (int i = 0; i < MAX_NUM_ENTITIES; i++) {
             const int entityIndex = (w->oldestItem + i) % w->numEntities;
-            if (w->entities[entityIndex].type == ITEM) {
+            if (w->entities[entityIndex].type == WE_ITEM) {
                 w->entities[entityIndex] = entity;
+                w->entities[entityIndex];
                 w->oldestItem = entityIndex+1;
+                if (entity.type == WE_PLAYER) {
+                    if (w->numPlayers < MAX_NUM_PLAYERS) {
+                        w->players[w->numPlayers++] = &w->entities[entityIndex];
+                    } else {
+                        LOG_FATAL("Max number of players reached, cannot add another");
+                    }
+                }
                 return;
             }
         }
     } else {
         w->entities[w->numEntities++] = entity;
+        if (entity.type == WE_PLAYER) {
+            if (w->numPlayers < MAX_NUM_PLAYERS) {
+                w->players[w->numPlayers++] = &w->entities[w->numEntities-1];
+            } else {
+                LOG_FATAL("Max number of players reached, cannot add another");
+            }
+        }
     }
-}
-
-static void freeEntity(const worldEntity_t *e) {
-    glDeleteBuffers(1, &e->vbo);
-    glDeleteVertexArrays(1, &e->vao);
 }
 
 void world_removeItemEntity(world_t *w, const int entityIndex) {
@@ -564,7 +623,7 @@ void world_removeItemEntity(world_t *w, const int entityIndex) {
         LOG_FATAL("Entity index out of range");
     }
 
-    if (w->entities[entityIndex].type == ITEM) {
+    if (w->entities[entityIndex].type == WE_ITEM) {
         freeEntity(&w->entities[entityIndex]);
     }
 
@@ -669,7 +728,7 @@ static block_t getBlockType(world_t *w, vec3 position) {
     return bd.type;
 }
 
-raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection) {
+raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection, const float raycastDistance) {
     vec3 viewNormalised;
     glm_vec3_copy(viewDirection, viewNormalised);
     glm_normalize(viewNormalised);
@@ -706,7 +765,16 @@ raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection) {
 
     raycastFace_e currentFace = POS_X_FACE;
 
-    while (totalDistance < MAX_RAYCAST_DISTANCE) {
+    // Check starting block first
+    if (getBlockType(w, currentBlock) != BL_AIR) {
+        return (raycast_t){
+            .blockPosition = {currentBlock[0], currentBlock[1], currentBlock[2]},
+            .face = currentFace,
+            .found = true
+        };
+    }
+
+    while (totalDistance < raycastDistance) {
         // checks for a solid block
         if (getBlockType(w, currentBlock) != BL_AIR) {
             return (raycast_t){
@@ -761,7 +829,7 @@ void world_highlightFace(world_t *w, camera_t *camera) {
     vec3 ray;
     glm_vec3_scale(camera->ruf[2], -1.0f, ray);
 
-    raycast_t res = world_raycast(w, camera->eye, ray);
+    raycast_t res = world_raycast(w, camera->eye, ray, MAX_RAYCAST_DISTANCE);
     w->highlightFound = res.found;
     if (!res.found) {
         return;
@@ -817,7 +885,15 @@ void world_drawHighlight(const world_t *w, const int modelLocation) {
 
 void world_processAllEntities(world_t *w, const double dt) {
     for (int i = 0; i < w->numEntities; i++) {
-        if (w->entities[i].type != NONE) {
+        if (w->entities[i].type != WE_NONE) {
+            if (w->entities[i].type == WE_ITEM) {
+                for (int j = 0; j < w->numPlayers; j++) {
+                    if (glm_vec3_distance(w->entities[i].entity->position, w->players[j]->entity->position) > BLOCK_DERENDER_DISTANCE) {
+                        world_removeItemEntity(w, i);
+                        i--;
+                    }
+                }
+            }
             w->entities[i].entity->acceleration[1] = GRAVITY_ACCELERATION;
             processEntity(w, w->entities[i].entity, dt);
         }
@@ -826,7 +902,7 @@ void world_processAllEntities(world_t *w, const double dt) {
 
 void world_drawAllEntities(const world_t *w, const int modelLocation) {
     for (int i = 0; i < w->numEntities; i++) {
-        if (w->entities[i].type == ITEM) {
+        if (w->entities[i].type == WE_ITEM) {
             mat4 model;
             glm_translate_make(model, w->entities[i].entity->position);
             glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
