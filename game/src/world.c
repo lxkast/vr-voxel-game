@@ -674,6 +674,10 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
         // audio found here: https://pixabay.com/sound-effects/rustling-bushes-dried-leaves-5-230204/
         play3DAudio(w, "../../src/audio/leaf_destroy.mp3", (float)x, (float)y, (float)z);
 
+    } else if (*bp == BL_STONE) {
+        LOG_DEBUG("Playing sound");
+        // audio found here: https://pixabay.com/sound-effects/rock-destroy-6409/
+        play3DAudio(w, "../../src/audio/stone_destroy.mp3", (float)x, (float)y, (float)z);
     }else if (*bp == BL_LOG) {
         // audio found here https://pixabay.com/sound-effects/log-split-88986/
         play3DAudio(w, "../../src/audio/log_destroy.mp3", (float)x, (float)y, (float)z);
