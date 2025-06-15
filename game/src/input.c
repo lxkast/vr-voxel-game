@@ -63,7 +63,7 @@ void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
 
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && player->entity.grounded) {
         player->entity.velocity[1] = 5;
-        player->entity.grounded = false;
+        //player->entity.grounded = false;
     }
 
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {

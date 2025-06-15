@@ -49,7 +49,7 @@ void main() {
     }
 
     if (textureCol > HIGHLIGHT_COLUMN) {
-        finalRGB = vec4(finalRGB.xyz / max(1.0, 6.0 - vLightValue), 1);
+        finalRGB = vec4(finalRGB.xyz * pow(vLightValue, 1.4), 1);
     }
     FragColor = mix(fogColor, finalRGB, f);
 }
