@@ -166,7 +166,7 @@ void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
 
         world_getBlocksInRange(w, minPoint, maxPoint, buf);
 
-        printf("static const structure_block_t generated[] = {\n");
+        printf("static const structureBlock_t generated[] = {\n");
 
         for (int i = 0; i < numBlocks; i++) {
             const blockData_t block = buf[i];

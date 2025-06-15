@@ -15,17 +15,17 @@ typedef struct {
     block_t type;
     int x,y,z;
     float chanceToAppear;
-} structure_block_t;
+} structureBlock_t;
 
 typedef struct {
     decorator_t decorator;
     int numBlocks;
-    structure_block_t *blocks;
+    structureBlock_t *blocks;
     float chance;
     block_t base;
 } structure_t;
 
-static const structure_block_t treePattern[] = {
+static const structureBlock_t treePattern[] = {
     // Tree trunk
     {BL_LOG, 0,0,0, 1.f},
     {BL_LOG, 0,1,0, 1.f},
@@ -62,7 +62,7 @@ const structure_t treeStructure = {
 };
 
 // second structure for testing purposes
-static const structure_block_t stoneT[] = {
+static const structureBlock_t stoneT[] = {
     {BL_STONE, 0, 0, 0, 1.f},
     {BL_STONE, 0, 1, 0, 1.f},
     {BL_STONE, 0, 2, 0, 1.f},
@@ -77,7 +77,7 @@ const structure_t stoneTStructure = {
     .base = BL_GRASS,
 };
 
-static const structure_block_t woodenHouse[] = {
+static const structureBlock_t woodenHouse[] = {
     {5, -1, 0, -2, 1.f},
     {5, -1, 0, 2, 1.f},
     {5, -1, 1, -2, 1.f},
@@ -116,7 +116,7 @@ static const structure_block_t woodenHouse[] = {
 };
 
 const structure_t woodenHouseStructure = {
-    .numBlocks = sizeof(woodenHouse)/sizeof(structure_block_t),
+    .numBlocks = sizeof(woodenHouse)/sizeof(structureBlock_t),
     .blocks = woodenHouse,
     .chance = 0.005f,
     .base = BL_SAND,

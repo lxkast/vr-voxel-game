@@ -534,7 +534,7 @@ static void decorator_placeBlock(decorator_t *d,
 
 static void world_placeStructure(world_t *world, structure_t *structure) {
     for (int i = 0; i < structure->numBlocks; i++) {
-        const structure_block_t block = structure->blocks[i];
+        const structureBlock_t block = structure->blocks[i];
         decorator_placeBlock(&structure->decorator, world, block.x, block.y, block.z, block.type, block.chanceToAppear);
     }
 }
