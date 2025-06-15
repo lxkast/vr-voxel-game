@@ -643,6 +643,19 @@ void world_removeItemEntity(world_t *w, const int entityIndex) {
     }
 }
 
+static void play3DAudio(world_t *w, const char *filepath, const float x, const float y, const float z) {
+    ma_sound_uninit(&w->sound);
+
+    if (ma_sound_init_from_file(&w->engine,
+                                filepath,
+                                MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_ASYNC,
+                                NULL, NULL, &w->sound) == MA_SUCCESS) {
+        ma_sound_set_spatialization_enabled(&w->sound, MA_TRUE);
+        ma_sound_set_position(&w->sound, x, y, z);
+        ma_sound_start(&w->sound);
+    }
+}
+
 bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
     block_t *bp;
     chunk_t *cp;
@@ -652,41 +665,17 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
 
     #ifdef ENABLE_AUDIO
     if (*bp == BL_DIRT || *bp == BL_GRASS || *bp == BL_SAND) {
-        ma_sound_uninit(&w->sound);
-
         // audio found here: https://pixabay.com/sound-effects/footsteps-dirt-gravel-6823/
-        if (ma_sound_init_from_file(&w->engine,
-                                    "../../src/audio/sand_dirt_grass_destroy.mp3",
-                                    MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_ASYNC,
-                                    NULL, NULL, &w->sound) == MA_SUCCESS) {
-            ma_sound_set_spatialization_enabled(&w->sound, MA_TRUE);
-            ma_sound_set_position(&w->sound, (float)x, (float)y, (float)z);
-            ma_sound_start(&w->sound);
-        }
+        play3DAudio(w, "../../src/audio/sand_dirt_grass_destroy.mp3", (float)x, (float)y, (float)z);
+
     } else if (*bp == BL_LEAF) {
-        ma_sound_uninit(&w->sound);
-
         // audio found here: https://pixabay.com/sound-effects/rustling-bushes-dried-leaves-5-230204/
-        if (ma_sound_init_from_file(&w->engine,
-                                    "../../src/audio/leaf_destroy.mp3",
-                                    MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_ASYNC,
-                                    NULL, NULL, &w->sound) == MA_SUCCESS) {
-            ma_sound_set_spatialization_enabled(&w->sound, MA_TRUE);
-            ma_sound_set_position(&w->sound, (float)x, (float)y, (float)z);
-            ma_sound_start(&w->sound);
-        }
-    }else if (*bp == BL_LOG) {
-        ma_sound_uninit(&w->sound);
+        play3DAudio(w, "../../src/audio/leaf_destroy.mp3", (float)x, (float)y, (float)z);
 
+    }else if (*bp == BL_LOG) {
         // audio found here https://pixabay.com/sound-effects/log-split-88986/
-        if (ma_sound_init_from_file(&w->engine,
-                                    "../../src/audio/log_destroy.mp3",
-                                    MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_ASYNC,
-                                    NULL, NULL, &w->sound) == MA_SUCCESS) {
-            ma_sound_set_spatialization_enabled(&w->sound, MA_TRUE);
-            ma_sound_set_position(&w->sound, (float)x, (float)y, (float)z);
-            ma_sound_start(&w->sound);
-        }
+        play3DAudio(w, "../../src/audio/log_destroy.mp3", (float)x, (float)y, (float)z);
+
     }
 
     #endif
