@@ -35,6 +35,7 @@ static double previousMouse[2];
 vec3 bottomLeft = {0.f, 0.f, 0.f};
 vec3 topRight = {0.f,0.f,0.f};
 vec3 origin = {0.f,0.f,0.f};
+block_t originBlock = BL_AIR;
 
 static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
     vec3 acceleration = { 0.f, GRAVITY_ACCELERATION, 0.f };
@@ -99,6 +100,7 @@ static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w)
         raycast_t raycast = world_raycast(w, startPos, lookDirection, 10);
         glm_vec3_copy(raycast.blockPosition, origin);
         origin[1]++;
+        originBlock = getBlockType(w, raycast.blockPosition);
         LOG_DEBUG("FOUND BLOCK: %f, %f, %f", origin[0], origin[1], origin[2]);
     }
 
@@ -123,14 +125,23 @@ static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w)
 
         world_getBlocksInRange(w, minPoint, maxPoint, buf);
 
-        LOG_DEBUG("PRINTING BLOCKS");
+        printf("structure_block_t generated[] = {\n");
 
         for (int i = 0; i < numBlocks; i++) {
             const blockData_t block = buf[i];
             if (block.type!= BL_AIR) {
-                printf("{%d, %d, %d, %d, 1.f},\n", block.type, block.x - (int)origin[0], block.y - (int)origin[1], block.z - (int)origin[2]);
+                printf("    {%d, %d, %d, %d, 1.f},\n", block.type, block.x - (int)origin[0], block.y - (int)origin[1], block.z - (int)origin[2]);
             }
-        }}
+        }
+
+        printf("};\n\n");
+
+        printf("structure_t generatedStructure = {\n");
+        printf("    .numBlocks = %d,\n", numBlocks);
+        printf("    .blocks = generated,\n");
+        printf("    .chance = %f,\n", 0.005);
+        printf("    .base = %d,\n};\n\n", originBlock);
+    }
     #endif
 
 

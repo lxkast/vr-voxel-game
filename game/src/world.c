@@ -427,13 +427,7 @@ void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, bl
     }
 }
 
-/**
- * @brief Gets the type of a block at a chosen position
- * @param w a pointer to the world
- * @param position the position to get a block at
- * @return The type of the block
- */
-static block_t getBlockType(world_t *w, vec3 position) {
+block_t getBlockType(world_t *w, vec3 position) {
     blockData_t bd;
     world_getBlock(w, position, &bd);
     return bd.type;
@@ -566,6 +560,7 @@ static void world_decorateChunk(world_t *w, chunkValue_t *cv, const int cx, cons
             if (rng_float(&cv->chunk->rng) < woodenHouseStructure.chance) {
                 if (world_initStructure(w, &woodenHouseStructure, cv, x, z, woodenHouseStructure.base, cx, cy, cz)) {
                     world_placeStructure(w, &woodenHouseStructure);
+                    continue;
                 }
             }
         }
