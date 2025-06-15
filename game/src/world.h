@@ -76,6 +76,7 @@ typedef struct world_t {
     rng_t worldRng;
     noise_t noise;
     ma_engine engine;
+    ma_sound sound;
 } world_t;
 
 /**
@@ -262,3 +263,5 @@ void world_addEntity(world_t *w, worldEntity_t we);
 void world_removeItemEntity(world_t *w, int entityIndex);
 
 void world_drawAllEntities(const world_t *w, int modelLocation);
+
+void world_updateEngine(world_t *w, vec3 pos, vec3 lookDir);

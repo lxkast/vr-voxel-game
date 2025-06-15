@@ -245,7 +245,6 @@ static void decorator_placeTree(struct decorator *d, world_t *world) {
 
 }
 
-
 static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
     struct decorator d;
 
@@ -315,6 +314,7 @@ void world_init(world_t *w, GLuint program, uint64_t seed) {
     if (ma_engine_init(NULL, &w->engine) != MA_SUCCESS) {
         LOG_FATAL("Engine not loaded");
     }
+    ma_engine_listener_set_position(&w->engine, 0, 0.0f, 0.0f, 0.0f);
 }
 
 vec3 chunkBounds = {15.f, 15.f, 15.f};
@@ -649,7 +649,16 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
     if (*bp == BL_AIR) return false;
 
     if (*bp == BL_LOG) {
-        ma_engine_play_sound(&w->engine, "..\\..\\src\\audio\\log_destroy.mp3", NULL);
+        ma_sound_uninit(&w->sound);
+
+        if (ma_sound_init_from_file(&w->engine,
+                                    "../../src/audio/log_destroy.mp3",
+                                    MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_ASYNC,
+                                    NULL, NULL, &w->sound) == MA_SUCCESS) {
+            ma_sound_set_spatialization_enabled(&w->sound, MA_TRUE);
+            ma_sound_set_position(&w->sound, (float)x, (float)y, (float)z);
+            ma_sound_start(&w->sound);
+        }
     }
 
     const worldEntity_t entity = createItemEntity(w, (vec3){(float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f}, BLOCK_TO_ITEM[*bp]);
@@ -912,4 +921,9 @@ void world_drawAllEntities(const world_t *w, const int modelLocation) {
             glBindVertexArray(0);
         }
     }
+}
+
+void world_updateEngine(world_t *w, vec3 pos, vec3 lookDir) {
+    ma_engine_listener_set_position(&w->engine, 0, pos[0], pos[1], pos[2]);
+    ma_engine_listener_set_direction(&w->engine, 0, -lookDir[2], lookDir[1], -lookDir[0]);
 }
