@@ -79,6 +79,7 @@ static biome_e getBiome(chunk_t *c, const struct biomeSlice bs, const int y) {
 void chunk_init(chunk_t *c, const rng_t rng, const noise_t noise, const int cx, const int cy, const int cz) {
     c->rng = rng;
     c->noise = noise;
+    c->biome = BIO_NIL;
 
     c->cx = cx;
     c->cy = cy;
@@ -132,7 +133,12 @@ void chunk_generate(chunk_t *c) {
 
                 const int ds = bs.height - yg;
                 if (ds >= 0) {
-                    switch (getBiome(c, bs, yg)) {
+                    const biome_e b = getBiome(c, bs, yg);
+                    switch (b) {
+                        case BIO_NIL: {
+                            LOG_WARN("Unknown biome!");
+                            ptr[x][y][z] = BL_STONE;
+                        }
                         case BIO_FOREST: {
                             ptr[x][y][z] = ds == 0 ? BL_GRASS : BL_DIRT;
                             break;
@@ -149,6 +155,9 @@ void chunk_generate(chunk_t *c) {
                             ptr[x][y][z] = BL_STONE;
                             break;
                         }
+                    }
+                    if (ds == 0) {
+                        c->biome = b;
                     }
                 }
             }

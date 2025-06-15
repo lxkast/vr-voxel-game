@@ -11,6 +11,17 @@
 #define CHUNK_SIZE_CUBED 4096
 
 /**
+ * @brief An enum containing biome information
+ */
+typedef enum {
+    BIO_NIL,
+    BIO_FOREST,
+    BIO_DESERT,
+    BIO_TUNDRA,
+    BIO_CAVE
+} biome_e;
+
+/**
  * @brief A struct containing data about a chunk.
  */
 typedef struct {
@@ -30,17 +41,9 @@ typedef struct {
     rng_t rng;
     /// A noise object
     noise_t noise;
+    /// The chunk of the biome
+    biome_e biome;
 } chunk_t;
-
-/**
- * @brief An enum containing biome information
- */
-typedef enum {
-    BIO_FOREST,
-    BIO_DESERT,
-    BIO_TUNDRA,
-    BIO_CAVE
-} biome_e;
 
 /**
  * @brief Initialises a chunk
