@@ -663,7 +663,19 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
             ma_sound_set_position(&w->sound, (float)x, (float)y, (float)z);
             ma_sound_start(&w->sound);
         }
-    } else if (*bp == BL_LOG) {
+    } else if (*bp == BL_LEAF) {
+        ma_sound_uninit(&w->sound);
+
+        // audio found here: https://pixabay.com/sound-effects/rustling-bushes-dried-leaves-5-230204/
+        if (ma_sound_init_from_file(&w->engine,
+                                    "../../src/audio/leaf_destroy.mp3",
+                                    MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_ASYNC,
+                                    NULL, NULL, &w->sound) == MA_SUCCESS) {
+            ma_sound_set_spatialization_enabled(&w->sound, MA_TRUE);
+            ma_sound_set_position(&w->sound, (float)x, (float)y, (float)z);
+            ma_sound_start(&w->sound);
+        }
+    }else if (*bp == BL_LOG) {
         ma_sound_uninit(&w->sound);
 
         // audio found here https://pixabay.com/sound-effects/log-split-88986/
