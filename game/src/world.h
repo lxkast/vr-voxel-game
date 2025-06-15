@@ -8,9 +8,13 @@
 #include "player.h"
 #include "uthash.h"
 #include "noise.h"
-#include "../external/miniaudio/miniaudio.h"
+
 
 #define MA_ENABLE_MP3
+
+#ifdef ENABLE_AUDIO
+#include "../external/miniaudio/miniaudio.h"
+#endif
 
 #define MAX_CHUNKS 256
 #define MAX_CHUNK_LOADERS 8
@@ -75,8 +79,10 @@ typedef struct world_t {
     rng_t generalRng;
     rng_t worldRng;
     noise_t noise;
+    #ifdef ENABLE_AUDIO
     ma_engine engine;
     ma_sound sound;
+    #endif
 } world_t;
 
 /**
@@ -264,4 +270,6 @@ void world_removeItemEntity(world_t *w, int entityIndex);
 
 void world_drawAllEntities(const world_t *w, int modelLocation);
 
+#ifdef ENABLE_AUDIO
 void world_updateEngine(world_t *w, vec3 pos, vec3 lookDir);
+#endif

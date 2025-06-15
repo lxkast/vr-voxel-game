@@ -295,6 +295,7 @@ int main(void) {
     analytics_init(&analytics);
     double fpsDisplayAcc = 0;
 
+    #ifdef ENABLE_AUDIO
     ma_sound walkingSound;
 
     // this audio was originally found here: https://pixabay.com/sound-effects/footsteps-dirt-gravel-6823/
@@ -310,8 +311,7 @@ int main(void) {
 
     ma_sound_set_looping(&walkingSound, MA_TRUE);
     ma_sound_set_spatialization_enabled(&walkingSound, MA_TRUE);
-
-    glfwSwapInterval(1);
+    #endif
 
     while (!glfwWindowShouldClose(window)) {
         analytics_startFrame(&analytics);
@@ -329,6 +329,7 @@ int main(void) {
 
         player_attachCamera(&player, &camera);
 
+        #ifdef ENABLE_AUDIO
         world_updateEngine(&world, camera.eye, camera.ruf);
 
         if (player.entity.grounded && (player.entity.velocity[0] != 0 || player.entity.velocity[2] != 0)) {
@@ -337,6 +338,7 @@ int main(void) {
         } else {
             ma_sound_stop(&walkingSound);
         }
+        #endif
 
 
         glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);

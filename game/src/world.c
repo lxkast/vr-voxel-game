@@ -311,10 +311,12 @@ void world_init(world_t *w, GLuint program, uint64_t seed) {
     rng_init(&w->generalRng, rng_ull(&w->worldRng));
     w->noise.seed = (uint32_t)rng_ull(&w->worldRng);
 
+    #ifdef ENABLE_AUDIO
     if (ma_engine_init(NULL, &w->engine) != MA_SUCCESS) {
         LOG_FATAL("Engine not loaded");
     }
     ma_engine_listener_set_position(&w->engine, 0, 0.0f, 0.0f, 0.0f);
+    #endif
 }
 
 vec3 chunkBounds = {15.f, 15.f, 15.f};
@@ -648,6 +650,7 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
 
     if (*bp == BL_AIR) return false;
 
+    #ifdef ENABLE_AUDIO
     if (*bp == BL_DIRT || *bp == BL_GRASS || *bp == BL_SAND) {
         ma_sound_uninit(&w->sound);
 
@@ -673,6 +676,8 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
             ma_sound_start(&w->sound);
         }
     }
+
+    #endif
 
     const worldEntity_t entity = createItemEntity(w, (vec3){(float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f}, BLOCK_TO_ITEM[*bp]);
     world_addEntity(w, entity);
@@ -936,7 +941,9 @@ void world_drawAllEntities(const world_t *w, const int modelLocation) {
     }
 }
 
+#ifdef ENABLE_AUDIO
 void world_updateEngine(world_t *w, vec3 pos, vec3 lookDir) {
     ma_engine_listener_set_position(&w->engine, 0, pos[0], pos[1], pos[2]);
     ma_engine_listener_set_direction(&w->engine, 0, -lookDir[2], lookDir[1], -lookDir[0]);
 }
+#endif
