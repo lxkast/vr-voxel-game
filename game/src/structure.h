@@ -25,7 +25,7 @@ typedef struct {
     block_t base;
 } structure_t;
 
-structure_block_t treePattern[] = {
+static const structure_block_t treePattern[] = {
     // Tree trunk
     {BL_LOG, 0,0,0, 1.f},
     {BL_LOG, 0,1,0, 1.f},
@@ -54,7 +54,7 @@ structure_block_t treePattern[] = {
     {BL_LEAF, -1,5,0, 1.f}, {BL_LEAF, 0,5,-1, 1.f}, {BL_LEAF, 0,5,0, 1.f}, {BL_LEAF, 0,5,1, 1.f}, {BL_LEAF, 1,5,0, 1.f}
 };
 
-structure_t treeStructure = {
+const structure_t treeStructure = {
     .numBlocks = 63,
     .blocks = treePattern,
     .chance = 0.01f,
@@ -62,7 +62,7 @@ structure_t treeStructure = {
 };
 
 // second structure for testing purposes
-structure_block_t stoneT[] = {
+static const structure_block_t stoneT[] = {
     {BL_STONE, 0, 0, 0, 1.f},
     {BL_STONE, 0, 1, 0, 1.f},
     {BL_STONE, 0, 2, 0, 1.f},
@@ -70,14 +70,14 @@ structure_block_t stoneT[] = {
     {BL_STONE, 1, 2, 0, 1.f},
 };
 
-structure_t stoneTStructure = {
+const structure_t stoneTStructure = {
     .numBlocks = 5,
     .blocks = stoneT,
     .chance = 0.005f,
     .base = BL_GRASS,
 };
 
-structure_block_t woodenHouse[] = {
+static const structure_block_t woodenHouse[] = {
     {5, -1, 0, -2, 1.f},
     {5, -1, 0, 2, 1.f},
     {5, -1, 1, -2, 1.f},
@@ -115,9 +115,17 @@ structure_block_t woodenHouse[] = {
     {5, 2, 2, 1, 1.f},
 };
 
-structure_t woodenHouseStructure = {
+const structure_t woodenHouseStructure = {
     .numBlocks = sizeof(woodenHouse)/sizeof(structure_block_t),
     .blocks = woodenHouse,
     .chance = 0.005f,
     .base = BL_SAND,
 };
+
+structure_t structures[] = {
+    treeStructure,
+    stoneTStructure,
+    woodenHouseStructure,
+};
+
+const int numStructures = sizeof(structures)/sizeof(structure_t);
