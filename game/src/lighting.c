@@ -139,17 +139,18 @@ float computeVertexLight(chunk_t *c, int vx, int vy, int vz, direction_e dir) {
     return (float)sum / (float)count;
 }
 
-// performs a BFS flood-fill to approximate the light values of each chunk
-void chunk_processLighting(chunk_t *c) {
+// performs a BFS flood-fill to approximate the torchlight values of each chunk
+static void processTorchLight(chunk_t *c) {
     // propagate darkness
     while (c->lightDeletionQueue.size > 0) {
         lightQueueItem_t head = queue_pop(&c->lightDeletionQueue);
-        unsigned char lightLevel = c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]];
+        unsigned char lightLevel = LIGHT_TORCH_MASK & c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]];
         if (lightLevel <= 0) {
             continue;
         }
         lightLevel = head.lightValue;
-        c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]] = 0;
+        // set torchlight to 0
+        c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]] &= LIGHT_SUN_MASK;
 
         for (int dir = 0; dir < 6; ++dir) {
             ivec3 dirVec;
@@ -167,7 +168,7 @@ void chunk_processLighting(chunk_t *c) {
             if (!validNeighbour) {
                 continue;
             }
-            unsigned char neighbourLight = c->lightMap[nPos[0]][nPos[1]][nPos[2]];
+            unsigned char neighbourLight = LIGHT_TORCH_MASK & c->lightMap[nPos[0]][nPos[1]][nPos[2]];
             if ((c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_AIR || c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_LEAF)) {
                 lightQueueItem_t nItem = { .lightValue = neighbourLight };
                 memcpy(&nItem.pos, &nPos, sizeof(ivec3));
@@ -182,10 +183,11 @@ void chunk_processLighting(chunk_t *c) {
     // propagate light
     while (c->lightInsertionQueue.size > 0) {
         lightQueueItem_t head = queue_pop(&c->lightInsertionQueue);
-        unsigned char lightLevel = c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]];
+        unsigned char lightLevel = LIGHT_TORCH_MASK & c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]];
 
         if (lightLevel < head.lightValue) {
-            c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]] = head.lightValue;
+            c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]] =
+                (c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]] & LIGHT_SUN_MASK) | (head.lightValue & LIGHT_TORCH_MASK);
             lightLevel = head.lightValue;
         }
 
@@ -213,12 +215,23 @@ void chunk_processLighting(chunk_t *c) {
             }
 
             if ((c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_AIR || c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_LEAF) &&
-                c->lightMap[nPos[0]][nPos[1]][nPos[2]] < newLight) {
-                c->lightMap[nPos[0]][nPos[1]][nPos[2]] = newLight;
+                LIGHT_TORCH_MASK & c->lightMap[nPos[0]][nPos[1]][nPos[2]] < newLight) {
+                c->lightMap[nPos[0]][nPos[1]][nPos[2]] =
+                    (c->lightMap[nPos[0]][nPos[1]][nPos[2]] & LIGHT_SUN_MASK) | (newLight & LIGHT_TORCH_MASK);
                 lightQueueItem_t nItem = { .lightValue = newLight };
                 memcpy(&nItem.pos, &nPos, sizeof(ivec3));
                 queue_push(&c->lightInsertionQueue, nItem);
             }
         }
     }
+}
+
+// performs a BFS flood-fill to approximate the sunlight values of each chunk
+static void processSunLight(chunk_t *c) {
+
+}
+
+void chunk_processLighting(chunk_t *c) {
+    processTorchLight(c);
+    processSunLight(c);
 }
