@@ -33,6 +33,16 @@ typedef struct {
 } chunk_t;
 
 /**
+ * @brief An enum containing biome information
+ */
+typedef enum {
+    BIO_FOREST,
+    BIO_DESERT,
+    BIO_TUNDRA,
+    BIO_CAVE
+} biome_e;
+
+/**
  * @brief Initialises a chunk
  * @param c A pointer to a chunk
  * @param rng An rng

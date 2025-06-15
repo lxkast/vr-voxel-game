@@ -8,9 +8,8 @@
 
 extern void chunk_createMesh(chunk_t *c);
 
-static float smoothstep(float min, float max, float x) {
+static float smoothstep(const float min, const float max, float x) {
     x = glm_clamp((x - min) / (max - min), 0.f, 1.f);
-
     return x * x * (3.0f - 2.0f * x);
 }
 
@@ -39,6 +38,43 @@ static float getHeight(chunk_t *c, const int x, const int z) {
 
     return h * 50.f;
 }
+
+struct biomeSlice {
+    int height;
+    float humidityOffset;
+    float temperatureOffset;
+
+    int x, z;
+};
+
+static struct biomeSlice createBiomeSlice(chunk_t *c, const int x, const int z) {
+    const float h = getHeight(c, x, z);
+    return (struct biomeSlice) {
+        .height = (int)h,
+        .humidityOffset = getHumidity(c, h, x, z),
+        .temperatureOffset = getTemperature(c, h, x, z),
+        .x = x,
+        .z = z
+    };
+}
+
+static biome_e getBiome(chunk_t *c, const struct biomeSlice bs, const int y) {
+    const float humidity = 90.f - 0.6f * (float)y + bs.humidityOffset;
+    const float temperature = 30.f - 0.50f * (float)y + bs.temperatureOffset;
+
+    if (bs.height - y > 5) {
+        return BIO_CAVE;
+    }
+    if (temperature > 30.f) {
+        return BIO_DESERT;
+    }
+    if (temperature > 15.f) {
+        return BIO_FOREST;
+    }
+
+    return BIO_TUNDRA;
+}
+
 
 void chunk_init(chunk_t *c, const rng_t rng, const noise_t noise, const int cx, const int cy, const int cz) {
     c->rng = rng;
@@ -89,30 +125,31 @@ void chunk_generate(chunk_t *c) {
             const int xg = (c->cx * CHUNK_SIZE + x);
             const int zg = (c->cz * CHUNK_SIZE + z);
 
-            const float height = getHeight(c, xg, zg);
-            const float humidityOffset = getHumidity(c, height, xg, zg);
-            const float temperatureOffset = getTemperature(c, height, xg, zg);
+            struct biomeSlice bs = createBiomeSlice(c, xg, zg);
 
             for (int y = 0; y < CHUNK_SIZE; y++) {
                 const int yg = c->cy * CHUNK_SIZE + y;
 
-                if (yg == (int)height) {
-                    const float humidity = 90.f - 0.6f * (float)yg + humidityOffset;
-                    const float temperature = 30.f - 0.50f * (float)yg + temperatureOffset;
-
-                    if (temperature > 30.f) {
-                        ptr[x][y][z] = BL_SAND;
-                    } else if (temperature > 10.f) {
-                        ptr[x][y][z] = BL_GRASS;
-                    } else if (temperature > 5.f) {
-                        ptr[x][y][z] = BL_STONE;
-                    } else {
-                        ptr[x][y][z] = BL_SNOW;
+                const int ds = bs.height - yg;
+                if (ds >= 0) {
+                    switch (getBiome(c, bs, yg)) {
+                        case BIO_FOREST: {
+                            ptr[x][y][z] = ds == 0 ? BL_GRASS : BL_DIRT;
+                            break;
+                        }
+                        case BIO_DESERT: {
+                            ptr[x][y][z] = BL_SAND;
+                            break;
+                        }
+                        case BIO_TUNDRA: {
+                            ptr[x][y][z] = BL_SNOW;
+                            break;
+                        }
+                        case BIO_CAVE: {
+                            ptr[x][y][z] = BL_STONE;
+                            break;
+                        }
                     }
-                } else if (yg < (int)height - 6) {
-                    ptr[x][y][z] = BL_STONE;
-                } else if (yg < (int)height) {
-                    ptr[x][y][z] = BL_DIRT;
                 }
             }
         }
