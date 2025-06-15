@@ -50,11 +50,11 @@ void player_init(world_t *w, player_t *p) {
         .hotbar = {
             .slots = {
                 {ITEM_DIRT, 64},
-                {ITEM_GRASS, 32},
                 {ITEM_STONE, 64},
                 {ITEM_LOG, 64},
-                {ITEM_LOG, 64},
-                {ITEM_STONE, 64},
+                {NOTHING, 0},
+                {NOTHING, 0},
+                {NOTHING, 0},
                 {NOTHING, 0},
                 {NOTHING, 0},
                 {NOTHING, 0}

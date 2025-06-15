@@ -110,6 +110,8 @@ void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
         }
     }
 
+    // This is temporary and for development purposes - allows us to create a structure from
+    // something we have built in-game, rather than having to try to visualise it logically
     #ifdef STRUCTURE_BUILD_TOOL
     if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
         vec3 startPos;
