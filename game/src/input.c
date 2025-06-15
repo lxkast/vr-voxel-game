@@ -38,34 +38,18 @@ void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
 
     const float sprintMultiplier = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? SPRINT_MULTIPLIER : 1.f ;
 
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        if (player->entity.grounded) {
-            acceleration[2] += GROUND_ACCELERATION * sprintMultiplier;  // Forward
-        } else {
-            acceleration[2] += AIR_ACCELERATION * sprintMultiplier;  // Forward
-        }
-    }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        if (player->entity.grounded) {
-            acceleration[2] -= GROUND_ACCELERATION * sprintMultiplier;  // Backward
-        } else {
-            acceleration[2] -= AIR_ACCELERATION * sprintMultiplier;  // Backward
-        }
-    }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        if (player->entity.grounded) {
-            acceleration[0] -= GROUND_ACCELERATION * sprintMultiplier;  // Left
-        } else {
-            acceleration[0] -= AIR_ACCELERATION * sprintMultiplier;  // Left
-        }
-    }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        if (player->entity.grounded) {
-            acceleration[0] += GROUND_ACCELERATION * sprintMultiplier;  // Right
-        } else {
-            acceleration[0] += AIR_ACCELERATION * sprintMultiplier;  // Right
-        }
-    }
+    vec3 direction = {0.0f, 0.0f, 0.0f};
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) direction[2] += 1.0f;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) direction[2] -= 1.0f;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) direction[0] -= 1.0f;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) direction[0] += 1.0f;
+
+    glm_vec3_normalize(direction);
+
+    const float accelVal = player->entity.grounded ? GROUND_ACCELERATION : AIR_ACCELERATION;
+    acceleration[0] += direction[0] * accelVal * sprintMultiplier;
+    acceleration[2] += direction[2] * accelVal * sprintMultiplier;
 
 
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && player->entity.grounded) {
@@ -190,7 +174,7 @@ void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
     glm_vec3_copy(acceleration, player->entity.acceleration);
 }
 
-void joystickEvent(int jid, int event) {
+void joystickEvent(const int jid, const int event) {
     if (event == GLFW_CONNECTED) {
 
         int axisCount;
@@ -224,9 +208,9 @@ void processCameraInput(GLFWwindow *window, camera_t *camera) {
 }
 
 /*
- * This function uses a callback meaning that is is much better for instantaneous presses, eg switching wireframe mode
+ * This function uses a callback meaning that it is much better for instantaneous presses, e.g. switching wireframe mode
  */
-static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+static void key_callback(GLFWwindow *window, const int key, int scancode, const int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     } else if (key == GLFW_KEY_O && action == GLFW_PRESS) {
