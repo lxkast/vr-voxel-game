@@ -17,11 +17,18 @@
 #define GROUND_ACCELERATION 35.f
 #define AIR_ACCELERATION 10.f
 
+#define STRUCTURE_BUILD_TOOL
+
 static double previousMouse[2];
 static int joystickID = -1;
 
 static void (*toggle_wireframe)();
 static void (*toggle_vr)();
+
+static vec3 bottomLeft = {0.f, 0.f, 0.f};
+static vec3 topRight = {0.f,0.f,0.f};
+static vec3 origin = {0.f,0.f,0.f};
+static block_t originBlock = BL_AIR;
 
 /*
  * This function uses polling, this means that it is better for "continuous" presses, ie holding W
@@ -102,6 +109,80 @@ void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
             }
         }
     }
+
+    // This is temporary and for development purposes - allows us to create a structure from
+    // something we have built in-game, rather than having to try to visualise it logically
+    #ifdef STRUCTURE_BUILD_TOOL
+    if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
+        vec3 startPos;
+        vec3 lookDirection;
+        glm_vec3_scale(player->lookVector, -1.f, lookDirection);
+        glm_vec3_add(player->entity.position, player->cameraOffset, startPos);
+        raycast_t raycast = world_raycast(w, startPos, lookDirection, 10);
+        glm_vec3_copy(raycast.blockPosition, bottomLeft);
+        LOG_DEBUG("FOUND BLOCK: %f, %f, %f", bottomLeft[0], bottomLeft[1], bottomLeft[2]);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS) {
+        vec3 startPos;
+        vec3 lookDirection;
+        glm_vec3_scale(player->lookVector, -1.f, lookDirection);
+        glm_vec3_add(player->entity.position, player->cameraOffset, startPos);
+        raycast_t raycast = world_raycast(w, startPos, lookDirection, 10);
+        glm_vec3_copy(raycast.blockPosition, topRight);
+        LOG_DEBUG("FOUND BLOCK: %f, %f, %f", topRight[0], topRight[1], topRight[2]);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) {
+        vec3 startPos;
+        vec3 lookDirection;
+        glm_vec3_scale(player->lookVector, -1.f, lookDirection);
+        glm_vec3_add(player->entity.position, player->cameraOffset, startPos);
+        raycast_t raycast = world_raycast(w, startPos, lookDirection, 10);
+        glm_vec3_copy(raycast.blockPosition, origin);
+        origin[1]++;
+        originBlock = getBlockType(w, raycast.blockPosition);
+        LOG_DEBUG("FOUND BLOCK: %f, %f, %f", origin[0], origin[1], origin[2]);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) {
+        vec3 minPoint;
+        vec3 maxPoint;
+        for (int i = 0; i < 3; i++) {
+            if (bottomLeft[i] < topRight[i]) {
+                minPoint[i] = bottomLeft[i];
+                maxPoint[i] = topRight[i] + 1;
+            } else {
+                minPoint[i] = topRight[i];
+                maxPoint[i] = bottomLeft[i] + 1;
+            }
+        }
+        const int numBlocks = (int)(maxPoint[0] - minPoint[0]) *
+                          (int)(maxPoint[1] - minPoint[1]) *
+                          (int)(maxPoint[2] - minPoint[2]);
+
+        // getting all the blocks in the range
+        blockData_t buf[numBlocks];
+
+        world_getBlocksInRange(w, minPoint, maxPoint, buf);
+
+        printf("static const structureBlock_t generated[] = {\n");
+
+        for (int i = 0; i < numBlocks; i++) {
+            const blockData_t block = buf[i];
+            if (block.type!= BL_AIR) {
+                printf("    {%d, %d, %d, %d, 1.f},\n", block.type, block.x - (int)origin[0], block.y - (int)origin[1], block.z - (int)origin[2]);
+            }
+        }
+
+        printf("};\n\n");
+
+        printf("const structure_t generatedStructure = {\n");
+        printf("    .numBlocks = %d,\n", numBlocks);
+        printf("    .blocks = generated,\n");
+        printf("    .base = %d,\n};\n\n", originBlock);
+    }
+    #endif
 
 
     changeRUFtoXYZ(acceleration, player->entity.yaw);
