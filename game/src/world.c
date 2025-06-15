@@ -545,7 +545,7 @@ static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
         for (int z = 0; z < CHUNK_SIZE; z++) {
             for (int i = 0; i < numStructures; i++) {
                 structure_t structure = structures[i];
-                if (rng_float(&cv->chunk->rng) < structure.chance) {
+                if (rng_float(&cv->chunk->rng) < 0.01) {
                     if (world_initStructure(w, &structure, cv, x, z, structure.base)) {
                         world_placeStructure(w, &structure);
                         break;

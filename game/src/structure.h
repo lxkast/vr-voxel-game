@@ -21,7 +21,6 @@ typedef struct {
     decorator_t decorator;
     int numBlocks;
     structureBlock_t *blocks;
-    float chance;
     block_t base;
 } structure_t;
 
@@ -57,7 +56,6 @@ static const structureBlock_t treePattern[] = {
 const structure_t treeStructure = {
     .numBlocks = 63,
     .blocks = treePattern,
-    .chance = 0.01f,
     .base = BL_GRASS,
 };
 
@@ -73,7 +71,6 @@ static const structureBlock_t stoneT[] = {
 const structure_t stoneTStructure = {
     .numBlocks = 5,
     .blocks = stoneT,
-    .chance = 0.005f,
     .base = BL_GRASS,
 };
 
@@ -118,7 +115,6 @@ static const structureBlock_t woodenHouse[] = {
 const structure_t woodenHouseStructure = {
     .numBlocks = sizeof(woodenHouse)/sizeof(structureBlock_t),
     .blocks = woodenHouse,
-    .chance = 0.005f,
     .base = BL_SAND,
 };
 

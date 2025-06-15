@@ -180,7 +180,6 @@ void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
         printf("const structure_t generatedStructure = {\n");
         printf("    .numBlocks = %d,\n", numBlocks);
         printf("    .blocks = generated,\n");
-        printf("    .chance = %f,\n", 0.005);
         printf("    .base = %d,\n};\n\n", originBlock);
     }
     #endif
