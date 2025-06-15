@@ -101,6 +101,11 @@ void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
                 player->entity.grounded = false;
             }
         }
+        if (buttons[1]) {
+            player_removeBlock(player, w);
+        } else if (buttons[2]) {
+            player_placeBlock(player, w);
+        }
     }
 
 

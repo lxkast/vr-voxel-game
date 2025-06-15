@@ -20,12 +20,9 @@ int main()
     }
 
     hardware_init();
-
     
-    // hci_event_callback_registration.callback = &packet_handler;
-    // hci_add_event_handler(&hci_event_callback_registration);
+    cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, true); // turn LED on
 
-    
     btstack_main();
     btstack_run_loop_execute();
 }
