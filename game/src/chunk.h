@@ -20,7 +20,7 @@ typedef struct {
     /// The array of blocks in the chunk.
     block_t blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
     /// The array of light levels in the chunk.
-    float lightMap[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
+    unsigned char lightMap[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
     /// The queue of light values used for adding lights to the lightMap
     lightQueue_t lightInsertionQueue;
     /// The queue of PREVIOUS light values for deleting lights from the lightMap

@@ -17,21 +17,10 @@ void chunk_init(chunk_t *c, rng_t rng, noise_t noise, int cx, int cy, int cz) {
     c->cz = cz;
     queue_initQueue(&c->lightInsertionQueue);
     queue_initQueue(&c->lightDeletionQueue);
-    memset(c->lightMap, 0, CHUNK_SIZE_CUBED * sizeof(int));
+    memset(c->lightMap, 0, CHUNK_SIZE_CUBED * sizeof(unsigned char));
 
     glGenBuffers(1, &c->vbo);
     glGenVertexArrays(1, &c->vao);
-
-    glBindBuffer(GL_ARRAY_BUFFER, c->vbo);
-
-    glBindVertexArray(c->vao);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *) 0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribIPointer(1, 1, GL_INT, 4 * sizeof(float), (void *) (3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
 }
 
 void chunk_fill(chunk_t *c, const block_t block) {

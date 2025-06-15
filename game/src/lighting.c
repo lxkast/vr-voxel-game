@@ -136,7 +136,7 @@ float computeVertexLight(chunk_t *c, int vx, int vy, int vz, direction_e dir) {
     if (count == 0) {
         return 0.0f;
     }
-    return sum / (float)count;
+    return (float)sum / (float)count;
 }
 
 // performs a BFS flood-fill to approximate the light values of each chunk
@@ -144,12 +144,12 @@ void chunk_processLighting(chunk_t *c) {
     // propagate darkness
     while (c->lightDeletionQueue.size > 0) {
         lightQueueItem_t head = queue_pop(&c->lightDeletionQueue);
-        float lightLevel = c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]];
-        if (lightLevel <= 0.0f) {
+        unsigned char lightLevel = c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]];
+        if (lightLevel <= 0) {
             continue;
         }
         lightLevel = head.lightValue;
-        c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]] = 0.0f;
+        c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]] = 0;
 
         for (int dir = 0; dir < 6; ++dir) {
             ivec3 dirVec;
@@ -167,11 +167,11 @@ void chunk_processLighting(chunk_t *c) {
             if (!validNeighbour) {
                 continue;
             }
-            float neighbourLight = c->lightMap[nPos[0]][nPos[1]][nPos[2]];
+            unsigned char neighbourLight = c->lightMap[nPos[0]][nPos[1]][nPos[2]];
             if ((c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_AIR || c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_LEAF)) {
                 lightQueueItem_t nItem = { .lightValue = neighbourLight };
                 memcpy(&nItem.pos, &nPos, sizeof(ivec3));
-                if (neighbourLight < lightLevel && neighbourLight != 0.0f) {
+                if (neighbourLight < lightLevel && neighbourLight != 0) {
                     queue_push(&c->lightDeletionQueue, nItem);
                 } else if (neighbourLight >= lightLevel){
                     queue_push(&c->lightInsertionQueue, nItem);
@@ -182,14 +182,14 @@ void chunk_processLighting(chunk_t *c) {
     // propagate light
     while (c->lightInsertionQueue.size > 0) {
         lightQueueItem_t head = queue_pop(&c->lightInsertionQueue);
-        float lightLevel = c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]];
+        unsigned char lightLevel = c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]];
 
         if (lightLevel < head.lightValue) {
             c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]] = head.lightValue;
             lightLevel = head.lightValue;
         }
 
-        float newLight = lightLevel - 1;
+        unsigned char newLight = lightLevel - 1;
         if (newLight <= 0) {
             continue;
         }
