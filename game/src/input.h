@@ -6,5 +6,19 @@
 #include "GLFW/glfw3.h"
 
 void initialiseInput(GLFWwindow *window, void (*wireframe)(), void (*vr)());
+
+/**
+ * @brief Gets the player's input every frame and makes necessary changes/calls required functions.
+ * @param window A pointer to a window
+ * @param player A pointer to a player
+ * @param w A pointer to a world
+ * @note This function uses polling, this means that it is better for "continuous" presses, ie holding W
+ */
 void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w);
+
+/**
+ * @brief Gets camera inputs (either mouse or headset) and updates look direction
+ * @param window A pointer to a window
+ * @param camera A pointer to a camera
+ */
 void processCameraInput(GLFWwindow *window, camera_t *camera);

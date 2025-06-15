@@ -23,9 +23,6 @@ static int joystickID = -1;
 static void (*toggle_wireframe)();
 static void (*toggle_vr)();
 
-/*
- * This function uses polling, this means that it is better for "continuous" presses, ie holding W
- */
 void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
     vec3 acceleration = { 0.f, GRAVITY_ACCELERATION, 0.f };
 
@@ -33,18 +30,10 @@ void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
 
     vec3 direction = {0.0f, 0.0f, 0.0f};
 
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        direction[2] += 1.0f;
-    }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        direction[2] -= 1.0f;
-    }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        direction[0] -= 1.0f;
-    }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        direction[0] += 1.0f;
-    }
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) direction[2] += 1.0f;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) direction[2] -= 1.0f;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) direction[0] -= 1.0f;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) direction[0] += 1.0f;
 
     glm_vec3_normalize(direction);
 
