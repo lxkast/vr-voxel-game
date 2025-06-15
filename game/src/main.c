@@ -12,13 +12,13 @@
 #include "texture.h"
 #include "world.h"
 
+#include "input.h"
+
 #if defined(__APPLE__) && defined(__MACH__)
 #define MINOR_VERSION 2
 #else
 #define MINOR_VERSION 1
 #endif
-
-#define STRUCTURE_BUILD_TOOL
 
 #define EYE_OFFSET 0.032f
 #define SCREEN_WIDTH 1024
@@ -26,187 +26,23 @@
 #define FOV_Y 45.0f
 #define USING_RASPBERRY_PI false
 
-#define SPRINT_MULTIPLIER 1.3f
-#define GROUND_ACCELERATION 35.f
-#define AIR_ACCELERATION 10.f
-
-static double previousMouse[2];
-
-vec3 bottomLeft = {0.f, 0.f, 0.f};
-vec3 topRight = {0.f,0.f,0.f};
-vec3 origin = {0.f,0.f,0.f};
-block_t originBlock = BL_AIR;
-
-static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
-    vec3 acceleration = { 0.f, GRAVITY_ACCELERATION, 0.f };
-
-    const float sprintMultiplier = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? SPRINT_MULTIPLIER : 1.f ;
-
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        if (player->entity.grounded) {
-            acceleration[2] += GROUND_ACCELERATION * sprintMultiplier;  // Forward
-        } else {
-            acceleration[2] += AIR_ACCELERATION * sprintMultiplier;  // Forward
-        }
-    }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        if (player->entity.grounded) {
-            acceleration[2] -= GROUND_ACCELERATION * sprintMultiplier;  // Backward
-        } else {
-            acceleration[2] -= AIR_ACCELERATION * sprintMultiplier;  // Backward
-        }
-    }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        if (player->entity.grounded) {
-            acceleration[0] -= GROUND_ACCELERATION * sprintMultiplier;  // Left
-        } else {
-            acceleration[0] -= AIR_ACCELERATION * sprintMultiplier;  // Left
-        }
-    }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        if (player->entity.grounded) {
-            acceleration[0] += GROUND_ACCELERATION * sprintMultiplier;  // Right
-        } else {
-            acceleration[0] += AIR_ACCELERATION * sprintMultiplier;  // Right
-        }
-    }
-
-    #ifdef STRUCTURE_BUILD_TOOL
-    if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
-        vec3 startPos;
-        vec3 lookDirection;
-        glm_vec3_scale(player->lookVector, -1.f, lookDirection);
-        glm_vec3_add(player->entity.position, player->cameraOffset, startPos);
-        raycast_t raycast = world_raycast(w, startPos, lookDirection, 10);
-        glm_vec3_copy(raycast.blockPosition, bottomLeft);
-        LOG_DEBUG("FOUND BLOCK: %f, %f, %f", bottomLeft[0], bottomLeft[1], bottomLeft[2]);
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS) {
-        vec3 startPos;
-        vec3 lookDirection;
-        glm_vec3_scale(player->lookVector, -1.f, lookDirection);
-        glm_vec3_add(player->entity.position, player->cameraOffset, startPos);
-        raycast_t raycast = world_raycast(w, startPos, lookDirection, 10);
-        glm_vec3_copy(raycast.blockPosition, topRight);
-        LOG_DEBUG("FOUND BLOCK: %f, %f, %f", topRight[0], topRight[1], topRight[2]);
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) {
-        vec3 startPos;
-        vec3 lookDirection;
-        glm_vec3_scale(player->lookVector, -1.f, lookDirection);
-        glm_vec3_add(player->entity.position, player->cameraOffset, startPos);
-        raycast_t raycast = world_raycast(w, startPos, lookDirection, 10);
-        glm_vec3_copy(raycast.blockPosition, origin);
-        origin[1]++;
-        originBlock = getBlockType(w, raycast.blockPosition);
-        LOG_DEBUG("FOUND BLOCK: %f, %f, %f", origin[0], origin[1], origin[2]);
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) {
-        vec3 minPoint;
-        vec3 maxPoint;
-        for (int i = 0; i < 3; i++) {
-            if (bottomLeft[i] < topRight[i]) {
-                minPoint[i] = bottomLeft[i];
-                maxPoint[i] = topRight[i] + 1;
-            } else {
-                minPoint[i] = topRight[i];
-                maxPoint[i] = bottomLeft[i] + 1;
-            }
-        }
-        const int numBlocks = (int)(maxPoint[0] - minPoint[0]) *
-                          (int)(maxPoint[1] - minPoint[1]) *
-                          (int)(maxPoint[2] - minPoint[2]);
-
-        // getting all the blocks in the range
-        blockData_t buf[numBlocks];
-
-        world_getBlocksInRange(w, minPoint, maxPoint, buf);
-
-        printf("structure_block_t generated[] = {\n");
-
-        for (int i = 0; i < numBlocks; i++) {
-            const blockData_t block = buf[i];
-            if (block.type!= BL_AIR) {
-                printf("    {%d, %d, %d, %d, 1.f},\n", block.type, block.x - (int)origin[0], block.y - (int)origin[1], block.z - (int)origin[2]);
-            }
-        }
-
-        printf("};\n\n");
-
-        printf("const structure_t generatedStructure = {\n");
-        printf("    .numBlocks = %d,\n", numBlocks);
-        printf("    .blocks = generated,\n");
-        printf("    .chance = %f,\n", 0.005);
-        printf("    .base = %d,\n};\n\n", originBlock);
-    }
-    #endif
-
-
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && player->entity.grounded) {
-        player->entity.velocity[1] = 5;
-        player->entity.grounded = false;
-    }
-
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-        player_removeBlock(player, w);
-    } else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-        player_placeBlock(player, w);
-    }
-
-    changeRUFtoXYZ(acceleration, player->entity.yaw);
-
-    glm_vec3_copy(acceleration, player->entity.acceleration);
-
-    for (char i = 0; i <= 8; i++) {
-        if (glfwGetKey(window, GLFW_KEY_1 + i) == GLFW_PRESS) {
-            player->hotbar.currentSlotIndex = i;
-            player->hotbar.currentSlot = &(player->hotbar.slots[i]);
-            player_printHotbar(player);
-            break;
-        }
-    }
-}
-
-static void processCameraInput(GLFWwindow *window, camera_t *camera) {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
-
-    double currentMouse[2];
-    glfwGetCursorPos(window, &currentMouse[0], &currentMouse[1]);
-    const float dX = (float)(currentMouse[0] - previousMouse[0]);
-    const float dY = (float)(currentMouse[1] - previousMouse[1]);
-    previousMouse[0] = currentMouse[0];
-    previousMouse[1] = currentMouse[1];
-    camera_fromMouse(camera, -dX, -dY);
-}
+#define GET_PROJECTION  mat4 projection; \
+                        glm_perspective(FOV_Y, (float)SCREEN_WIDTH / (float)((postProcessingEnabled ? 2 : 1) * SCREEN_HEIGHT), 0.1f, 16.f * (CHUNK_LOAD_RADIUS + 1), projection);
 
 static bool postProcessingEnabled = true;
 static bool wireframeView = false;
 
-static void processInput(GLFWwindow *window, mat4 projection) {
-    static bool previousDownO = false;
-    static bool previousDownP = false;
-    const int oKey = glfwGetKey(window, GLFW_KEY_O);
-    if (oKey == GLFW_PRESS && !previousDownO) {
-        wireframeView = !wireframeView;
-        previousDownO = true;
-    }
-    if (oKey == GLFW_RELEASE) {
-        previousDownO = false;
-    }
-    const int pKey = glfwGetKey(window, GLFW_KEY_P);
-    if (pKey == GLFW_PRESS && !previousDownP) {
-        postProcessingEnabled = !postProcessingEnabled;
-        glm_perspective(FOV_Y, (float)SCREEN_WIDTH / (float)((postProcessingEnabled ? 2 : 1) * SCREEN_HEIGHT), 0.1f, 16.f * (CHUNK_LOAD_RADIUS + 1), projection);
-        previousDownP = true;
-    }
-    if (pKey == GLFW_RELEASE) {
-        previousDownP = false;
-    }
+void set_projection(int mainProjectionLocation) {
+    GET_PROJECTION
+    glUniformMatrix4fv(mainProjectionLocation, 1, GL_FALSE, projection);
+}
+
+void toggle_wireframeView() {
+    wireframeView = !wireframeView;
+}
+
+void toggle_postprocessing() {
+    postProcessingEnabled = !postProcessingEnabled;
 }
 
 int main(void) {
@@ -249,9 +85,7 @@ int main(void) {
     }
 
     glEnable(GL_DEPTH_TEST);
-
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    glfwGetCursorPos(window, previousMouse, previousMouse + 1);
+    initialiseInput(window, toggle_wireframeView, toggle_postprocessing);
 
 
     LOG_INFO("Initialisation complete.");
@@ -312,10 +146,9 @@ int main(void) {
 
     glUseProgram(program);
     const int mainModelLocation = glGetUniformLocation(program, "model");
-    mat4 projection;
     const int mainProjectionLocation = glGetUniformLocation(program, "projection");
-    glm_perspective(FOV_Y, (float)SCREEN_WIDTH / (float)((postProcessingEnabled ? 2 : 1) * SCREEN_HEIGHT), 0.1f, 16.f * (CHUNK_LOAD_RADIUS + 1), projection);
-    glUniformMatrix4fv(mainProjectionLocation, 1, GL_FALSE, projection);
+
+    set_projection(mainProjectionLocation);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
@@ -327,8 +160,7 @@ int main(void) {
     const int blockEntityModelLocation = glGetUniformLocation(blockEntityProgram, "model");
     const int blockEntityProjectionLocation = glGetUniformLocation(blockEntityProgram, "projection");
 
-    glm_perspective(FOV_Y, (float)SCREEN_WIDTH / (float)((postProcessingEnabled ? 2 : 1) * SCREEN_HEIGHT), 0.1f, 16.f * (CHUNK_LOAD_RADIUS + 1), projection);
-    glUniformMatrix4fv(blockEntityProjectionLocation, 1, GL_FALSE, projection);
+    set_projection(mainProjectionLocation);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
@@ -377,7 +209,6 @@ int main(void) {
     while (!glfwWindowShouldClose(window)) {
         analytics_startFrame(&analytics);
         glUseProgram(program);
-        processInput(window, projection);
         processPlayerInput(window, &player, &world);
         processCameraInput(window, &camera);
         world_doChunkLoading(&world);
@@ -401,7 +232,8 @@ int main(void) {
         glUniform1i(glGetUniformLocation(program, "uTextureAtlas"), 0);
 
         glPolygonMode(GL_FRONT_AND_BACK, wireframeView ? GL_LINE : GL_FILL);
-        glUniformMatrix4fv(mainProjectionLocation, 1, GL_FALSE, projection);
+        set_projection(mainProjectionLocation);
+
         world_highlightFace(&world, &camera);
         if (postProcessingEnabled) {
             glViewport(0, 0, postProcess.buffer_width, postProcess.buffer_height);
@@ -415,10 +247,13 @@ int main(void) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         camera_setView(&camera, program);
+        GET_PROJECTION
         world_draw(&world, mainModelLocation, &camera, projection);
         world_drawHighlight(&world, mainModelLocation);
         glUseProgram(blockEntityProgram);
-        glUniformMatrix4fv(blockEntityProjectionLocation, 1, GL_FALSE, projection);
+
+        set_projection(blockEntityProjectionLocation);
+
         camera_setView(&camera, blockEntityProgram);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
@@ -435,7 +270,7 @@ int main(void) {
             world_drawHighlight(&world, mainModelLocation);
 
             glUseProgram(blockEntityProgram);
-            glUniformMatrix4fv(blockEntityProjectionLocation, 1, GL_FALSE, projection);
+            set_projection(blockEntityProjectionLocation);
             camera_setView(&camera, blockEntityProgram);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, texture);
