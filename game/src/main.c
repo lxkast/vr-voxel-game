@@ -298,7 +298,7 @@ int main(void) {
     ma_sound walkingSound;
 
     // this audio was originally found here: https://pixabay.com/sound-effects/footsteps-dirt-gravel-6823/
-    // I then select only my favourite section of it
+    // I then selected only my favourite section of it using editing software
     ma_sound_init_from_file(&world.engine,
                             "../../src/audio/footstep_sound.mp3",
                             MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_ASYNC,
@@ -306,7 +306,7 @@ int main(void) {
                             NULL,
                             &walkingSound);
 
-    ma_sound_set_volume(&walkingSound, 5.0f);
+    ma_sound_set_volume(&walkingSound, 0.1f);
 
     ma_sound_set_looping(&walkingSound, MA_TRUE);
     ma_sound_set_spatialization_enabled(&walkingSound, MA_TRUE);

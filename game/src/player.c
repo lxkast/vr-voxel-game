@@ -206,6 +206,8 @@ void player_pickUpItemsCheck(player_t *p, world_t *w) {
                     slot->count++;
                     player_printHotbar(p);
                     world_removeItemEntity(w, i);
+                    // this sound is from: https://pixabay.com/sound-effects/sharp-pop-328170/
+                    ma_engine_play_sound(&w->engine, "../../src/audio/item_pickup.mp3", NULL);
                     return;
                 }
             }
@@ -218,6 +220,8 @@ void player_pickUpItemsCheck(player_t *p, world_t *w) {
                     slot->count = 1;
                     player_printHotbar(p);
                     world_removeItemEntity(w, i);
+                    // this sound is from: https://pixabay.com/sound-effects/sharp-pop-328170/
+                    ma_engine_play_sound(&w->engine, "../../src/audio/item_pickup.mp3", NULL);
                     return;
                 }
             }
