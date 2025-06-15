@@ -4,7 +4,7 @@
 #include <cglm/cglm.h>
 
 /**
- * @brief A mixer function
+ * @brief A mixer function to make a pseudorandom 64-bit number
  * @note https://gee.cs.oswego.edu/dl/papers/oopsla14.pdf
  * @param x The number to mix
  * @return The new number
@@ -14,7 +14,7 @@ static uint64_t mix64(uint64_t x) {
     uint64_t z = x;
     z = (z ^ z >> 30) * 0xBF58476D1CE4E5B9ULL;
     z = (z ^ z >> 27) * 0x94D049BB133111EBULL;
-    return z ^ z >> 31;
+    return z ^ (z >> 31);
 }
 
 static void rng_update(rng_t *rng) {
