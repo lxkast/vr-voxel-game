@@ -18,6 +18,8 @@
 #define MINOR_VERSION 1
 #endif
 
+#define STRUCTURE_BUILD_TOOL
+
 #define EYE_OFFSET 0.032f
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
@@ -68,6 +70,7 @@ static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w)
         }
     }
 
+    #ifdef STRUCTURE_BUILD_TOOL
     if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
         vec3 startPos;
         vec3 lookDirection;
@@ -95,6 +98,7 @@ static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w)
         glm_vec3_add(player->entity.position, player->cameraOffset, startPos);
         raycast_t raycast = world_raycast(w, startPos, lookDirection, 10);
         glm_vec3_copy(raycast.blockPosition, origin);
+        origin[1]++;
         LOG_DEBUG("FOUND BLOCK: %f, %f, %f", origin[0], origin[1], origin[2]);
     }
 
@@ -127,6 +131,7 @@ static void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w)
                 printf("{%d, %d, %d, %d, 1.f},\n", block.type, block.x - (int)origin[0], block.y - (int)origin[1], block.z - (int)origin[2]);
             }
         }}
+    #endif
 
 
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && player->entity.grounded) {
