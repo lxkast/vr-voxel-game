@@ -430,8 +430,8 @@ void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, bl
 block_t getBlockType(world_t *w, vec3 position) {
     blockData_t bd;
     if (!world_getBlock(w, position, &bd)) {
-        LOG_FATAL("Error getting block type");
-    };
+        return BL_AIR;
+    }
     return bd.type;
 }
 
@@ -520,7 +520,7 @@ static void decorator_placeBlock(decorator_t *d,
                     break;
                 }
             }
-            if (found) {
+            if (!found) {
                 d->origin->loadData.children[d->origin->loadData.nChildren++] = *cacheValue;
             }
         }
@@ -546,7 +546,7 @@ static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
         for (int z = 0; z < CHUNK_SIZE; z++) {
             for (int i = 0; i < numStructures; i++) {
                 structure_t structure = structures[i];
-                if (rng_float(&cv->chunk->rng) < 1) {
+                if (rng_float(&cv->chunk->rng) < 0.01) {
                     if (world_initStructure(w, &structure, cv, x, z, structure.base)) {
                         world_placeStructure(w, &structure);
                         break;
