@@ -643,6 +643,7 @@ void world_removeItemEntity(world_t *w, const int entityIndex) {
     }
 }
 
+#ifdef ENABLE_AUDIO
 static void play3DAudio(world_t *w, const char *filepath, const float x, const float y, const float z) {
     ma_sound_uninit(&w->sound);
 
@@ -655,6 +656,7 @@ static void play3DAudio(world_t *w, const char *filepath, const float x, const f
         ma_sound_start(&w->sound);
     }
 }
+#endif
 
 bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
     block_t *bp;
