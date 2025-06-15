@@ -8,7 +8,6 @@ find_package(OpenGL)
 add_subdirectory(src)
 add_subdirectory(external)
 
-
 set(PARENT_SRC "${CMAKE_SOURCE_DIR}/..")
 set(PARENT_BUILD "${CMAKE_BINARY_DIR}/parent")
 

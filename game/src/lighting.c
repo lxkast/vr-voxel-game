@@ -142,8 +142,8 @@ float computeVertexLight(chunk_t *c, int vx, int vy, int vz, direction_e dir) {
 // performs a BFS flood-fill to approximate the torchlight values of each chunk
 static void processTorchLight(chunk_t *c) {
     // propagate darkness
-    while (c->lightDeletionQueue.size > 0) {
-        lightQueueItem_t head = queue_pop(&c->lightDeletionQueue);
+    while (c->lightTorchDeletionQueue.size > 0) {
+        lightQueueItem_t head = queue_pop(&c->lightTorchDeletionQueue);
         unsigned char lightLevel = LIGHT_TORCH_MASK & c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]];
         if (lightLevel <= 0) {
             continue;
@@ -173,16 +173,16 @@ static void processTorchLight(chunk_t *c) {
                 lightQueueItem_t nItem = { .lightValue = neighbourLight };
                 memcpy(&nItem.pos, &nPos, sizeof(ivec3));
                 if (neighbourLight < lightLevel && neighbourLight != 0) {
-                    queue_push(&c->lightDeletionQueue, nItem);
+                    queue_push(&c->lightTorchDeletionQueue, nItem);
                 } else if (neighbourLight >= lightLevel){
-                    queue_push(&c->lightInsertionQueue, nItem);
+                    queue_push(&c->lightTorchInsertionQueue, nItem);
                 }
             }
         }
     }
     // propagate light
-    while (c->lightInsertionQueue.size > 0) {
-        lightQueueItem_t head = queue_pop(&c->lightInsertionQueue);
+    while (c->lightTorchInsertionQueue.size > 0) {
+        lightQueueItem_t head = queue_pop(&c->lightTorchInsertionQueue);
         unsigned char lightLevel = LIGHT_TORCH_MASK & c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]];
 
         if (lightLevel < head.lightValue) {
@@ -220,7 +220,7 @@ static void processTorchLight(chunk_t *c) {
                     (c->lightMap[nPos[0]][nPos[1]][nPos[2]] & LIGHT_SUN_MASK) | (newLight & LIGHT_TORCH_MASK);
                 lightQueueItem_t nItem = { .lightValue = newLight };
                 memcpy(&nItem.pos, &nPos, sizeof(ivec3));
-                queue_push(&c->lightInsertionQueue, nItem);
+                queue_push(&c->lightTorchInsertionQueue, nItem);
             }
         }
     }

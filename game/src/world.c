@@ -648,7 +648,7 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
         lightQueueItem_t qi = {
             .pos = { x - ((x >> 4) << 4), y - ((y >> 4) << 4), z - ((z >> 4) << 4) },
             .lightValue = LIGHT_MAX_VALUE };
-        queue_push(&cp->lightDeletionQueue, qi);
+        queue_push(&cp->lightTorchDeletionQueue, qi);
     }
 
     const worldEntity_t entity = createItemEntity(w, (vec3){(float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f}, BLOCK_TO_ITEM[*bp]);
@@ -672,7 +672,7 @@ bool world_placeBlock(world_t *w, const int x, const int y, const int z, const b
         lightQueueItem_t qi = {
             .pos = { x - ((x >> 4) << 4), y - ((y >> 4) << 4), z - ((z >> 4) << 4) },
             .lightValue = LIGHT_MAX_VALUE };
-        queue_push(&cp->lightInsertionQueue, qi);
+        queue_push(&cp->lightTorchInsertionQueue, qi);
     }
     *bp = block;
     cp->tainted = true;

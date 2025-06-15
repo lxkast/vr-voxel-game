@@ -15,8 +15,8 @@ void chunk_init(chunk_t *c, rng_t rng, noise_t noise, int cx, int cy, int cz) {
     c->cx = cx;
     c->cy = cy;
     c->cz = cz;
-    queue_initQueue(&c->lightInsertionQueue);
-    queue_initQueue(&c->lightDeletionQueue);
+    queue_initQueue(&c->lightTorchInsertionQueue);
+    queue_initQueue(&c->lightTorchDeletionQueue);
     memset(c->lightMap, 0, CHUNK_SIZE_CUBED * sizeof(unsigned char));
 
     glGenBuffers(1, &c->vbo);
@@ -87,8 +87,8 @@ void chunk_draw(chunk_t *c, const int modelLocation) {
 void chunk_free(const chunk_t *c) {
     glDeleteVertexArrays(1, &c->vbo);
     glDeleteBuffers(1, &c->vao);
-    queue_freeQueue(&c->lightInsertionQueue);
-    queue_freeQueue(&c->lightDeletionQueue);
+    queue_freeQueue(&c->lightTorchInsertionQueue);
+    queue_freeQueue(&c->lightTorchDeletionQueue);
 }
 
 void chunk_serialise(chunk_t *c, FILE *fp) {

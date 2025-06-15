@@ -22,9 +22,11 @@ typedef struct {
     /// The array of light levels in the chunk.
     unsigned char lightMap[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
     /// The queue of light values used for adding lights to the lightMap
-    lightQueue_t lightInsertionQueue;
+    lightQueue_t lightTorchInsertionQueue;
+    lightQueue_t lightSunInsertionQueue;
     /// The queue of PREVIOUS light values for deleting lights from the lightMap
-    lightQueue_t lightDeletionQueue;
+    lightQueue_t lightTorchDeletionQueue;
+    lightQueue_t lightSunDeletionQueue;
     /// The VBO that holds the mesh.
     GLuint vbo;
     /// The VAO that is used for drawing.
