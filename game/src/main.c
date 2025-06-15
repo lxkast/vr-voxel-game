@@ -295,6 +295,22 @@ int main(void) {
     analytics_init(&analytics);
     double fpsDisplayAcc = 0;
 
+    ma_sound walkingSound;
+
+    ma_sound_init_from_file(&world.engine,
+                            "../../src/audio/footstep_sound.mp3",
+                            MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_ASYNC,
+                            NULL,
+                            NULL,
+                            &walkingSound);
+
+    ma_sound_set_volume(&walkingSound, 5.0f);
+
+    ma_sound_set_looping(&walkingSound, MA_TRUE);
+    ma_sound_set_spatialization_enabled(&walkingSound, MA_TRUE);
+
+    glfwSwapInterval(1);
+
     while (!glfwWindowShouldClose(window)) {
         analytics_startFrame(&analytics);
         glUseProgram(program);
@@ -312,6 +328,13 @@ int main(void) {
         player_attachCamera(&player, &camera);
 
         world_updateEngine(&world, camera.eye, camera.ruf);
+
+        if (player.entity.grounded && (player.entity.velocity[0] != 0 || player.entity.velocity[2] != 0)) {
+            ma_sound_set_position(&walkingSound, player.entity.position[0] + player.entity.size[0] / 2, player.entity.position[1], player.entity.position[2] + player.entity.size[2] / 2);
+            ma_sound_start(&walkingSound);
+        } else {
+            ma_sound_stop(&walkingSound);
+        }
 
 
         glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);

@@ -651,6 +651,7 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
     if (*bp == BL_LOG) {
         ma_sound_uninit(&w->sound);
 
+        // audio found here https://pixabay.com/sound-effects/log-split-88986/
         if (ma_sound_init_from_file(&w->engine,
                                     "../../src/audio/log_destroy.mp3",
                                     MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_ASYNC,
