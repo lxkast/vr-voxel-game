@@ -101,7 +101,7 @@ static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int c
     return clusterPtr;
 }
 
-static void world_decorateChunk(world_t *w, chunkValue_t *cv, int cx, int cy, int cz);
+static void world_decorateChunk(world_t *w, chunkValue_t *cv);
 
 /**
  * @brief Loads a chunk.
@@ -144,7 +144,7 @@ static chunkValue_t *world_loadChunk(world_t *w,
     if (ll > cv->ll) {
         if (ll > LL_PARTIAL) {
             chunk_generate(cv->chunk);
-            world_decorateChunk(w, cv, cx, cy, cz);
+            world_decorateChunk(w, cv);
         }
         cv->ll = ll;
     }
@@ -454,7 +454,7 @@ static bool decorator_initSurface(decorator_t *d, chunkValue_t *origin, const in
     return false;
 }
 
-static bool world_initStructure(world_t *w, structure_t *structure, chunkValue_t *origin, const int x, const int z, const block_t block, const int cx, const int cy, const int cz) {
+static bool world_initStructure(world_t *w, structure_t *structure, chunkValue_t *origin, const int x, const int z, const block_t block) {
     for (int y = CHUNK_SIZE - 2; y >= 0; y--) {
         const block_t currBlock = origin->chunk->blocks[x][y][z];
         if (currBlock != BL_AIR) {
@@ -465,7 +465,7 @@ static bool world_initStructure(world_t *w, structure_t *structure, chunkValue_t
                     const int testY = y + structure->blocks[i].y + 1;
                     const int testZ = z + structure->blocks[i].z;
                     if (testX < 0 || testX > CHUNK_SIZE - 1 || testY < 0 || testY > CHUNK_SIZE - 1 || testZ < 0 || testZ > CHUNK_SIZE - 1 ) {
-                        if (getBlockType(w, (vec3){(float)(cx*16 + testX), (float)(cy*16 + testY), (float)(cz*16 + testZ)}) != BL_AIR) {
+                        if (getBlockType(w, (vec3){(float)(origin->chunk->cx*16 + testX), (float)(origin->chunk->cy*16 + testY), (float)(origin->chunk->cz*16 + testZ)}) != BL_AIR) {
                             return false;
                         }
                     } else {
@@ -523,7 +523,7 @@ static void decorator_placeBlock(decorator_t *d,
             }
         }
 
-        if (rng_floatRange(&(*cacheValue)->chunk->rng, 0.f, 1.0f) > chance) {
+        if (rng_float(&(*cacheValue)->chunk->rng) > chance) {
             return;
         }
 
@@ -540,13 +540,13 @@ static void world_placeStructure(world_t *world, structure_t *structure) {
 }
 
 
-static void world_decorateChunk(world_t *w, chunkValue_t *cv, const int cx, const int cy, const int cz) {
+static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
     for (int x = 0; x < CHUNK_SIZE; x++) {
         for (int z = 0; z < CHUNK_SIZE; z++) {
             for (int i = 0; i < numStructures; i++) {
                 structure_t structure = structures[i];
                 if (rng_float(&cv->chunk->rng) < structure.chance) {
-                    if (world_initStructure(w, &structure, cv, x, z, structure.base, cx, cy, cz)) {
+                    if (world_initStructure(w, &structure, cv, x, z, structure.base)) {
                         world_placeStructure(w, &structure);
                         break;
                     }
