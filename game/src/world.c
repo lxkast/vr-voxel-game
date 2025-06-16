@@ -4,10 +4,10 @@
 #include <logging.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <uthash.h>
 #include "chunk.h"
 #include "entity.h"
 #include "noise.h"
-#include "uthash.h"
 #include "vertices.h"
 #include "structure.h"
 #include "lighting.h"

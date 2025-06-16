@@ -2,12 +2,12 @@
 
 #include <cglm/cglm.h>
 #include <glad/gl.h>
+#include <uthash.h>
 #include "camera.h"
 #include "chunk.h"
 #include "item.h"
-#include "player.h"
-#include "uthash.h"
 #include "noise.h"
+#include "player.h"
 
 #define MAX_CHUNKS 256
 #define MAX_CHUNK_LOADERS 8
