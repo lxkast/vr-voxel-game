@@ -69,7 +69,10 @@ static biome_e getBiome(chunk_t *c, const struct biomeSlice bs, const int y) {
         return BIO_DESERT;
     }
     if (temperature > 15.f) {
-        return BIO_FOREST;
+        if (y > 15) {
+            return BIO_FOREST;
+        }
+        return BIO_PLAINS;
     }
 
     return BIO_TUNDRA;
@@ -140,6 +143,7 @@ void chunk_generate(chunk_t *c) {
                             ptr[x][y][z] = BL_STONE;
                             break;
                         }
+                        case BIO_PLAINS:
                         case BIO_FOREST: {
                             ptr[x][y][z] = ds == 0 ? BL_GRASS : BL_DIRT;
                             break;

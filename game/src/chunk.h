@@ -16,6 +16,7 @@
 typedef enum {
     BIO_NIL,
     BIO_FOREST,
+    BIO_PLAINS,
     BIO_DESERT,
     BIO_TUNDRA,
     BIO_CAVE
