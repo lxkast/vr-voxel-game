@@ -23,7 +23,11 @@
 #define EYE_OFFSET 0.032f
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
-#define FOV_Y 45.0f
+#ifdef BUILD_FOR_RPI
+#define FOV_Y 0.785f
+#else
+#define FOV_Y 1.0177f
+#endif
 #define USING_RASPBERRY_PI false
 
 #define GET_PROJECTION  mat4 projection; \
