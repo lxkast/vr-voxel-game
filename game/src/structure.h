@@ -103,7 +103,7 @@ static const structureBlock_t jungleTreePattern[] = {
 };
 
 const structure_t jungleTreeStructure = {
-    .numBlocks = 63,
+    .numBlocks = 68,
     .blocks = jungleTreePattern,
 };
 
