@@ -19,7 +19,8 @@ typedef enum {
     BIO_PLAINS,
     BIO_DESERT,
     BIO_TUNDRA,
-    BIO_CAVE
+    BIO_CAVE,
+    BIO_JUNGLE,
 } biome_e;
 
 /**

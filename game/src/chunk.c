@@ -59,13 +59,16 @@ static struct biomeSlice createBiomeSlice(chunk_t *c, const int x, const int z) 
 }
 
 static biome_e getBiome(chunk_t *c, const struct biomeSlice bs, const int y) {
-    const float humidity = 90.f - 0.6f * (float)y + bs.humidityOffset;
+    const float humidity = 70.f - 0.6f * (float)y + bs.humidityOffset;
     const float temperature = 30.f - 0.50f * (float)y + bs.temperatureOffset;
 
     if (bs.height - y > 5) {
         return BIO_CAVE;
     }
     if (temperature > 30.f) {
+        if (humidity > 75.f) {
+            return BIO_JUNGLE;
+        }
         return BIO_DESERT;
     }
     if (temperature > 15.f) {
@@ -146,6 +149,10 @@ void chunk_generate(chunk_t *c) {
                         case BIO_PLAINS:
                         case BIO_FOREST: {
                             ptr[x][y][z] = ds == 0 ? BL_GRASS : BL_DIRT;
+                            break;
+                        }
+                        case BIO_JUNGLE: {
+                            ptr[x][y][z] = ds == 0 ? BL_JUNGLE_GRASS : BL_MUD;
                             break;
                         }
                         case BIO_DESERT: {

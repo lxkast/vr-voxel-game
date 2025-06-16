@@ -12,6 +12,8 @@ typedef enum {
     BL_LEAF,
     BL_GLOWSTONE,
     BL_SNOW,
+    BL_JUNGLE_GRASS,
+    BL_MUD
 } block_t;
 
 /**
