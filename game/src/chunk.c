@@ -136,8 +136,9 @@ void chunk_generate(chunk_t *c) {
                     const biome_e b = getBiome(c, bs, yg);
                     switch (b) {
                         case BIO_NIL: {
-                            LOG_WARN("Unknown biome!");
+                            LOG_WARN("Unknown biome");
                             ptr[x][y][z] = BL_STONE;
+                            break;
                         }
                         case BIO_FOREST: {
                             ptr[x][y][z] = ds == 0 ? BL_GRASS : BL_DIRT;
@@ -156,7 +157,7 @@ void chunk_generate(chunk_t *c) {
                             break;
                         }
                     }
-                    if (ds == 0) {
+                    if (x == 7 && z == 7 && ds == 0) {
                         c->biome = b;
                     }
                 }

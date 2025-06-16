@@ -541,19 +541,22 @@ static void world_placeStructure(world_t *world, structure_t *structure) {
     }
 }
 
+
 static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
-    for (int x = 0; x < CHUNK_SIZE; x++) {
-        for (int z = 0; z < CHUNK_SIZE; z++) {
-            for (int i = 0; i < numStructures; i++) {
-                structure_t structure = structures[i];
-                if (rng_float(&cv->chunk->rng) < 0.01) {
-                    if (world_initStructure(w, &structure, cv, x, z, structure.base)) {
-                        world_placeStructure(w, &structure);
-                        break;
-                    }
-                }
-            }
-        }
+#define STRUCTURE(type, chance, base)                             \
+    for (int x = 0; x < CHUNK_SIZE; x++) {                        \
+        for (int z = 0; z < CHUNK_SIZE; z++) {                    \
+            if (rng_float(&cv->chunk->rng) < chance) {            \
+                structure_t s = type;                             \
+                if (world_initStructure(w, &s, cv, x, z, base)) { \
+                    world_placeStructure(w, &s);                  \
+                }                                                 \
+            }                                                     \
+        }                                                         \
+    }
+
+    if (cv->chunk->biome == BIO_FOREST) {
+        STRUCTURE(treeStructure, 0.05f, BL_GRASS);
     }
 }
 
