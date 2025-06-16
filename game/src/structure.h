@@ -24,6 +24,18 @@ typedef struct {
     block_t base;
 } structure_t;
 
+static const structureBlock_t cactusPattern[] = {
+    {BL_CACTUS, 0, 0, 0, 1.f},
+    {BL_CACTUS, 0, 1, 0, 1.f},
+    {BL_CACTUS, 0, 2, 0, 0.5f},
+};
+
+const structure_t cactusStructure = {
+    .numBlocks = 3,
+    .blocks = cactusPattern,
+    .base = BL_SAND,
+};
+
 static const structureBlock_t treePattern[] = {
     // Tree trunk
     {BL_LOG, 0,0,0, 1.f},

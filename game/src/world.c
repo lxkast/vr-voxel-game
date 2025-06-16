@@ -561,6 +561,9 @@ static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
     if (cv->chunk->biome == BIO_PLAINS) {
         STRUCTURE(treeStructure, 0.001f, BL_GRASS);
     }
+    if (cv->chunk->biome == BIO_DESERT) {
+        STRUCTURE(cactusStructure, 0.003f, BL_SAND);
+    }
 }
 
 static void meshItemEntity(worldEntity_t *e) {
