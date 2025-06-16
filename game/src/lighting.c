@@ -288,16 +288,18 @@ static void processSunLight(chunk_t *c) {
             lightLevel = head.lightValue;
         }
 
-        unsigned char newLight = lightLevel - 1;
-        if (newLight <= 0) {
+        if (lightLevel - 1 <= 0) {
             continue;
         }
 
         // check each direction and add to queue if transparent and lightValue less than current
         // always propagate max sunlight downwards
         for (int dir = 0; dir < 6; ++dir) {
-            if (dir == DIR_MINUSY && newLight == LIGHT_MAX_VALUE - 1) {
-                newLight = LIGHT_MAX_VALUE;
+            int newNeighbourLevel;
+            if (dir == DIR_MINUSY && lightLevel == LIGHT_MAX_VALUE) {
+                newNeighbourLevel = LIGHT_MAX_VALUE;
+            } else {
+                newNeighbourLevel = lightLevel - 1;
             }
             ivec3 dirVec;
             memcpy(&dirVec, &directions[dir], sizeof(ivec3));
@@ -316,10 +318,10 @@ static void processSunLight(chunk_t *c) {
             }
 
             if ((c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_AIR || c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_LEAF) &&
-                (LIGHT_SUN_MASK & c->lightMap[nPos[0]][nPos[1]][nPos[2]]) >> 4 < newLight) {
+                (LIGHT_SUN_MASK & c->lightMap[nPos[0]][nPos[1]][nPos[2]]) >> 4 < newNeighbourLevel) {
                 c->lightMap[nPos[0]][nPos[1]][nPos[2]] =
-                    (c->lightMap[nPos[0]][nPos[1]][nPos[2]] & LIGHT_TORCH_MASK) | ((newLight & LIGHT_TORCH_MASK) << 4);
-                lightQueueItem_t nItem = { .lightValue = newLight };
+                    (c->lightMap[nPos[0]][nPos[1]][nPos[2]] & LIGHT_TORCH_MASK) | ((newNeighbourLevel & LIGHT_TORCH_MASK) << 4);
+                lightQueueItem_t nItem = { .lightValue = newNeighbourLevel };
                 memcpy(&nItem.pos, &nPos, sizeof(ivec3));
                 queue_push(&c->lightSunInsertionQueue, nItem);
             }

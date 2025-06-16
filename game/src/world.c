@@ -230,7 +230,7 @@ static void decorator_placeTree(struct decorator *d, world_t *world) {
         for (int x = -2; x <= 2; x++) {
             for (int z = -2; z <= 2; z++) {
                 if (y < 4 || (abs(x) + abs(z) < 2)) {
-                    decorator_placeBlock(d, world, x, y, z, BL_LEAF);
+                    decorator_placeBlock(d, world, x, y, z, BL_DIRT);
                 }
             }
         }
