@@ -44,12 +44,14 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) direction[0] -= 1.0f;
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) direction[0] += 1.0f;
 
-    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !hudOpen) {
-        open_hud(camera, player);
-        hudOpen = true;
-    } else if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE && hudOpen) {
-        close_hud(camera, player);
-        hudOpen = false;
+    if (joystickID == -1) {
+        if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !hudOpen) {
+            open_hud(camera, player);
+            hudOpen = true;
+        } else if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE && hudOpen) {
+            close_hud(camera, player);
+            hudOpen = false;
+        }
     }
 
     glm_vec3_normalize(direction);
@@ -103,6 +105,14 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
             player_removeBlock(player, w);
         } else if (buttons[2]) {
             player_placeBlock(player, w);
+        }
+
+        if (buttons[0] && !hudOpen) {
+            open_hud(camera, player);
+            hudOpen = true;
+        } else if (!buttons[0] && hudOpen) {
+            close_hud(camera, player);
+            hudOpen = false;
         }
     }
 
