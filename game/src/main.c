@@ -261,7 +261,9 @@ int main(void) {
         glBindTexture(GL_TEXTURE_2D, texture);
         glUniform1i(glGetUniformLocation(blockEntityProgram, "uTextureAtlas"), 0);
         world_drawAllEntities(&world, blockEntityModelLocation);
-        hud_render(projection, &camera, &player, texture);
+
+        vec3 offset = {postProcessingEnabled ? -EYE_OFFSET: 0, 0, 0};
+        hud_render(projection, offset, &camera, &player, texture);
         glUseProgram(program);
         if (postProcessingEnabled) {
             postProcess_bindBuffer(&postProcess.rightFramebuffer);
@@ -279,7 +281,8 @@ int main(void) {
             glBindTexture(GL_TEXTURE_2D, texture);
             glUniform1i(glGetUniformLocation(blockEntityProgram, "uTextureAtlas"), 0);
             world_drawAllEntities(&world, blockEntityModelLocation);
-            hud_render(projection, &camera, &player, texture);
+            vec3 offset = {EYE_OFFSET, 0, 0};
+            hud_render(projection, offset, &camera, &player, texture);
             {
                 static int width, height;
                 glfwGetFramebufferSize(window, &width, &height);

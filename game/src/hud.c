@@ -209,7 +209,7 @@ static int calculate_looking_at(versor camera) {
     return lookingAt;
 }
 
-void hud_render(mat4 perspective, camera_t *camera, player_t *player, GLuint textureAtlas) {
+void hud_render(mat4 perspective, vec3 offset, camera_t *camera, player_t *player, GLuint textureAtlas) {
     if (!shouldRender) return;
     vec3 centercoords = {0, 0, -2};
     versor orientation = {0, 0, 0, 1};
@@ -220,6 +220,12 @@ void hud_render(mat4 perspective, camera_t *camera, player_t *player, GLuint tex
     versor inverted;
     glm_quat_inv(camera->ori, inverted);
     glm_quat_mat4(inverted, view);
+
+    mat4 translate;
+    glm_translate_make(translate, offset);
+    mat4 translateI;
+    glm_mat4_inv(translate, translateI);
+    glm_mat4_mul(translateI, view, view);
 
     mat4 view2;
     glm_quat_mat4(initialRot, view2);
