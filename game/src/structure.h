@@ -21,7 +21,6 @@ typedef struct {
     decorator_t decorator;
     int numBlocks;
     structureBlock_t *blocks;
-    block_t base;
 } structure_t;
 
 static const structureBlock_t cactusPattern[] = {
@@ -33,7 +32,6 @@ static const structureBlock_t cactusPattern[] = {
 const structure_t cactusStructure = {
     .numBlocks = 3,
     .blocks = cactusPattern,
-    .base = BL_SAND,
 };
 
 static const structureBlock_t treePattern[] = {
@@ -68,7 +66,6 @@ static const structureBlock_t treePattern[] = {
 const structure_t treeStructure = {
     .numBlocks = 63,
     .blocks = treePattern,
-    .base = BL_GRASS,
 };
 
 static const structureBlock_t jungleTreePattern[] = {
@@ -91,24 +88,23 @@ static const structureBlock_t jungleTreePattern[] = {
     {BL_JUNGLE_LEAF, -2,2,1, 1.f},  {BL_JUNGLE_LEAF, -1,2,1, 1.f},  {BL_JUNGLE_LEAF, 0,2,1, 1.f},  {BL_JUNGLE_LEAF, 1,2,1, 1.f},  {BL_JUNGLE_LEAF, 2,2,1, 1.f},
     {BL_JUNGLE_LEAF, -2,2,2, 1.f},  {BL_JUNGLE_LEAF, -1,2,2, 1.f},  {BL_JUNGLE_LEAF, 0,2,2, 1.f},  {BL_JUNGLE_LEAF, 1,2,2, 1.f},  {BL_JUNGLE_LEAF, 2,2,2, 1.f},
 
-    // y=3 layer (5x5)
+    // y=7 layer (5x5)
     {BL_JUNGLE_LEAF, -2,7,-2, 0.8f}, {BL_JUNGLE_LEAF, -1,7,-2, 1.f}, {BL_JUNGLE_LEAF, 0,7,-2, 1.f}, {BL_JUNGLE_LEAF, 1,7,-2, 1.f}, {BL_JUNGLE_LEAF, 2,7,-2, 0.8f},
     {BL_JUNGLE_LEAF, -2,7,-1, 1.f}, {BL_JUNGLE_LEAF, -1,7,-1, 1.f}, {BL_JUNGLE_LEAF, 0,7,-1, 1.f}, {BL_JUNGLE_LEAF, 1,7,-1, 1.f}, {BL_JUNGLE_LEAF, 2,7,-1, 1.f},
     {BL_JUNGLE_LEAF, -2,7,0, 1.f},  {BL_JUNGLE_LEAF, -1,7,0, 1.f},  {BL_JUNGLE_LEAF, 1,7,0, 1.f},  {BL_JUNGLE_LEAF, 2,7,0, 1.f},
     {BL_JUNGLE_LEAF, -2,7,1, 1.f},  {BL_JUNGLE_LEAF, -1,7,1, 1.f},  {BL_JUNGLE_LEAF, 0,7,1, 1.f},  {BL_JUNGLE_LEAF, 1,7,1, 1.f},  {BL_JUNGLE_LEAF, 2,7,1, 1.f},
     {BL_JUNGLE_LEAF, -2,7,2, 0.8f},  {BL_JUNGLE_LEAF, -1,7,2, 1.f},  {BL_JUNGLE_LEAF, 0,7,2, 1.f},  {BL_JUNGLE_LEAF, 1,7,2, 1.f},  {BL_JUNGLE_LEAF, 2,7,2, 0.8f},
 
-    // y=4 layer (diamond pattern)
+    // y=8 layer (diamond pattern)
     {BL_JUNGLE_LEAF, -1,8,0, 1.f}, {BL_JUNGLE_LEAF, 0,8,-1, 1.f}, {BL_JUNGLE_LEAF, 0,8,0, 1.f}, {BL_JUNGLE_LEAF, 0,8,1, 1.f}, {BL_JUNGLE_LEAF, 1,8,0, 1.f},
 
-    // y=5 layer (diamond pattern)
+    // y=9 layer (diamond pattern)
     {BL_JUNGLE_LEAF, -1,9,0, 1.f}, {BL_JUNGLE_LEAF, 0,9,-1, 1.f}, {BL_JUNGLE_LEAF, 0,9,0, 1.f}, {BL_JUNGLE_LEAF, 0,9,1, 1.f}, {BL_JUNGLE_LEAF, 1,9,0, 1.f}
 };
 
 const structure_t jungleTreeStructure = {
     .numBlocks = 63,
     .blocks = jungleTreePattern,
-    .base = BL_GRASS,
 };
 
 // second structure for testing purposes
@@ -123,7 +119,6 @@ static const structureBlock_t stoneT[] = {
 const structure_t stoneTStructure = {
     .numBlocks = 5,
     .blocks = stoneT,
-    .base = BL_GRASS,
 };
 
 static const structureBlock_t woodenHouse[] = {
@@ -167,7 +162,6 @@ static const structureBlock_t woodenHouse[] = {
 const structure_t woodenHouseStructure = {
     .numBlocks = sizeof(woodenHouse)/sizeof(structureBlock_t),
     .blocks = woodenHouse,
-    .base = BL_SAND,
 };
 
 structure_t structures[] = {
