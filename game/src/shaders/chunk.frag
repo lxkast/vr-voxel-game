@@ -1,7 +1,7 @@
 #version 140
 #define TEXTURE_WIDTH 16
 #define TEXTURE_HEIGHT 16
-#define ATLAS_WIDTH 128
+#define ATLAS_WIDTH 256
 #define ATLAS_HEIGHT 64
 #define HIGHLIGHT_COLUMN 0
 #define FACE_BOTTOM 1

@@ -17,11 +17,18 @@
 #define GROUND_ACCELERATION 35.f
 #define AIR_ACCELERATION 10.f
 
+#define STRUCTURE_BUILD_TOOL
+
 static double previousMouse[2];
 static int joystickID = -1;
 
 static void (*toggle_wireframe)();
 static void (*toggle_vr)();
+
+static vec3 bottomLeft = {0.f, 0.f, 0.f};
+static vec3 topRight = {0.f,0.f,0.f};
+static vec3 origin = {0.f,0.f,0.f};
+static block_t originBlock = BL_AIR;
 
 /*
  * This function uses polling, this means that it is better for "continuous" presses, ie holding W
@@ -31,34 +38,18 @@ void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
 
     const float sprintMultiplier = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? SPRINT_MULTIPLIER : 1.f ;
 
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        if (player->entity.grounded) {
-            acceleration[2] += GROUND_ACCELERATION * sprintMultiplier;  // Forward
-        } else {
-            acceleration[2] += AIR_ACCELERATION * sprintMultiplier;  // Forward
-        }
-    }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        if (player->entity.grounded) {
-            acceleration[2] -= GROUND_ACCELERATION * sprintMultiplier;  // Backward
-        } else {
-            acceleration[2] -= AIR_ACCELERATION * sprintMultiplier;  // Backward
-        }
-    }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        if (player->entity.grounded) {
-            acceleration[0] -= GROUND_ACCELERATION * sprintMultiplier;  // Left
-        } else {
-            acceleration[0] -= AIR_ACCELERATION * sprintMultiplier;  // Left
-        }
-    }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        if (player->entity.grounded) {
-            acceleration[0] += GROUND_ACCELERATION * sprintMultiplier;  // Right
-        } else {
-            acceleration[0] += AIR_ACCELERATION * sprintMultiplier;  // Right
-        }
-    }
+    vec3 direction = {0.0f, 0.0f, 0.0f};
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) direction[2] += 1.0f;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) direction[2] -= 1.0f;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) direction[0] -= 1.0f;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) direction[0] += 1.0f;
+
+    glm_vec3_normalize(direction);
+
+    const float accelVal = player->entity.grounded ? GROUND_ACCELERATION : AIR_ACCELERATION;
+    acceleration[0] += direction[0] * accelVal * sprintMultiplier;
+    acceleration[2] += direction[2] * accelVal * sprintMultiplier;
 
 
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && player->entity.grounded) {
@@ -101,7 +92,86 @@ void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
                 player->entity.grounded = false;
             }
         }
+        if (buttons[1]) {
+            player_removeBlock(player, w);
+        } else if (buttons[2]) {
+            player_placeBlock(player, w);
+        }
     }
+
+    // This is temporary and for development purposes - allows us to create a structure from
+    // something we have built in-game, rather than having to try to visualise it logically
+    #ifdef STRUCTURE_BUILD_TOOL
+    if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
+        vec3 startPos;
+        vec3 lookDirection;
+        glm_vec3_scale(player->lookVector, -1.f, lookDirection);
+        glm_vec3_add(player->entity.position, player->cameraOffset, startPos);
+        raycast_t raycast = world_raycast(w, startPos, lookDirection, 10);
+        glm_vec3_copy(raycast.blockPosition, bottomLeft);
+        LOG_DEBUG("FOUND BLOCK: %f, %f, %f", bottomLeft[0], bottomLeft[1], bottomLeft[2]);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS) {
+        vec3 startPos;
+        vec3 lookDirection;
+        glm_vec3_scale(player->lookVector, -1.f, lookDirection);
+        glm_vec3_add(player->entity.position, player->cameraOffset, startPos);
+        raycast_t raycast = world_raycast(w, startPos, lookDirection, 10);
+        glm_vec3_copy(raycast.blockPosition, topRight);
+        LOG_DEBUG("FOUND BLOCK: %f, %f, %f", topRight[0], topRight[1], topRight[2]);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) {
+        vec3 startPos;
+        vec3 lookDirection;
+        glm_vec3_scale(player->lookVector, -1.f, lookDirection);
+        glm_vec3_add(player->entity.position, player->cameraOffset, startPos);
+        raycast_t raycast = world_raycast(w, startPos, lookDirection, 10);
+        glm_vec3_copy(raycast.blockPosition, origin);
+        origin[1]++;
+        originBlock = getBlockType(w, raycast.blockPosition);
+        LOG_DEBUG("FOUND BLOCK: %f, %f, %f", origin[0], origin[1], origin[2]);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) {
+        vec3 minPoint;
+        vec3 maxPoint;
+        for (int i = 0; i < 3; i++) {
+            if (bottomLeft[i] < topRight[i]) {
+                minPoint[i] = bottomLeft[i];
+                maxPoint[i] = topRight[i] + 1;
+            } else {
+                minPoint[i] = topRight[i];
+                maxPoint[i] = bottomLeft[i] + 1;
+            }
+        }
+        const int numBlocks = (int)(maxPoint[0] - minPoint[0]) *
+                          (int)(maxPoint[1] - minPoint[1]) *
+                          (int)(maxPoint[2] - minPoint[2]);
+
+        // getting all the blocks in the range
+        blockData_t buf[numBlocks];
+
+        world_getBlocksInRange(w, minPoint, maxPoint, buf);
+
+        printf("static const structureBlock_t generated[] = {\n");
+
+        for (int i = 0; i < numBlocks; i++) {
+            const blockData_t block = buf[i];
+            if (block.type!= BL_AIR) {
+                printf("    {%d, %d, %d, %d, 1.f},\n", block.type, block.x - (int)origin[0], block.y - (int)origin[1], block.z - (int)origin[2]);
+            }
+        }
+
+        printf("};\n\n");
+
+        printf("const structure_t generatedStructure = {\n");
+        printf("    .numBlocks = %d,\n", numBlocks);
+        printf("    .blocks = generated,\n");
+        printf("    .base = %d,\n};\n\n", originBlock);
+    }
+    #endif
 
 
     changeRUFtoXYZ(acceleration, player->entity.yaw);
@@ -109,7 +179,7 @@ void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
     glm_vec3_copy(acceleration, player->entity.acceleration);
 }
 
-void joystickEvent(int jid, int event) {
+void joystickEvent(const int jid, const int event) {
     if (event == GLFW_CONNECTED) {
 
         int axisCount;
@@ -143,9 +213,9 @@ void processCameraInput(GLFWwindow *window, camera_t *camera) {
 }
 
 /*
- * This function uses a callback meaning that is is much better for instantaneous presses, eg switching wireframe mode
+ * This function uses a callback meaning that it is much better for instantaneous presses, e.g. switching wireframe mode
  */
-static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+static void key_callback(GLFWwindow *window, const int key, int scancode, const int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     } else if (key == GLFW_KEY_O && action == GLFW_PRESS) {

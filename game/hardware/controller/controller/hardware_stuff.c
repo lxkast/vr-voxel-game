@@ -2,6 +2,9 @@
 #include "pico/stdlib.h"
 #include "hardware/adc.h"
 #include "hardware_stuff.h"
+#include <math.h>
+
+#define DEADZONE 0.1f
 
 
 const int SWITCH_PINS[SWITCH_COUNT] = {19, 5, 6, 27, 15}; // Adjust as needed
@@ -37,5 +40,10 @@ int read_data(ReadData* data) {
         uint16_t joy_y = adc_read();
         data->dx = (float) joy_x / 4098.0f;
         data->dy = (float) joy_y / 4098.0f;
-
+        if (fabs(data->dx - 0.5) < DEADZONE) {
+            data->dx = 0.5f;
+        }
+        if (fabs(data->dy - 0.5) < DEADZONE) {
+            data->dy = 0.5f;
+        }
 }

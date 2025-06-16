@@ -207,6 +207,7 @@ int main(void) {
     analytics_init(&analytics);
     double fpsDisplayAcc = 0;
 
+    glEnable(GL_CULL_FACE);
     while (!glfwWindowShouldClose(window)) {
         analytics_startFrame(&analytics);
         glUseProgram(program);

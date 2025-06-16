@@ -13,7 +13,13 @@ typedef enum {
     ITEM_PICKAXE,
     ITEM_LOG,
     ITEM_LEAF,
-    ITEM_GLOWSTONE
+    ITEM_GLOWSTONE,
+    ITEM_SNOW,
+    ITEM_JUNGLE_GRASS,
+    ITEM_MUD,
+    ITEM_CACTUS,
+    ITEM_JUNGLE_LOG,
+    ITEM_JUNGLE_LEAF
 } item_e;
 
 typedef struct {
@@ -42,7 +48,13 @@ static const itemProperties_t ITEM_PROPERTIES[] = {
     [ITEM_PICKAXE] = {"Pickaxe",      false, true, 1,200},
     [ITEM_LOG] = {"Log",       true,  false,  64,-1},
     [ITEM_LEAF] = {"Leaf block",       true,  false,  64,-1},
-    [ITEM_GLOWSTONE] = {"Glowstone",     true, false, 64,-1},
+    [ITEM_GLOWSTONE] = { "Glowstone", true, false, 64, -1},
+    [ITEM_SNOW] = { "Snow", true, false, 64, -1},
+    [ITEM_JUNGLE_GRASS] = { "Jungle grass", true, false, 64, -1},
+    [ITEM_MUD] = { "Mud", true, false, 64, -1},
+    [ITEM_CACTUS] = { "Cactus", true, false, 64, -1},
+    [ITEM_JUNGLE_LOG] = { "Jungle log", true, false, 64, -1},
+    [ITEM_JUNGLE_LEAF] = { "Jungle leaf", true, false, 64, -1},
 };
 
 /// a mapping from block item types to the block types
@@ -53,6 +65,12 @@ static const block_t ITEM_TO_BLOCK[] = {
     [ITEM_LEAF] = BL_LEAF,
     [ITEM_STONE] = BL_STONE,
     [ITEM_GLOWSTONE] = BL_GLOWSTONE,
+    [ITEM_SNOW] = BL_SNOW,
+    [ITEM_JUNGLE_GRASS] = BL_JUNGLE_GRASS,
+    [ITEM_MUD] = BL_MUD,
+    [ITEM_CACTUS] = BL_CACTUS,
+    [ITEM_JUNGLE_LOG] = BL_JUNGLE_LOG,
+    [ITEM_JUNGLE_LEAF] = BL_JUNGLE_LEAF,
 };
 
 /// a mapping from block item types to the block types
@@ -63,6 +81,12 @@ static const block_t BLOCK_TO_ITEM[] = {
     [BL_LOG] = ITEM_LOG,
     [BL_LEAF] = ITEM_LEAF,
     [BL_GLOWSTONE] = ITEM_GLOWSTONE,
+    [BL_SNOW] = ITEM_SNOW,
+    [BL_JUNGLE_GRASS] = ITEM_JUNGLE_GRASS,
+    [BL_MUD] = ITEM_MUD,
+    [BL_CACTUS] = ITEM_CACTUS,
+    [BL_JUNGLE_LOG] = ITEM_JUNGLE_LOG,
+    [BL_JUNGLE_LEAF] = ITEM_JUNGLE_LEAF,
 };
 
 typedef struct {

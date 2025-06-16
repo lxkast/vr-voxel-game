@@ -21,15 +21,15 @@ typedef struct {
 void rng_init(rng_t *rng, uint64_t seed);
 
 /**
- * @brief Generates a random 64 bit number
+ * @brief Generates a random 64-bit number
  * 
  * @param rng A pointer to an rng
- * @return uint64_t A random 64 bit number
+ * @return uint64_t A random 64-bit number
  */
 uint64_t rng_ull(rng_t *rng);
 
 /**
- * @brief Generates a random (32 bit) float
+ * @brief Generates a random float between 0 and 1 (inclusive).
  * 
  * @param rng A pointer to an rng
  * @return float A random float
@@ -44,7 +44,7 @@ float rng_float(rng_t *rng);
  * @param max The maximum value the random number can take
  * @return float The random number
  */
-float rng_floatRange(rng_t *rng, const float min, const float max);
+float rng_floatRange(rng_t *rng, float min, float max);
 
 
 /**
@@ -78,11 +78,14 @@ float noise_value(noise_t *n, int x, int z);
 float noise_smoothValue(noise_t *n, float x, float y);
 
 /**
- * @brief A function representing a heightmap
- * 
+ * @brief A fractal brownian motion function
+ *
  * @param n A pointer to a noise object
  * @param x The first input
- * @param z The second input
- * @return float The random noise value
+ * @param y The second input
+ * @param octaves The number of octaves of noise
+ * @param persistence The persistence
+ * @param baseFrequency The base frequency
+ * @return float The value from the noise
  */
-float noise_height(noise_t *n, int x, int z);
+float noise_fbm(noise_t *n, float x, float y, int octaves, float persistence, float baseFrequency);

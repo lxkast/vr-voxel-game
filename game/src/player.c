@@ -25,7 +25,7 @@ static void player_addToWorld(player_t *p, world_t *w) {
 }
 
 void player_init(world_t *w, player_t *p) {
-    vec3 start = {0.f, 50.f, 0.f};
+    vec3 start = {0.f, 100.f, 0.f};
 
     while (true) {
         blockData_t bd;
@@ -46,7 +46,7 @@ void player_init(world_t *w, player_t *p) {
             .yaw = 0,
         },
         .lookVector = { 0.f, 0.f, 0.f },
-        .cameraOffset = {0.3f, 1.6f, 0.3f},
+        .cameraOffset = {0.3f, 1.8f, 0.3f},
         .hotbar = {
             .slots = {
                 {ITEM_DIRT, 64},
