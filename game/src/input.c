@@ -99,6 +99,11 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
                 player->entity.grounded = false;
             }
         }
+        if (buttons[1]) {
+            player_removeBlock(player, w);
+        } else if (buttons[2]) {
+            player_placeBlock(player, w);
+        }
     }
 
     // This is temporary and for development purposes - allows us to create a structure from
