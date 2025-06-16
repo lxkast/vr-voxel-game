@@ -143,7 +143,7 @@ int main(void) {
     */
 
 
-    const GLuint texture = loadTextureRGBA("textures/atlas.png", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
+    const GLuint texture = loadTexture("textures/atlas.png", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
 
     glUseProgram(program);
     const int mainModelLocation = glGetUniformLocation(program, "model");
@@ -269,8 +269,13 @@ int main(void) {
             postProcess_bindBuffer(&postProcess.rightFramebuffer);
             glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
             camera_translateX(&camera, 2 * EYE_OFFSET);
             camera_setView(&camera, program);
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, texture);
+            glUniform1i(glGetUniformLocation(program, "uTextureAtlas"), 0);
             world_draw(&world, mainModelLocation, &camera, projection);
             world_drawHighlight(&world, mainModelLocation);
 
