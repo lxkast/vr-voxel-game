@@ -123,3 +123,15 @@ const float quadVertices[] = {
 };
 
 const unsigned int quadVerticesSize = sizeof(quadVertices);
+
+const float squareVertices[] = {
+    -1.f, 1.f, 0.f,    0.f, 1.f,
+    -1.f, -1.f, 0.f,    0.f, 0.f,
+    1.f, -1.f, 0.f,    1.f, 0.f,
+
+    -1.f, 1.f, 0.f,    0.f, 1.f,
+    1.f, -1.f, 0.f,    1.f, 0.f,
+    1.f, 1.f, 0.f,    1.f, 1.f
+};
+const unsigned int squareVerticesSize = sizeof(squareVertices);
+
