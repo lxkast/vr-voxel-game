@@ -9,12 +9,11 @@
 #include "uthash.h"
 #include "noise.h"
 
-
-#define MA_ENABLE_MP3
 #define ENABLE_AUDIO
 
 #ifdef ENABLE_AUDIO
 #include "../external/miniaudio/miniaudio.h"
+#define MA_ENABLE_MP3
 #endif
 
 #define MAX_CHUNKS 256
