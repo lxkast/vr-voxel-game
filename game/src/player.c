@@ -25,7 +25,7 @@ static void player_addToWorld(player_t *p, world_t *w) {
 }
 
 void player_init(world_t *w, player_t *p) {
-    vec3 start = {0.f, 50.f, 0.f};
+    vec3 start = {0.f, 100.f, 0.f};
 
     while (true) {
         blockData_t bd;
