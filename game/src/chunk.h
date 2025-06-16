@@ -43,7 +43,7 @@ typedef struct {
     rng_t rng;
     /// A noise object
     noise_t noise;
-    /// The chunk of the biome
+    /// The biome of the chunk
     biome_e biome;
 } chunk_t;
 
