@@ -4,14 +4,11 @@
 #include <GLFW/glfw3.h>
 #include <logging.h>
 #include <stdio.h>
-#include "analytics.h"
 #include "camera.h"
 #include "entity.h"
 #include "player.h"
-#include "postprocess.h"
-#include "shaderutil.h"
-#include "texture.h"
 #include "world.h"
+#include "hud.h"
 
 #define SPRINT_MULTIPLIER 1.3f
 #define GROUND_ACCELERATION 35.f
@@ -30,10 +27,12 @@ static vec3 topRight = {0.f,0.f,0.f};
 static vec3 origin = {0.f,0.f,0.f};
 static block_t originBlock = BL_AIR;
 
+static bool hudOpen = false;
+
 /*
  * This function uses polling, this means that it is better for "continuous" presses, ie holding W
  */
-void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
+void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, world_t *w) {
     vec3 acceleration = { 0.f, GRAVITY_ACCELERATION, 0.f };
 
     const float sprintMultiplier = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? SPRINT_MULTIPLIER : 1.f ;
@@ -44,6 +43,16 @@ void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) direction[2] -= 1.0f;
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) direction[0] -= 1.0f;
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) direction[0] += 1.0f;
+
+    if (joystickID == -1) {
+        if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !hudOpen) {
+            open_hud(camera, player);
+            hudOpen = true;
+        } else if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE && hudOpen) {
+            close_hud(camera, player);
+            hudOpen = false;
+        }
+    }
 
     glm_vec3_normalize(direction);
 
@@ -96,6 +105,14 @@ void processPlayerInput(GLFWwindow *window, player_t *player, world_t *w) {
             player_removeBlock(player, w);
         } else if (buttons[2]) {
             player_placeBlock(player, w);
+        }
+
+        if (buttons[0] && !hudOpen) {
+            open_hud(camera, player);
+            hudOpen = true;
+        } else if (!buttons[0] && hudOpen) {
+            close_hud(camera, player);
+            hudOpen = false;
         }
     }
 

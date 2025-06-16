@@ -31,3 +31,6 @@ extern const unsigned int itemBlockVerticesSize;
 
 extern const float quadVertices[];
 extern const unsigned int quadVerticesSize;
+
+extern const float squareVertices[];
+extern const unsigned int squareVerticesSize;
