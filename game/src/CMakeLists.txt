@@ -8,7 +8,6 @@ endif()
 list(REMOVE_ITEM SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/hardware/test.c")
 add_executable(extension
         ${SRC_FILES}
-        item.h
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE logging)
