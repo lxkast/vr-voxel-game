@@ -259,3 +259,11 @@ void world_addEntity(world_t *w, worldEntity_t we);
 void world_removeItemEntity(world_t *w, int entityIndex);
 
 void world_drawAllEntities(const world_t *w, int modelLocation);
+
+/**
+ * @brief Gets the type of block at a chosen position
+ * @param w a pointer to the world
+ * @param position the position to get a block at
+ * @return The type of the block
+ */
+block_t getBlockType(world_t *w, vec3 position);

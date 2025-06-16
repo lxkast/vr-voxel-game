@@ -46,12 +46,12 @@ void player_init(world_t *w, player_t *p) {
             .yaw = 0,
         },
         .lookVector = { 0.f, 0.f, 0.f },
-        .cameraOffset = {0.3f, 1.6f, 0.3f},
+        .cameraOffset = {0.3f, 1.8f, 0.3f},
         .hotbar = {
             .slots = {
                 {ITEM_DIRT, 64},
-                {ITEM_GRASS, 32},
-                {ITEM_STONE, 16},
+                {ITEM_STONE, 64},
+                {ITEM_LOG, 64},
                 {NOTHING, 0},
                 {NOTHING, 0},
                 {NOTHING, 0},

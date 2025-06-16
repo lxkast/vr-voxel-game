@@ -9,6 +9,7 @@
 #include "noise.h"
 #include "uthash.h"
 #include "vertices.h"
+#include "structure.h"
 
 #define MAX_RAYCAST_DISTANCE 6.f
 #define RAYCAST_STEP_MAGNITUDE 0.1f
@@ -33,7 +34,7 @@ typedef struct chunkValue_t {
     struct {
         reloadData_e reload;
         size_t nChildren;
-        struct chunkValue_t *children[32];
+        chunkValue_t *children[32];
     } loadData;
 
 } chunkValue_t;
@@ -151,111 +152,6 @@ static chunkValue_t *world_loadChunk(world_t *w,
     if (r < cv->loadData.reload) cv->loadData.reload = r;
 
     return cv;
-}
-
-struct decorator {
-    int cacheN;
-    chunkValue_t *cache[3][3][3];
-
-    chunkValue_t *origin;
-    int ox, oy, oz;
-};
-
-static void decorator_init(struct decorator *d, chunkValue_t *origin, const int x, const int y, const int z) {
-    d->cacheN = 0;
-    d->origin = origin;
-    memset(d->cache, 0, 27 * sizeof(chunkValue_t *));
-    d->cache[1][1][1] = origin;
-    d->ox = x;
-    d->oy = y;
-    d->oz = z;
-}
-
-static bool decorator_initSurface(struct decorator *d, chunkValue_t *origin, const int x, const int z, const block_t block) {
-    for (int y = CHUNK_SIZE - 2; y >= 0; y--) {
-        if (origin->chunk->blocks[x][y][z] == block) {
-            decorator_init(d, origin, x, y + 1, z);
-            return true;
-        }
-    }
-    return false;
-}
-
-static void decorator_placeBlock(struct decorator *d,
-                                 world_t *world,
-                                 int x,
-                                 int y,
-                                 int z,
-                                 const block_t block) {
-    x = d->ox + x;
-    y = d->oy + y;
-    z = d->oz + z;
-
-    const int cx = x >> 4;
-    const int cy = y >> 4;
-    const int cz = z >> 4;
-
-    if (-1 <= cx && cx <= 1 && -1 <= cy && cy <= 1 && -1 <= cz && cz <= 1) {
-        chunkValue_t **cacheValue = &d->cache[cx + 1][cy + 1][cz + 1];
-        if (!*cacheValue) {
-            *cacheValue = world_loadChunk(world,
-                                          d->origin->chunk->cx + cx,
-                                          d->origin->chunk->cy + cy,
-                                          d->origin->chunk->cz + cz,
-                                          LL_INIT,
-                                          REL_CHILD);
-            if (d->origin->loadData.nChildren > 31) {
-                LOG_FATAL("Buffer overflow in chunk children");
-            }
-            bool found = false;
-            for (int i = 0; i < d->origin->loadData.nChildren; i++) {
-                if (d->origin->loadData.children[i] == *cacheValue) {
-                    found = true;
-                    break;
-                }
-            }
-            if (found) {
-                d->origin->loadData.children[d->origin->loadData.nChildren++] = *cacheValue;
-            }
-        }
-
-        (*cacheValue)->chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)] = block;
-        (*cacheValue)->chunk->tainted = true;
-    }
-}
-
-static void decorator_placeTree(struct decorator *d, world_t *world) {
-    for (int y = 2; y < 6; y++) {
-        for (int x = -2; x <= 2; x++) {
-            for (int z = -2; z <= 2; z++) {
-                if (y < 4 || (abs(x) + abs(z) < 2)) {
-                    decorator_placeBlock(d, world, x, y, z, BL_LEAF);
-                }
-            }
-        }
-    }
-
-    decorator_placeBlock(d, world, 0, 0, 0, BL_LOG);
-    decorator_placeBlock(d, world, 0, 1, 0, BL_LOG);
-    decorator_placeBlock(d, world, 0, 2, 0, BL_LOG);
-    decorator_placeBlock(d, world, 0, 3, 0, BL_LOG);
-    decorator_placeBlock(d, world, 0, 4, 0, BL_LOG);
-
-}
-
-
-static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
-    struct decorator d;
-
-    for (int x = 0; x < CHUNK_SIZE; x++) {
-        for (int z = 0; z < CHUNK_SIZE; z++) {
-            if (rng_float(&cv->chunk->rng) < 0.01f) {
-                if (decorator_initSurface(&d, cv, x, z, BL_GRASS)) {
-                    decorator_placeTree(&d, w);
-                }
-            }
-        }
-    }
 }
 
 static bool getBlockAddr(world_t *w, const int x, const int y, const int z, block_t **block, chunk_t **chunk) {
@@ -531,6 +427,136 @@ void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, bl
     }
 }
 
+block_t getBlockType(world_t *w, vec3 position) {
+    blockData_t bd;
+    if (!world_getBlock(w, position, &bd)) {
+        return BL_AIR;
+    }
+    return bd.type;
+}
+
+
+static void decorator_init(decorator_t *d, chunkValue_t *origin, const int x, const int y, const int z) {
+    d->cacheN = 0;
+    d->origin = origin;
+    memset(d->cache, 0, 27 * sizeof(chunkValue_t *));
+    d->cache[1][1][1] = origin;
+    d->ox = x;
+    d->oy = y;
+    d->oz = z;
+}
+
+static bool decorator_initSurface(decorator_t *d, chunkValue_t *origin, const int x, const int z, const block_t block) {
+    for (int y = CHUNK_SIZE - 1; y >= 0; y--) {
+        if (origin->chunk->blocks[x][y][z] == block) {
+            decorator_init(d, origin, x, y + 1, z);
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool world_initStructure(world_t *w, structure_t *structure, chunkValue_t *origin, const int x, const int z, const block_t block) {
+    for (int y = CHUNK_SIZE - 1; y >= 0; y--) {
+        const block_t currBlock = origin->chunk->blocks[x][y][z];
+        if (currBlock != BL_AIR) {
+            if (currBlock == block) {
+
+                for (int i = 0; i < structure->numBlocks; i++) {
+                    const int testX = x + structure->blocks[i].x;
+                    const int testY = y + structure->blocks[i].y + 1;
+                    const int testZ = z + structure->blocks[i].z;
+                    if (testX < 0 || testX > CHUNK_SIZE - 1 || testY < 0 || testY > CHUNK_SIZE - 1 || testZ < 0 || testZ > CHUNK_SIZE - 1 ) {
+                        if (getBlockType(w, (vec3){(float)(origin->chunk->cx*CHUNK_SIZE + testX), (float)(origin->chunk->cy*CHUNK_SIZE + testY), (float)(origin->chunk->cz*CHUNK_SIZE + testZ)}) != BL_AIR) {
+                            return false;
+                        }
+                    } else {
+                        if (origin->chunk->blocks[testX][testY][testZ] != BL_AIR) {
+                            return false;
+                        }
+                    }
+                }
+
+                decorator_init(&structure->decorator, origin, x, y + 1, z);
+                return true;
+            }
+            return false;
+        }
+    }
+    return false;
+}
+
+static void decorator_placeBlock(decorator_t *d,
+                                 world_t *world,
+                                 int x,
+                                 int y,
+                                 int z,
+                                 const block_t block,
+                                 const float chance) {
+    x = d->ox + x;
+    y = d->oy + y;
+    z = d->oz + z;
+
+    const int cx = x >> 4;
+    const int cy = y >> 4;
+    const int cz = z >> 4;
+
+    if (-1 <= cx && cx <= 1 && -1 <= cy && cy <= 1 && -1 <= cz && cz <= 1) {
+        chunkValue_t **cacheValue = &d->cache[cx + 1][cy + 1][cz + 1];
+        if (!*cacheValue) {
+            *cacheValue = world_loadChunk(world,
+                                          d->origin->chunk->cx + cx,
+                                          d->origin->chunk->cy + cy,
+                                          d->origin->chunk->cz + cz,
+                                          LL_INIT,
+                                          REL_CHILD);
+            if (d->origin->loadData.nChildren > 31) {
+                LOG_FATAL("Buffer overflow in chunk children");
+            }
+            bool found = false;
+            for (int i = 0; i < d->origin->loadData.nChildren; i++) {
+                if (d->origin->loadData.children[i] == *cacheValue) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                d->origin->loadData.children[d->origin->loadData.nChildren++] = *cacheValue;
+            }
+        }
+
+        if (rng_float(&(*cacheValue)->chunk->rng) > chance) {
+            return;
+        }
+
+        (*cacheValue)->chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)] = block;
+        (*cacheValue)->chunk->tainted = true;
+    }
+}
+
+static void world_placeStructure(world_t *world, structure_t *structure) {
+    for (int i = 0; i < structure->numBlocks; i++) {
+        const structureBlock_t block = structure->blocks[i];
+        decorator_placeBlock(&structure->decorator, world, block.x, block.y, block.z, block.type, block.chanceToAppear);
+    }
+}
+
+static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
+    for (int x = 0; x < CHUNK_SIZE; x++) {
+        for (int z = 0; z < CHUNK_SIZE; z++) {
+            for (int i = 0; i < numStructures; i++) {
+                structure_t structure = structures[i];
+                if (rng_float(&cv->chunk->rng) < 0.01) {
+                    if (world_initStructure(w, &structure, cv, x, z, structure.base)) {
+                        world_placeStructure(w, &structure);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+}
+
 static void meshItemEntity(worldEntity_t *e) {
     glGenVertexArrays(1, &e->vao);
     glGenBuffers(1, &e->vbo);
@@ -714,18 +740,6 @@ bool world_save(const world_t *w, const char *dir) {
     free(empty);
     free(nameBuf);
     return true;
-}
-
-/**
- * @brief Gets the type of a block at a chosen position
- * @param w a pointer to the world
- * @param position the position to get a block at
- * @return The type of the block
- */
-static block_t getBlockType(world_t *w, vec3 position) {
-    blockData_t bd;
-    world_getBlock(w, position, &bd);
-    return bd.type;
 }
 
 raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection, const float raycastDistance) {
