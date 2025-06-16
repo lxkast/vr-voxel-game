@@ -644,12 +644,40 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
     if (!getBlockAddr(w, x, y, z, &bp, &cp)) return false;
 
     if (*bp == BL_AIR) return false;
+
+    ivec3 blockPos = { x - ((x >> 4) << 4), y - ((y >> 4) << 4), z - ((z >> 4) << 4) };
+
+    unsigned char torchValue = EXTRACT_TORCH(cp->lightMap[blockPos[0]][blockPos[1]][blockPos[2]]);
+
     if (*bp == BL_GLOWSTONE) {
         lightQueueItem_t qi = {
             .pos = { x - ((x >> 4) << 4), y - ((y >> 4) << 4), z - ((z >> 4) << 4) },
-            .lightValue = LIGHT_MAX_VALUE };
+            .lightValue = torchValue };
         queue_push(&cp->lightTorchDeletionQueue, qi);
     }
+    if (*bp != BL_LEAF) {
+        for (int dir = 0; dir < 6; ++dir) {
+            ivec3 nPos;
+            memcpy(nPos, directions[dir], sizeof(ivec3));
+            glm_ivec3_add(nPos, blockPos, nPos);
+            if (nPos[0] < 0 || nPos[0] >= CHUNK_SIZE ||
+                nPos[1] < 0 || nPos[1] >= CHUNK_SIZE ||
+                nPos[2] < 0 || nPos[2] >= CHUNK_SIZE) {
+                continue;
+            }
+            unsigned char neighborLightMapValue = cp->lightMap[nPos[0]][nPos[1]][nPos[2]];
+            unsigned char neighborSun = EXTRACT_SUN(neighborLightMapValue);
+            unsigned char neighborTorch = EXTRACT_TORCH(neighborLightMapValue);
+
+            if (neighborSun > 0) {
+                queue_push(&cp->lightSunInsertionQueue, (lightQueueItem_t){ .pos = {nPos[0], nPos[1], nPos[2]}, .lightValue = neighborSun });
+            }
+            if (neighborTorch > 0) {
+                queue_push(&cp->lightTorchInsertionQueue, (lightQueueItem_t){ .pos = {nPos[0], nPos[1], nPos[2]}, .lightValue = neighborTorch });
+            }
+        }
+    }
+
 
     const worldEntity_t entity = createItemEntity(w, (vec3){(float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f}, BLOCK_TO_ITEM[*bp]);
     world_addEntity(w, entity);
@@ -668,11 +696,28 @@ bool world_placeBlock(world_t *w, const int x, const int y, const int z, const b
     if (*bp != BL_AIR) {
         return false;
     }
+
+    ivec3 blockPos = { x - ((x >> 4) << 4), y - ((y >> 4) << 4), z - ((z >> 4) << 4) };
+
     if (block == BL_GLOWSTONE) {
         lightQueueItem_t qi = {
-            .pos = { x - ((x >> 4) << 4), y - ((y >> 4) << 4), z - ((z >> 4) << 4) },
             .lightValue = LIGHT_MAX_VALUE };
+        memcpy(&qi.pos, &blockPos, sizeof(ivec3));
         queue_push(&cp->lightTorchInsertionQueue, qi);
+    }
+    int sunValue = EXTRACT_SUN(cp->lightMap[blockPos[0]][blockPos[1]][blockPos[2]]);
+    int torchValue = EXTRACT_TORCH(cp->lightMap[blockPos[0]][blockPos[1]][blockPos[2]]);
+    if (sunValue > 0 && block != BL_LEAF) {
+        lightQueueItem_t qi = {
+            .lightValue = sunValue };
+        memcpy(&qi.pos, &blockPos, sizeof(ivec3));
+        queue_push(&cp->lightSunDeletionQueue, qi);
+    }
+    if (torchValue > 0 && block != BL_LEAF) {
+        lightQueueItem_t qi = {
+            .lightValue = torchValue };
+        memcpy(&qi.pos, &blockPos, sizeof(ivec3));
+        queue_push(&cp->lightTorchDeletionQueue, qi);
     }
     *bp = block;
     cp->tainted = true;

@@ -238,6 +238,46 @@ static void processSunLight(chunk_t *c) {
             }
         }
     }
+    while (c->lightSunDeletionQueue.size > 0) {
+        lightQueueItem_t head = queue_pop(&c->lightSunDeletionQueue);
+        unsigned char lightLevel = EXTRACT_SUN(c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]]);
+        if (lightLevel <= 0) {
+            continue;
+        }
+        lightLevel = head.lightValue;
+        // set sunlight to 0
+        c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]] &= LIGHT_TORCH_MASK;
+
+        for (int dir = 0; dir < 6; ++dir) {
+            ivec3 dirVec;
+            memcpy(&dirVec, &directions[dir], sizeof(ivec3));
+            ivec3 nPos;
+            glm_ivec3_add(head.pos, dirVec, nPos);
+
+            bool validNeighbour = true;
+            for (int i = 0; i < 3; i++) {
+                if (nPos[i] < 0 || nPos[i] >= CHUNK_SIZE) {
+                    validNeighbour = false;
+                    break;
+                }
+            }
+            if (!validNeighbour) {
+                continue;
+            }
+
+            unsigned char neighbourLight = EXTRACT_SUN(c->lightMap[nPos[0]][nPos[1]][nPos[2]]);
+            if ((c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_AIR || c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_LEAF)) {
+                lightQueueItem_t nItem = { .lightValue = neighbourLight };
+                memcpy(&nItem.pos, &nPos, sizeof(ivec3));
+                if (dir == DIR_MINUSY || (neighbourLight < lightLevel && neighbourLight != 0)) {
+                    queue_push(&c->lightSunDeletionQueue, nItem);
+                } else if (neighbourLight >= lightLevel){
+                    queue_push(&c->lightSunInsertionQueue, nItem);
+                }
+            }
+        }
+    }
+
     while (c->lightSunInsertionQueue.size > 0) {
         lightQueueItem_t head = queue_pop(&c->lightSunInsertionQueue);
         unsigned char lightLevel = (LIGHT_SUN_MASK & c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]]) >> 4;
