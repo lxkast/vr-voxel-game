@@ -1,4 +1,4 @@
-file(GLOB_RECURSE SRC_FILES
+file(GLOB SRC_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/*.c"
 )
 

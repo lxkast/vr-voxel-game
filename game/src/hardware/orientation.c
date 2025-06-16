@@ -89,11 +89,7 @@ static void update(double accels[3]) {
     quat_conjugate(currentState, inv);
     double other[3];
     quat_vecmul(inv, gravityDir, predicted);
-
-    LOG_DEBUG("Predicted: \t%f %f %f", predicted[0], predicted[1], predicted[2]);
-    LOG_DEBUG("Actual: \t%f %f %f", accels[0], accels[1], accels[2]);
-    LOG_DEBUG("Other:  \t%f %f %f", other[0], other[1], other[2]);    
-//    return; 
+ 
     double yk[3] = {accels[0] - predicted[0], accels[1] - predicted[1], accels[2] - predicted[2]};
     double H[3][4] = {
         {-currentState[3] * 2, -currentState[2] * 2, -currentState[1] * 2, -currentState[0] * 2},

@@ -132,11 +132,11 @@ void processCameraInput(GLFWwindow *window, camera_t *camera) {
     #ifdef BUILD_FOR_RPI
         quaternion orientation;
         imu_getOrientation(orientation);
-        c->ori[0] = orientation[1];
-        c->ori[1] = orientation[2];
-        c->ori[2] = orientation[3];
-        c->ori[3] = orientation[0];
-        camera_setRuf(c);
+        camera->ori[0] = orientation[1];
+        camera->ori[1] = orientation[2];
+        camera->ori[2] = orientation[3];
+        camera->ori[3] = orientation[0];
+        camera_update(camera);
     #else
         double currentMouse[2];
         glfwGetCursorPos(window, &currentMouse[0], &currentMouse[1]);
