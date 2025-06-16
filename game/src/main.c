@@ -11,6 +11,8 @@
 #include "shaderutil.h"
 #include "texture.h"
 #include "world.h"
+#include "entity.h"
+#include "player.h"
 
 #include "input.h"
 #include "hud.h"
@@ -226,7 +228,7 @@ int main(void) {
 
         player_attachCamera(&player, &camera);
 
-
+        camera_update(&camera);
         glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
         glClear(GL_DEPTH_BUFFER_BIT);
         glClear(GL_COLOR_BUFFER_BIT);
