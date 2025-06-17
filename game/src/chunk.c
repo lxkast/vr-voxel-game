@@ -122,7 +122,6 @@ void chunk_createDeserialise(chunk_t *c, FILE *fp) {
 }
 
 void chunk_initSun(chunk_t *c) {
-    return;
     for (int i = 0; i < CHUNK_SIZE; ++i) {
         for (int j = 0; j < CHUNK_SIZE; ++j) {
             if (c->blocks[i][CHUNK_SIZE - 1][j] == BL_AIR || c->blocks[i][CHUNK_SIZE - 1][j] == BL_LEAF) {

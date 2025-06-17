@@ -140,6 +140,21 @@ chunkValue_t *world_loadChunk(world_t *w,
             chunk_generate(cv->chunk);
             world_decorateChunk(w, cv);
             chunk_initSun(cv->chunk);
+            // flag all neighbouring chunks for re-meshing
+            int offsets[] = { -1, 0, 1 };
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 3; j++) {
+                    for (int k = 0; k < 3; k++) {
+                        chunk_t *neighbour = world_getFullyLoadedChunk(w,
+                            cv->chunk->cx + offsets[i],
+                            cv->chunk->cy + offsets[j],
+                            cv->chunk->cz + offsets[k]);
+                        if (neighbour) {
+                            neighbour->tainted = true;
+                        }
+                    }
+                }
+            }
         }
         cv->ll = ll;
     }
@@ -250,7 +265,7 @@ void world_draw(const world_t *w, const int modelLocation, camera_t *cam, mat4 p
     double planes[6][4];
     calculatePlanes(cam, projection, planes);
 
-    // only draw chunks after lighting is fully processed
+    // process darkness propagation between all chunks
     while (true) {
         bool deletionFinished = true;
         HASH_ITER(hh, w->clusterTable, cluster, tmp) {
@@ -268,6 +283,7 @@ void world_draw(const world_t *w, const int modelLocation, camera_t *cam, mat4 p
             break;
         }
     }
+    // process light propagation between all chunks
     while (true) {
         bool insertionFinished = true;
         HASH_ITER(hh, w->clusterTable, cluster, tmp) {
@@ -286,6 +302,7 @@ void world_draw(const world_t *w, const int modelLocation, camera_t *cam, mat4 p
         }
     }
 
+    // draw all chunks that are visible
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
         for (int i = 0; i < C_T * C_T * C_T; i++) {
             if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
