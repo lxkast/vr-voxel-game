@@ -19,7 +19,7 @@ typedef enum {
     ITEM_MUD,
     ITEM_CACTUS,
     ITEM_JUNGLE_LOG,
-    ITEM_JUNGLE_LEAF
+    ITEM_JUNGLE_LEAF,
 } item_e;
 
 typedef struct {
