@@ -23,22 +23,6 @@ typedef struct {
     int x, y, z;
 } clusterKey_t;
 
-/**
- * @brief Value stored in hashmap entry array
- */
-typedef struct chunkValue_t {
-    /// The pointer to a heap allocated chunk
-    chunk_t *chunk;
-    /// The current level of loading the chunk is in
-    chunkLoadLevel_e ll;
-
-    struct {
-        reloadData_e reload;
-        size_t nChildren;
-        chunkValue_t *children[32];
-    } loadData;
-
-} chunkValue_t;
 
 /**
  * @brief A cluster and also hashmap
@@ -104,6 +88,15 @@ static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int c
 
 static void world_decorateChunk(world_t *w, chunkValue_t *cv);
 
+chunk_t *world_getFullyLoadedChunk(world_t *w, const int cx, const int cy, const int cz) {
+    size_t offset;
+
+    cluster_t *cluster = clusterGet(w, cx, cy, cz, true, &offset);
+    chunkValue_t *cv = &cluster->cells[offset];
+
+    return cv->chunk && cv->ll > LL_PARTIAL ? cv->chunk : NULL;
+}
+
 /**
  * @brief Loads a chunk.
  * @param w A pointer to a world
@@ -113,7 +106,7 @@ static void world_decorateChunk(world_t *w, chunkValue_t *cv);
  * @param ll The load level to load to if the chunk doesn't exist
  * @param r The reload style of the chunk
  */
-static chunkValue_t *world_loadChunk(world_t *w,
+chunkValue_t *world_loadChunk(world_t *w,
                      const int cx,
                      const int cy,
                      const int cz,
@@ -268,7 +261,7 @@ void world_draw(const world_t *w, const int modelLocation, camera_t *cam, mat4 p
                      || cluster->cells[i].chunk->lightTorchDeletionQueue.size > 0
                      || cluster->cells[i].chunk->lightSunInsertionQueue.size > 0
                      || cluster->cells[i].chunk->lightSunDeletionQueue.size > 0)) {
-                    chunk_processLighting(cluster->cells[i].chunk);
+                    chunk_processLighting(cluster->cells[i].chunk, w);
                     lightingFinished = false;
                 }
             }
@@ -767,6 +760,7 @@ bool world_placeBlock(world_t *w, const int x, const int y, const int z, const b
     }
     int sunValue = EXTRACT_SUN(cp->lightMap[blockPos[0]][blockPos[1]][blockPos[2]]);
     int torchValue = EXTRACT_TORCH(cp->lightMap[blockPos[0]][blockPos[1]][blockPos[2]]);
+    LOG_DEBUG("torch value: %d", torchValue);
     if (sunValue > 0 && block != BL_LEAF) {
         lightQueueItem_t qi = {
             .lightValue = sunValue };

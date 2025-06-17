@@ -19,6 +19,8 @@ typedef enum {
     BL_JUNGLE_LEAF
 } block_t;
 
+#define BL_TRANSPARENT(x) (x == BL_AIR || x == BL_LEAF || x == BL_JUNGLE_LEAF)
+
 /**
  * @brief Struct that holds data about a single block.
  */
