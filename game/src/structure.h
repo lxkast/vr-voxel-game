@@ -1,6 +1,8 @@
 #pragma once
 #include "block.h"
 
+#define STRUCTURE_SIZE(pattern) sizeof(pattern) / sizeof(structureBlock_t)
+
 typedef struct chunkValue_t chunkValue_t;
 
 typedef struct {
@@ -30,7 +32,7 @@ static const structureBlock_t cactusPattern[] = {
 };
 
 const structure_t cactusStructure = {
-    .numBlocks = 3,
+    .numBlocks = STRUCTURE_SIZE(cactusPattern),
     .blocks = cactusPattern,
 };
 
@@ -64,7 +66,7 @@ static const structureBlock_t treePattern[] = {
 };
 
 const structure_t treeStructure = {
-    .numBlocks = 63,
+    .numBlocks = STRUCTURE_SIZE(treePattern),
     .blocks = treePattern,
 };
 
@@ -103,12 +105,12 @@ static const structureBlock_t jungleTreePattern[] = {
 };
 
 const structure_t jungleTreeStructure = {
-    .numBlocks = 68,
+    .numBlocks = STRUCTURE_SIZE(jungleTreePattern),
     .blocks = jungleTreePattern,
 };
 
 // second structure for testing purposes
-static const structureBlock_t stoneT[] = {
+static const structureBlock_t stoneTPattern[] = {
     {BL_STONE, 0, 0, 0, 1.f},
     {BL_STONE, 0, 1, 0, 1.f},
     {BL_STONE, 0, 2, 0, 1.f},
@@ -117,11 +119,11 @@ static const structureBlock_t stoneT[] = {
 };
 
 const structure_t stoneTStructure = {
-    .numBlocks = 5,
-    .blocks = stoneT,
+    .numBlocks = STRUCTURE_SIZE(stoneTPattern),
+    .blocks = stoneTPattern,
 };
 
-static const structureBlock_t woodenHouse[] = {
+static const structureBlock_t woodenHousePattern[] = {
     {5, -1, 0, -2, 1.f},
     {5, -1, 0, 2, 1.f},
     {5, -1, 1, -2, 1.f},
@@ -160,8 +162,8 @@ static const structureBlock_t woodenHouse[] = {
 };
 
 const structure_t woodenHouseStructure = {
-    .numBlocks = sizeof(woodenHouse)/sizeof(structureBlock_t),
-    .blocks = woodenHouse,
+    .numBlocks = STRUCTURE_SIZE(woodenHousePattern),
+    .blocks = woodenHousePattern,
 };
 
 structure_t structures[] = {
