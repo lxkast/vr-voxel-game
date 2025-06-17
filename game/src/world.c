@@ -459,34 +459,65 @@ static bool decorator_initSurface(decorator_t *d, chunkValue_t *origin, const in
     return false;
 }
 
-static bool world_initStructure(world_t *w, structure_t *structure, chunkValue_t *origin, const int x, const int z, const block_t block) {
-    for (int y = CHUNK_SIZE - 1; y >= 0; y--) {
-        const block_t currBlock = origin->chunk->blocks[x][y][z];
-        if (currBlock != BL_AIR) {
-            if (currBlock == block) {
+static bool decorator_testBlock(decorator_t *d, world_t *world, int x, int y, int z, const block_t match) {
+    x = d->ox + x;
+    y = d->oy + y;
+    z = d->oz + z;
 
-                for (int i = 0; i < structure->numBlocks; i++) {
-                    const int testX = x + structure->blocks[i].x;
-                    const int testY = y + structure->blocks[i].y + 1;
-                    const int testZ = z + structure->blocks[i].z;
-                    if (testX < 0 || testX > CHUNK_SIZE - 1 || testY < 0 || testY > CHUNK_SIZE - 1 || testZ < 0 || testZ > CHUNK_SIZE - 1 ) {
-                        if (getBlockType(w, (vec3){(float)(origin->chunk->cx*CHUNK_SIZE + testX), (float)(origin->chunk->cy*CHUNK_SIZE + testY), (float)(origin->chunk->cz*CHUNK_SIZE + testZ)}) != BL_AIR) {
-                            return false;
-                        }
-                    } else {
-                        if (origin->chunk->blocks[testX][testY][testZ] != BL_AIR) {
-                            return false;
-                        }
-                    }
-                }
+    const int cx = x >> 4;
+    const int cy = y >> 4;
+    const int cz = z >> 4;
 
-                decorator_init(&structure->decorator, origin, x, y + 1, z);
-                return true;
+    if (-1 <= cx && cx <= 1 && -1 <= cy && cy <= 1 && -1 <= cz && cz <= 1) {
+        chunkValue_t **cacheValue = &d->cache[cx + 1][cy + 1][cz + 1];
+        if (!*cacheValue) {
+            *cacheValue = world_loadChunk(world,
+                                          d->origin->chunk->cx + cx,
+                                          d->origin->chunk->cy + cy,
+                                          d->origin->chunk->cz + cz,
+                                          LL_INIT,
+                                          REL_CHILD);
+            if (d->origin->loadData.nChildren > 31) {
+                LOG_FATAL("Buffer overflow in chunk children");
             }
+            bool found = false;
+            for (int i = 0; i < d->origin->loadData.nChildren; i++) {
+                if (d->origin->loadData.children[i] == *cacheValue) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                d->origin->loadData.children[d->origin->loadData.nChildren++] = *cacheValue;
+            }
+        }
+
+        const block_t b = (*cacheValue)->chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)];
+        return  b == BL_AIR || b == match;
+    }
+
+    return false;
+}
+
+
+static bool world_initStructure(world_t *w, structure_t *structure, chunkValue_t *origin, const int x, const int z, const block_t block) {
+    decorator_t d;
+    if (!decorator_initSurface(&d, origin, x, z, block)) {
+        return false;
+    }
+
+    for (int i = 0; i < structure->numBlocks; i++) {
+        if (!decorator_testBlock(&d, w, structure->blocks[i].x,
+                                        structure->blocks[i].y,
+                                        structure->blocks[i].z,
+                                        structure->blocks[i].allowOverlap ? structure->blocks[i].type : BL_AIR)) {
             return false;
         }
     }
-    return false;
+
+    structure->decorator = d;
+
+    return true;
 }
 
 static void decorator_placeBlock(decorator_t *d,
