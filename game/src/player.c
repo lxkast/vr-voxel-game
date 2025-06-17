@@ -53,7 +53,7 @@ void player_init(world_t *w, player_t *p) {
                 {ITEM_GRASS, 32},
                 {ITEM_STONE, 16},
                 {ITEM_GLOWSTONE, 64},
-                {NOTHING, 0},
+                {ITEM_SNOW, 64},
                 {NOTHING, 0},
                 {NOTHING, 0},
                 {NOTHING, 0},
