@@ -1,7 +1,3 @@
-//
-// Created by src24 on 27/05/25.
-//
-
 #include "datastructs.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -17,7 +13,7 @@
 static unsigned long hash_str(const char *str) {
     long hash = 5381;
     while (*str != '\0') {
-        hash = (hash << 5) + str[0] ^ hash;
+        hash = ((hash << 5) + str[0]) ^ hash;
         str++;
     }
     return hash;
