@@ -104,7 +104,7 @@ static vertex_t *greedyMeshDirection(world_t *w, chunk_t *c, direction_e dir, ve
                     continue;
                 }
                 seen[i][j][k] = true;
-                float light = c->lightMap[i][j][k];
+                unsigned char light = glm_imax(EXTRACT_SUN(c->lightMap[i][j][k]), EXTRACT_TORCH(c->lightMap[i][j][k]));
                 int width = 1;
                 int height = 1;
                 // expand width
@@ -119,11 +119,12 @@ static vertex_t *greedyMeshDirection(world_t *w, chunk_t *c, direction_e dir, ve
                     }
                     if (normalNextCoord[0] >= 0 && normalNextCoord[1] >= 0 && normalNextCoord[2] >= 0 &&
                         normalNextCoord[0] < CHUNK_SIZE && normalNextCoord[1] < CHUNK_SIZE && normalNextCoord[2] < CHUNK_SIZE) {
-                        if (light != c->lightMap[normalNextCoord[0]][normalNextCoord[1]][normalNextCoord[2]]) {
+                        if (light != glm_imax(EXTRACT_SUN(c->lightMap[normalNextCoord[0]][normalNextCoord[1]][normalNextCoord[2]]),
+                            EXTRACT_TORCH(c->lightMap[normalNextCoord[0]][normalNextCoord[1]][normalNextCoord[2]]))) {
                             break;
                         }
                     }
-                    if (seen[nx][ny][nz] || c->blocks[nx][ny][nz] != type || !faceIsVisible(c, nextCoord, dir) || light != c->lightMap[nextCoord[0]][nextCoord[1]][nextCoord[2]]) {
+                    if (seen[nx][ny][nz] || c->blocks[nx][ny][nz] != type || !faceIsVisible(c, nextCoord, dir)) {
                         break;
                     }
                     seen[nx][ny][nz] = true;
@@ -144,7 +145,8 @@ static vertex_t *greedyMeshDirection(world_t *w, chunk_t *c, direction_e dir, ve
                         }
                         if (normalNextCoord[0] >= 0 && normalNextCoord[1] >= 0 && normalNextCoord[2] >= 0 &&
                             normalNextCoord[0] < CHUNK_SIZE && normalNextCoord[1] < CHUNK_SIZE && normalNextCoord[2] < CHUNK_SIZE) {
-                            if (light != c->lightMap[normalNextCoord[0]][normalNextCoord[1]][normalNextCoord[2]]) {
+                            if (light != glm_imax(EXTRACT_SUN(c->lightMap[normalNextCoord[0]][normalNextCoord[1]][normalNextCoord[2]]),
+                            EXTRACT_TORCH(c->lightMap[normalNextCoord[0]][normalNextCoord[1]][normalNextCoord[2]]))) {
                                 ok = false;
                                 break;
                             }
