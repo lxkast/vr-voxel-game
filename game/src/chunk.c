@@ -8,7 +8,7 @@
 
 #define LIGHT_MAX_VALUE 15
 
-extern void chunk_createMesh(chunk_t *c);
+extern void chunk_createMesh(void *w, chunk_t *c);
 
 static float smoothstep(const float min, const float max, float x) {
     x = glm_clamp((x - min) / (max - min), 0.f, 1.f);
@@ -122,6 +122,7 @@ void chunk_createDeserialise(chunk_t *c, FILE *fp) {
 }
 
 void chunk_initSun(chunk_t *c) {
+    // return;
     for (int i = 0; i < CHUNK_SIZE; ++i) {
         for (int j = 0; j < CHUNK_SIZE; ++j) {
             if (c->blocks[i][CHUNK_SIZE - 1][j] == BL_AIR || c->blocks[i][CHUNK_SIZE - 1][j] == BL_LEAF) {
@@ -186,8 +187,8 @@ void chunk_generate(chunk_t *c) {
     c->tainted = true;
 }
 
-void chunk_draw(chunk_t *c, const int modelLocation) {
-    if (c->tainted) chunk_createMesh(c);
+void chunk_draw(void *w, chunk_t *c, const int modelLocation) {
+    if (c->tainted) chunk_createMesh(w, c);
     c->tainted = false;
 
     mat4 model;

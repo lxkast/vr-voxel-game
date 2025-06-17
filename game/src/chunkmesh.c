@@ -23,7 +23,7 @@ static bool faceIsVisible(chunk_t *c, ivec3 blockPos, direction_e dir) {
 
 // writes vertices of a face specified by buf
 // returns pointer to next free position in the buffer
-static vertex_t *writeFace(chunk_t *c, vertex_t *buf, ivec3 blockPos, direction_e dir, int width, int height, int type) {
+static vertex_t *writeFace(world_t *w, chunk_t *c, vertex_t *buf, ivec3 blockPos, direction_e dir, int width, int height, int type) {
     ivec3 dirVec;
     memcpy(&dirVec, &directions[dir], sizeof(ivec3));
     int texIndex = type * 4;
@@ -36,7 +36,7 @@ static vertex_t *writeFace(chunk_t *c, vertex_t *buf, ivec3 blockPos, direction_
                 buf[i].y = buf[i].y * height + blockPos[1];
                 buf[i].z += blockPos[2];
                 buf[i].texIndex += texIndex;
-                buf[i].lightValue = computeVertexLight(c, buf[i].x, buf[i].y, buf[i].z, dir);
+                buf[i].lightValue = computeVertexLight(w, c, buf[i].x, buf[i].y, buf[i].z, dir);
             }
             break;
         case DIR_PLUSY:
@@ -46,7 +46,7 @@ static vertex_t *writeFace(chunk_t *c, vertex_t *buf, ivec3 blockPos, direction_
                 buf[i].y += blockPos[1];
                 buf[i].z = buf[i].z * height + blockPos[2];
                 buf[i].texIndex += texIndex;
-                buf[i].lightValue = computeVertexLight(c, buf[i].x, buf[i].y, buf[i].z, dir);
+                buf[i].lightValue = computeVertexLight(w, c, buf[i].x, buf[i].y, buf[i].z, dir);
             }
             break;
         case DIR_PLUSX:
@@ -56,7 +56,7 @@ static vertex_t *writeFace(chunk_t *c, vertex_t *buf, ivec3 blockPos, direction_
                 buf[i].y = buf[i].y * width + blockPos[1];
                 buf[i].z = buf[i].z * height + blockPos[2];
                 buf[i].texIndex += texIndex;
-                buf[i].lightValue = computeVertexLight(c, buf[i].x, buf[i].y, buf[i].z, dir);
+                buf[i].lightValue = computeVertexLight(w, c, buf[i].x, buf[i].y, buf[i].z, dir);
             }
             break;
     }
@@ -90,7 +90,7 @@ static void getNextCoord(ivec3 out, int i, int j, int k, direction_e dir, int wi
 }
 
 // greedy meshing in one direction, writes quads to buf, returns updated pointer
-static vertex_t *greedyMeshDirection(chunk_t *c, direction_e dir, vertex_t *buf) {
+static vertex_t *greedyMeshDirection(world_t *w, chunk_t *c, direction_e dir, vertex_t *buf) {
     ivec3 dirVec;
     memcpy(&dirVec, &directions[dir], sizeof(ivec3));
     vertex_t *nextPtr = buf;
@@ -164,7 +164,7 @@ static vertex_t *greedyMeshDirection(chunk_t *c, direction_e dir, vertex_t *buf)
                         seen[nx][ny][nz] = true;
                     }
                 }
-                nextPtr = writeFace(c, nextPtr, base, dir, width, height, type);
+                nextPtr = writeFace(w, c, nextPtr, base, dir, width, height, type);
             }
         }
     }
@@ -173,15 +173,16 @@ static vertex_t *greedyMeshDirection(chunk_t *c, direction_e dir, vertex_t *buf)
 
 /**
  * @brief Creates the mesh from a chunk
+ * @param w A pointer to a world
  * @param c A pointer to a chunk
  */
-void chunk_createMesh(chunk_t *c) {
+void chunk_createMesh(world_t *w, chunk_t *c) {
     const size_t bytesPerBlock = sizeof(vertex_t) * 36;
 
     vertex_t *buf = malloc(CHUNK_SIZE_CUBED * bytesPerBlock);
     vertex_t *nextPtr = buf;
     for (direction_e dir = 0; dir < 6; ++dir) {
-        nextPtr = greedyMeshDirection(c, dir, nextPtr);
+        nextPtr = greedyMeshDirection(w, c, dir, nextPtr);
     }
     const GLsizeiptr sizeToWrite = sizeof(vertex_t) * (nextPtr - buf);
     c->meshVertices = sizeToWrite / sizeof(vertex_t);

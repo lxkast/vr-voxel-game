@@ -6,8 +6,8 @@
 #include <logging.h>
 
 // computes the light value of a vertex by averaging the 4 light values in the direction of the normal
-float computeVertexLight(chunk_t *c, int vx, int vy, int vz, direction_e dir) {
-    const int offsets[2] = { 0, -1 };
+float computeVertexLight(world_t *w, chunk_t *c, int vx, int vy, int vz, direction_e dir) {
+    const int vertexOffset[2] = { 0, -1 };
 
     int count = 0;
     int sum = 0;
@@ -16,17 +16,30 @@ float computeVertexLight(chunk_t *c, int vx, int vy, int vz, direction_e dir) {
         case DIR_PLUSZ: {
             for (int i = 0; i < 2; ++i) {
                 for (int j = 0; j < 2; ++j) {
-                    int nx = vx + offsets[i];
-                    int ny = vy + offsets[j];
-                    int nz = vz;
-                    if (nx >= 0 && nx < CHUNK_SIZE &&
-                        ny >= 0 && ny < CHUNK_SIZE &&
-                        nz >= 0 && nz < CHUNK_SIZE) {
-                        int lv = c->lightMap[nx][ny][nz];
+                    ivec3 nPos = { vx + vertexOffset[i], vy + vertexOffset[j], vz };
+                    ivec3 chunkOffset = { 0, 0, 0 };
+                    for (int n = 0; n < 3; ++n) {
+                        if (nPos[n] < 0) {
+                            nPos[n] = CHUNK_SIZE - 1;
+                            chunkOffset[n] = -1;
+                        } else if (nPos[n] >= CHUNK_SIZE) {
+                            nPos[n] = 0;
+                            chunkOffset[n] = 1;
+                        }
+                    }
+                    if (chunkOffset[0] == 0 && chunkOffset[1] == 0 && chunkOffset[2] == 0) {
+                        int lv = c->lightMap[nPos[0]][nPos[1]][nPos[2]];
                         sum += glm_imax(lv & LIGHT_TORCH_MASK, (lv & LIGHT_SUN_MASK) >> 4);
                         count++;
                     } else {
-                        // TODO: fetch light value from neighbouring chunk
+                        ivec3 cPos = { c->cx, c->cy, c->cz };
+                        glm_ivec3_add(cPos, chunkOffset, cPos);
+                        chunk_t *nChunk = world_getFullyLoadedChunk(w, cPos[0], cPos[1], cPos[2]);
+                        if (nChunk) {
+                            int lv = nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]];
+                            sum += glm_imax(lv & LIGHT_TORCH_MASK, (lv & LIGHT_SUN_MASK) >> 4);
+                            count++;
+                        }
                     }
                 }
             }
@@ -36,17 +49,33 @@ float computeVertexLight(chunk_t *c, int vx, int vy, int vz, direction_e dir) {
             int dz = -1;
             for (int i = 0; i < 2; ++i) {
                 for (int j = 0; j < 2; ++j) {
-                    int nx = vx + offsets[i];
-                    int ny = vy + offsets[j];
+                    int nx = vx + vertexOffset[i];
+                    int ny = vy + vertexOffset[j];
                     int nz = vz + dz;
-                    if (nx >= 0 && nx < CHUNK_SIZE &&
-                        ny >= 0 && ny < CHUNK_SIZE &&
-                        nz >= 0 && nz < CHUNK_SIZE) {
-                        int lv = c->lightMap[nx][ny][nz];
+                    ivec3 nPos = { nx, ny, nz };
+                    ivec3 chunkOffset = { 0, 0, 0 };
+                    for (int n = 0; n < 3; ++n) {
+                        if (nPos[n] < 0) {
+                            nPos[n] = CHUNK_SIZE - 1;
+                            chunkOffset[n] = -1;
+                        } else if (nPos[n] >= CHUNK_SIZE) {
+                            nPos[n] = 0;
+                            chunkOffset[n] = 1;
+                        }
+                    }
+                    if (chunkOffset[0] == 0 && chunkOffset[1] == 0 && chunkOffset[2] == 0) {
+                        int lv = c->lightMap[nPos[0]][nPos[1]][nPos[2]];
                         sum += glm_imax(lv & LIGHT_TORCH_MASK, (lv & LIGHT_SUN_MASK) >> 4);
                         count++;
                     } else {
-                        // TODO: fetch light value from neighbouring chunk
+                        ivec3 cPos = { c->cx, c->cy, c->cz };
+                        glm_ivec3_add(cPos, chunkOffset, cPos);
+                        chunk_t *nChunk = world_getFullyLoadedChunk(w, cPos[0], cPos[1], cPos[2]);
+                        if (nChunk) {
+                            int lv = nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]];
+                            sum += glm_imax(lv & LIGHT_TORCH_MASK, (lv & LIGHT_SUN_MASK) >> 4);
+                            count++;
+                        }
                     }
                 }
             }
@@ -55,17 +84,33 @@ float computeVertexLight(chunk_t *c, int vx, int vy, int vz, direction_e dir) {
         case DIR_PLUSY: {
             for (int i = 0; i < 2; ++i) {
                 for (int j = 0; j < 2; ++j) {
-                    int nx = vx + offsets[i];
-                    int nz = vz + offsets[j];
+                    int nx = vx + vertexOffset[i];
+                    int nz = vz + vertexOffset[j];
                     int ny = vy;
-                    if (nx >= 0 && nx < CHUNK_SIZE &&
-                        ny >= 0 && ny < CHUNK_SIZE &&
-                        nz >= 0 && nz < CHUNK_SIZE) {
-                        int lv = c->lightMap[nx][ny][nz];
+                    ivec3 nPos = { nx, ny, nz };
+                    ivec3 chunkOffset = { 0, 0, 0 };
+                    for (int n = 0; n < 3; ++n) {
+                        if (nPos[n] < 0) {
+                            nPos[n] = CHUNK_SIZE - 1;
+                            chunkOffset[n] = -1;
+                        } else if (nPos[n] >= CHUNK_SIZE) {
+                            nPos[n] = 0;
+                            chunkOffset[n] = 1;
+                        }
+                    }
+                    if (chunkOffset[0] == 0 && chunkOffset[1] == 0 && chunkOffset[2] == 0) {
+                        int lv = c->lightMap[nPos[0]][nPos[1]][nPos[2]];
                         sum += glm_imax(lv & LIGHT_TORCH_MASK, (lv & LIGHT_SUN_MASK) >> 4);
                         count++;
                     } else {
-                        // TODO: fetch light value from neighbouring chunk
+                        ivec3 cPos = { c->cx, c->cy, c->cz };
+                        glm_ivec3_add(cPos, chunkOffset, cPos);
+                        chunk_t *nChunk = world_getFullyLoadedChunk(w, cPos[0], cPos[1], cPos[2]);
+                        if (nChunk) {
+                            int lv = nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]];
+                            sum += glm_imax(lv & LIGHT_TORCH_MASK, (lv & LIGHT_SUN_MASK) >> 4);
+                            count++;
+                        }
                     }
                 }
             }
@@ -75,17 +120,33 @@ float computeVertexLight(chunk_t *c, int vx, int vy, int vz, direction_e dir) {
             int dy = -1;
             for (int i = 0; i < 2; ++i) {
                 for (int j = 0; j < 2; ++j) {
-                    int nx = vx + offsets[i];
-                    int nz = vz + offsets[j];
+                    int nx = vx + vertexOffset[i];
+                    int nz = vz + vertexOffset[j];
                     int ny = vy + dy;
-                    if (nx >= 0 && nx < CHUNK_SIZE &&
-                        ny >= 0 && ny < CHUNK_SIZE &&
-                        nz >= 0 && nz < CHUNK_SIZE) {
-                        int lv = c->lightMap[nx][ny][nz];
+                    ivec3 nPos = { nx, ny, nz };
+                    ivec3 chunkOffset = { 0, 0, 0 };
+                    for (int n = 0; n < 3; ++n) {
+                        if (nPos[n] < 0) {
+                            nPos[n] = CHUNK_SIZE - 1;
+                            chunkOffset[n] = -1;
+                        } else if (nPos[n] >= CHUNK_SIZE) {
+                            nPos[n] = 0;
+                            chunkOffset[n] = 1;
+                        }
+                    }
+                    if (chunkOffset[0] == 0 && chunkOffset[1] == 0 && chunkOffset[2] == 0) {
+                        int lv = c->lightMap[nPos[0]][nPos[1]][nPos[2]];
                         sum += glm_imax(lv & LIGHT_TORCH_MASK, (lv & LIGHT_SUN_MASK) >> 4);
                         count++;
                     } else {
-                        // TODO: fetch light value from neighbouring chunk
+                        ivec3 cPos = { c->cx, c->cy, c->cz };
+                        glm_ivec3_add(cPos, chunkOffset, cPos);
+                        chunk_t *nChunk = world_getFullyLoadedChunk(w, cPos[0], cPos[1], cPos[2]);
+                        if (nChunk) {
+                            int lv = nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]];
+                            sum += glm_imax(lv & LIGHT_TORCH_MASK, (lv & LIGHT_SUN_MASK) >> 4);
+                            count++;
+                        }
                     }
                 }
             }
@@ -94,17 +155,33 @@ float computeVertexLight(chunk_t *c, int vx, int vy, int vz, direction_e dir) {
         case DIR_PLUSX: {
             for (int i = 0; i < 2; ++i) {
                 for (int j = 0; j < 2; ++j) {
-                    int ny = vy + offsets[i];
-                    int nz = vz + offsets[j];
+                    int ny = vy + vertexOffset[i];
+                    int nz = vz + vertexOffset[j];
                     int nx = vx;
-                    if (nx >= 0 && nx < CHUNK_SIZE &&
-                        ny >= 0 && ny < CHUNK_SIZE &&
-                        nz >= 0 && nz < CHUNK_SIZE) {
-                        int lv = c->lightMap[nx][ny][nz];
+                    ivec3 nPos = { nx, ny, nz };
+                    ivec3 chunkOffset = { 0, 0, 0 };
+                    for (int n = 0; n < 3; ++n) {
+                        if (nPos[n] < 0) {
+                            nPos[n] = CHUNK_SIZE - 1;
+                            chunkOffset[n] = -1;
+                        } else if (nPos[n] >= CHUNK_SIZE) {
+                            nPos[n] = 0;
+                            chunkOffset[n] = 1;
+                        }
+                    }
+                    if (chunkOffset[0] == 0 && chunkOffset[1] == 0 && chunkOffset[2] == 0) {
+                        int lv = c->lightMap[nPos[0]][nPos[1]][nPos[2]];
                         sum += glm_imax(lv & LIGHT_TORCH_MASK, (lv & LIGHT_SUN_MASK) >> 4);
                         count++;
                     } else {
-                        // TODO: fetch light value from neighbouring chunk
+                        ivec3 cPos = { c->cx, c->cy, c->cz };
+                        glm_ivec3_add(cPos, chunkOffset, cPos);
+                        chunk_t *nChunk = world_getFullyLoadedChunk(w, cPos[0], cPos[1], cPos[2]);
+                        if (nChunk) {
+                            int lv = nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]];
+                            sum += glm_imax(lv & LIGHT_TORCH_MASK, (lv & LIGHT_SUN_MASK) >> 4);
+                            count++;
+                        }
                     }
                 }
             }
@@ -114,17 +191,33 @@ float computeVertexLight(chunk_t *c, int vx, int vy, int vz, direction_e dir) {
             int dx = -1;
             for (int i = 0; i < 2; ++i) {
                 for (int j = 0; j < 2; ++j) {
-                    int ny = vy + offsets[i];
-                    int nz = vz + offsets[j];
+                    int ny = vy + vertexOffset[i];
+                    int nz = vz + vertexOffset[j];
                     int nx = vx + dx;
-                    if (nx >= 0 && nx < CHUNK_SIZE &&
-                        ny >= 0 && ny < CHUNK_SIZE &&
-                        nz >= 0 && nz < CHUNK_SIZE) {
-                        int lv = c->lightMap[nx][ny][nz];
+                    ivec3 nPos = { nx, ny, nz };
+                    ivec3 chunkOffset = { 0, 0, 0 };
+                    for (int n = 0; n < 3; ++n) {
+                        if (nPos[n] < 0) {
+                            nPos[n] = CHUNK_SIZE - 1;
+                            chunkOffset[n] = -1;
+                        } else if (nPos[n] >= CHUNK_SIZE) {
+                            nPos[n] = 0;
+                            chunkOffset[n] = 1;
+                        }
+                    }
+                    if (chunkOffset[0] == 0 && chunkOffset[1] == 0 && chunkOffset[2] == 0) {
+                        int lv = c->lightMap[nPos[0]][nPos[1]][nPos[2]];
                         sum += glm_imax(lv & LIGHT_TORCH_MASK, (lv & LIGHT_SUN_MASK) >> 4);
                         count++;
                     } else {
-                        // TODO: fetch light value from neighbouring chunk
+                        ivec3 cPos = { c->cx, c->cy, c->cz };
+                        glm_ivec3_add(cPos, chunkOffset, cPos);
+                        chunk_t *nChunk = world_getFullyLoadedChunk(w, cPos[0], cPos[1], cPos[2]);
+                        if (nChunk) {
+                            int lv = nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]];
+                            sum += glm_imax(lv & LIGHT_TORCH_MASK, (lv & LIGHT_SUN_MASK) >> 4);
+                            count++;
+                        }
                     }
                 }
             }

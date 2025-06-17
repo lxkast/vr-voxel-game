@@ -97,10 +97,11 @@ void chunk_generate(chunk_t *c);
 
 /**
  * @brief Draws a chunk.
+ * @param w A pointer to a world
  * @param c A pointer to a chunk
  * @param modelLocation The location of the model matrix in the shader program
  */
-void chunk_draw(chunk_t *c, int modelLocation);
+void chunk_draw(void *w, chunk_t *c, int modelLocation);
 
 /**
 * @brief A function for freeing a chunk

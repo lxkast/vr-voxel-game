@@ -309,7 +309,7 @@ void world_draw(const world_t *w, const int modelLocation, camera_t *cam, mat4 p
             const bool renderingChunk = shouldRender(cam, cluster->cells[i].chunk, planes);
 
             if (cluster->cells[i].chunk && renderingChunk) {
-                chunk_draw(cluster->cells[i].chunk, modelLocation);
+                chunk_draw(w, cluster->cells[i].chunk, modelLocation);
             }
         }
     }
