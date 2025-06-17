@@ -163,24 +163,53 @@ static void processTorchLight(chunk_t *c, world_t *w) {
             glm_ivec3_add(head.pos, dirVec, nPos);
 
             bool validNeighbour = true;
+            ivec3 offset = {0, 0, 0};
             for (int i = 0; i < 3; i++) {
-                if (nPos[i] < 0 || nPos[i] >= CHUNK_SIZE) {
-                    validNeighbour = false;
-                    break;
+                if (nPos[i] < 0) {
+                    offset[i] = -1;
+                    nPos[i] = CHUNK_SIZE - 1;
+                }
+                else if (nPos[i] >= CHUNK_SIZE) {
+                    offset[i] = 1;
+                    nPos[i] = 0;
                 }
             }
-            if (!validNeighbour) {
-                continue;
-            }
-            unsigned char neighbourLight = LIGHT_TORCH_MASK & c->lightMap[nPos[0]][nPos[1]][nPos[2]];
-            if ((c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_AIR || c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_LEAF)) {
-                lightQueueItem_t nItem = { .lightValue = neighbourLight };
-                memcpy(&nItem.pos, &nPos, sizeof(ivec3));
-                if (neighbourLight < lightLevel && neighbourLight != 0) {
-                    queue_push(&c->lightTorchDeletionQueue, nItem);
-                } else if (neighbourLight >= lightLevel){
-                    queue_push(&c->lightTorchInsertionQueue, nItem);
+            if (offset[0] == 0 && offset[1] == 0 && offset[2] == 0) {
+                // propagate darkness within current chunk
+                if (BL_TRANSPARENT(c->blocks[nPos[0]][nPos[1]][nPos[2]])) {
+                    unsigned char neighbourLight = EXTRACT_TORCH(c->lightMap[nPos[0]][nPos[1]][nPos[2]]);
+                    lightQueueItem_t nItem = { .lightValue = neighbourLight };
+                    memcpy(&nItem.pos, &nPos, sizeof(ivec3));
+                    if (neighbourLight < lightLevel && neighbourLight != 0) {
+                        queue_push(&c->lightTorchDeletionQueue, nItem);
+                    } else if (neighbourLight >= lightLevel) {
+                        queue_push(&c->lightTorchInsertionQueue, nItem);
+                    }
+                    c->tainted = true;
                 }
+            } else {
+                // propagate darkness within neighbouring chunk
+                ivec3 cPos = { c->cx, c->cy, c->cz };
+                glm_ivec3_add(cPos, offset, cPos);
+                chunk_t *nChunk = world_getFullyLoadedChunk(w, cPos[0], cPos[1], cPos[2]);
+                if (nChunk == NULL) {
+                    LOG_ERROR("Attempted to propagate torch darkness to unloaded chunk");
+                    // TODO: think about what should happen
+                } else {
+                    if (!BL_TRANSPARENT(nChunk->blocks[nPos[0]][nPos[1]][nPos[2]])) {
+                        continue;
+                    }
+                    unsigned char neighbourLight = EXTRACT_TORCH(nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]]);
+                    lightQueueItem_t nItem = { .lightValue = neighbourLight };
+                    memcpy(&nItem.pos, &nPos, sizeof(ivec3));
+                    if (neighbourLight < lightLevel && neighbourLight != 0) {
+                        queue_push(&nChunk->lightTorchDeletionQueue, nItem);
+                    } else if (neighbourLight >= lightLevel) {
+                        queue_push(&nChunk->lightTorchInsertionQueue, nItem);
+                    }
+                    nChunk->tainted = true;
+                }
+
             }
         }
     }

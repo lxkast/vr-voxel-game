@@ -773,6 +773,7 @@ bool world_placeBlock(world_t *w, const int x, const int y, const int z, const b
         memcpy(&qi.pos, &blockPos, sizeof(ivec3));
         queue_push(&cp->lightTorchDeletionQueue, qi);
     }
+    LOG_DEBUG("torch: %d", torchValue);
     *bp = block;
     cp->tainted = true;
 
