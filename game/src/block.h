@@ -9,7 +9,14 @@ typedef enum {
     BL_SAND,
     BL_STONE,
     BL_LOG,
-    BL_LEAF
+    BL_LEAF,
+    BL_GLOWSTONE,
+    BL_SNOW,
+    BL_JUNGLE_GRASS,
+    BL_MUD,
+    BL_CACTUS,
+    BL_JUNGLE_LOG,
+    BL_JUNGLE_LEAF
 } block_t;
 
 static const float TIME_TO_MINE_BLOCK[] = {
@@ -19,7 +26,14 @@ static const float TIME_TO_MINE_BLOCK[] = {
     [BL_SAND] = 0.4f,
     [BL_STONE] = 3.f,
     [BL_LOG] = 1.f,
-    [BL_LEAF] = 0.1f
+    [BL_LEAF] = 0.1f,
+    [BL_GLOWSTONE] = 0.3f,
+    [BL_SNOW] = 0.5f,
+    [BL_JUNGLE_GRASS] = 0.5f,
+    [BL_MUD] = 0.75f,
+    [BL_CACTUS] = 0.4f,
+    [BL_JUNGLE_LOG] = 1.f,
+    [BL_JUNGLE_LEAF] = 0.1f,
 };
 
 /**

@@ -8,24 +8,96 @@
 
 extern void chunk_createMesh(chunk_t *c);
 
-void chunk_init(chunk_t *c, int cx, int cy, int cz) {
+static float smoothstep(const float min, const float max, float x) {
+    x = glm_clamp((x - min) / (max - min), 0.f, 1.f);
+    return x * x * (3.0f - 2.0f * x);
+}
+
+static float getHumidity(chunk_t *c, const float h, const int x, const int z) {
+    const float n = noise_smoothValue(&c->noise, 0.005f * (float)x - 1024.f, 0.005f * (float)z + 1024.f);
+    return 20.f * n;
+}
+
+static float getTemperature(chunk_t *c, const float h, const int x, const int z) {
+    const float n = noise_smoothValue(&c->noise, 0.003f * (float)x + 1024.f, 0.003f * (float)z - 1024.f);
+    return 15.f * n;
+}
+
+static float getHeight(chunk_t *c, const int x, const int z) {
+    const float xf = (float)x;
+    const float zf = (float)z;
+
+    const float biome = 0.5f + (0.5f * noise_fbm(&c->noise, xf, zf, 2, 0.5f, 0.005f));
+    const float biomeMask = smoothstep(0.4f, 0.8f, biome);
+
+    const float hills = 0.5f + (0.5f * noise_fbm(&c->noise, xf, zf, 5, 0.4f, 0.01f));
+
+    const float flat = 0.1f + (0.1f * noise_fbm(&c->noise, xf, zf, 3, 0.4f, 0.01f));
+
+    const float h = glm_lerp(flat, hills, biomeMask);
+
+    return h * 50.f;
+}
+
+struct biomeSlice {
+    int height;
+    float humidityOffset;
+    float temperatureOffset;
+
+    int x, z;
+};
+
+static struct biomeSlice createBiomeSlice(chunk_t *c, const int x, const int z) {
+    const float h = getHeight(c, x, z);
+    return (struct biomeSlice) {
+        .height = (int)h,
+        .humidityOffset = getHumidity(c, h, x, z),
+        .temperatureOffset = getTemperature(c, h, x, z),
+        .x = x,
+        .z = z
+    };
+}
+
+static biome_e getBiome(chunk_t *c, const struct biomeSlice bs, const int y) {
+    const float humidity = 70.f - 0.6f * (float)y + bs.humidityOffset;
+    const float temperature = 30.f - 0.50f * (float)y + bs.temperatureOffset;
+
+    if (bs.height - y > 5) {
+        return BIO_CAVE;
+    }
+    if (temperature > 30.f) {
+        if (humidity > 75.f) {
+            return BIO_JUNGLE;
+        }
+        return BIO_DESERT;
+    }
+    if (temperature > 15.f) {
+        if (y > 15) {
+            return BIO_FOREST;
+        }
+        return BIO_PLAINS;
+    }
+
+    return BIO_TUNDRA;
+}
+
+
+void chunk_init(chunk_t *c, const rng_t rng, const noise_t noise, const int cx, const int cy, const int cz) {
+    c->rng = rng;
+    c->noise = noise;
+    c->biome = BIO_NIL;
+
     c->cx = cx;
     c->cy = cy;
     c->cz = cz;
+    queue_initQueue(&c->lightTorchInsertionQueue);
+    queue_initQueue(&c->lightTorchDeletionQueue);
+    queue_initQueue(&c->lightSunInsertionQueue);
+    queue_initQueue(&c->lightSunDeletionQueue);
+    memset(c->lightMap, 0, CHUNK_SIZE_CUBED * sizeof(unsigned char));
 
     glGenBuffers(1, &c->vbo);
     glGenVertexArrays(1, &c->vao);
-
-    glBindBuffer(GL_ARRAY_BUFFER, c->vbo);
-
-    glBindVertexArray(c->vao);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *) 0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribIPointer(1, 1, GL_INT, 4 * sizeof(float), (void *) (3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
 }
 
 void chunk_fill(chunk_t *c, const block_t block) {
@@ -51,21 +123,48 @@ void chunk_generate(chunk_t *c) {
     int (*ptr)[CHUNK_SIZE][CHUNK_SIZE] = (int (*)[CHUNK_SIZE][CHUNK_SIZE]) c->blocks;
     for (int x = 0; x < CHUNK_SIZE; x++) {
         for (int z = 0; z < CHUNK_SIZE; z++) {
-            const float xf = (c->cx * CHUNK_SIZE + x);
-            const float zf = (c->cz * CHUNK_SIZE + z);
+            const int xg = (c->cx * CHUNK_SIZE + x);
+            const int zg = (c->cz * CHUNK_SIZE + z);
 
-            const float biome = noise_smoothValue(xf * 0.005f, zf * 0.005f);
-
-            const float n = noise_height(xf, zf);
-            const float height = n * 20.f;
+            struct biomeSlice bs = createBiomeSlice(c, xg, zg);
 
             for (int y = 0; y < CHUNK_SIZE; y++) {
-                if (c->cy * CHUNK_SIZE + y == (int)height) {
-                    ptr[x][y][z] = biome < 0.5f ? BL_GRASS : BL_SAND;
-                } else if (c->cy * CHUNK_SIZE + y < height - 6) {
-                    ptr[x][y][z] = BL_STONE;
-                } else if (c->cy * CHUNK_SIZE + y < height) {
-                    ptr[x][y][z] = biome < 0.5f ? BL_DIRT : BL_SAND;
+                const int yg = c->cy * CHUNK_SIZE + y;
+
+                const int ds = bs.height - yg;
+                if (ds >= 0) {
+                    const biome_e b = getBiome(c, bs, yg);
+                    switch (b) {
+                        case BIO_NIL: {
+                            LOG_WARN("Unknown biome");
+                            ptr[x][y][z] = BL_STONE;
+                            break;
+                        }
+                        case BIO_PLAINS:
+                        case BIO_FOREST: {
+                            ptr[x][y][z] = ds == 0 ? BL_GRASS : BL_DIRT;
+                            break;
+                        }
+                        case BIO_JUNGLE: {
+                            ptr[x][y][z] = ds == 0 ? BL_JUNGLE_GRASS : BL_MUD;
+                            break;
+                        }
+                        case BIO_DESERT: {
+                            ptr[x][y][z] = BL_SAND;
+                            break;
+                        }
+                        case BIO_TUNDRA: {
+                            ptr[x][y][z] = BL_SNOW;
+                            break;
+                        }
+                        case BIO_CAVE: {
+                            ptr[x][y][z] = BL_STONE;
+                            break;
+                        }
+                    }
+                    if (x == 7 && z == 7 && ds == 0) {
+                        c->biome = b;
+                    }
                 }
             }
         }
@@ -92,6 +191,10 @@ void chunk_draw(chunk_t *c, const int modelLocation) {
 void chunk_free(const chunk_t *c) {
     glDeleteVertexArrays(1, &c->vbo);
     glDeleteBuffers(1, &c->vao);
+    queue_freeQueue(&c->lightTorchInsertionQueue);
+    queue_freeQueue(&c->lightTorchDeletionQueue);
+    queue_freeQueue(&c->lightSunInsertionQueue);
+    queue_freeQueue(&c->lightSunDeletionQueue);
 }
 
 void chunk_serialise(chunk_t *c, FILE *fp) {

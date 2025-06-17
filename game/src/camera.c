@@ -1,8 +1,9 @@
 #include <cglm/cglm.h>
 #include <math.h>
+#include <logging.h>
+#include "hardware/orientation.h"
 
 #include "camera.h"
-
 /**
  * @brief Calculates and sets the ruf matrix based on the orientation.
  * @param c A pointer to a camera object
@@ -14,6 +15,10 @@ static void camera_setRuf(camera_t *c) {
 void camera_init(camera_t *c) {
     glm_vec3_copy(GLM_VEC3_ZERO, c->eye);
     glm_quat_for(GLM_ZUP, GLM_YUP, c->ori);
+    camera_setRuf(c);
+}
+
+void camera_update(camera_t *c) {
     camera_setRuf(c);
 }
 

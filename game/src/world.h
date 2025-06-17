@@ -5,7 +5,9 @@
 #include "camera.h"
 #include "chunk.h"
 #include "item.h"
+#include "player.h"
 #include "uthash.h"
+#include "noise.h"
 
 #define MAX_CHUNKS 256
 #define MAX_CHUNK_LOADERS 8
@@ -20,21 +22,26 @@
 #define GRAVITY_ACCELERATION (-10.f)
 
 #define MAX_NUM_ENTITIES 64
+#define MAX_NUM_PLAYERS 4
 
 typedef struct entity_t entity_t;
 
 typedef enum {
-    NONE,
-    PLAYER,
-    ITEM,
-    // MOB,   (Not implemented yet)
+    WE_NONE,
+    WE_PLAYER,
+    WE_ITEM,
+    // WE_MOB,   (Not implemented yet)
 } worldEntity_e;
 
 typedef struct {
+    /// What kind of entity it is
     worldEntity_e type;
+    /// The actual entity_t entity
     entity_t *entity;
-    /// This is only checked if 'type' is ITEM
+    /// This is only checked if 'type' is WE_ITEM
     item_e itemType;
+    /// Stores whether the entity needs to be freed
+    bool needsFreeing;
     /// Entity VAO and VBO, currently only used for 'item' entities
     GLuint vao;
     GLuint vbo;
@@ -58,6 +65,13 @@ typedef struct world_t {
     int numEntities;
     worldEntity_t entities[MAX_NUM_ENTITIES];
     int oldestItem;
+    int numPlayers;
+    /// Stores pointers to all current players in the world
+    worldEntity_t *players[MAX_NUM_PLAYERS];
+    uint64_t seed;
+    rng_t generalRng;
+    rng_t worldRng;
+    noise_t noise;
 } world_t;
 
 /**
@@ -83,15 +97,18 @@ typedef enum {
  * @brief Initialises a world struct.
  * @param w A pointer to a world
  * @param program A shader program for setting effects
+ * @param seed The world seed
  */
-void world_init(world_t *w, GLuint program);
+void world_init(world_t *w, GLuint program, uint64_t seed);
 
 /**
  * @brief Draws the world.
  * @param w A pointer to a world
  * @param modelLocation The model matrix location in the shader program
+ * @param cam A pointer to the camera from which to render from
+ * @param projection The current projection matrix
  */
-void world_draw(const world_t *w, int modelLocation, camera_t *cam);
+void world_draw(const world_t *w, int modelLocation, camera_t *cam, mat4 projection);
 
 /**
  * @brief Frees the world.
@@ -172,10 +189,11 @@ void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, bl
  * @param w a pointer to the world
  * @param startPosition the position to start the raycast from
  * @param viewDirection the direction to raycast along
+ * @param raycastDistance the maximum distance to check with raycasting
  * @return whether the raycast was successful - found = False mean no block was found, otherwise found = true
  *         and block = found block
  */
-raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection);
+raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection, float raycastDistance);
 
 /**
  * @brief Tries to remove a block at a position.
@@ -241,3 +259,11 @@ void world_addEntity(world_t *w, worldEntity_t we);
 void world_removeItemEntity(world_t *w, int entityIndex);
 
 void world_drawAllEntities(const world_t *w, int modelLocation);
+
+/**
+ * @brief Gets the type of block at a chosen position
+ * @param w a pointer to the world
+ * @param position the position to get a block at
+ * @return The type of the block
+ */
+block_t getBlockType(world_t *w, vec3 position);

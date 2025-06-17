@@ -17,16 +17,17 @@ static bool onBlockCooldown(player_t *p) {
 
 static void player_addToWorld(player_t *p, world_t *w) {
     world_addEntity(w, (worldEntity_t){
-        .type = PLAYER,
+        .type = WE_PLAYER,
         .entity = &p->entity,
         .itemType = -1,
+        .needsFreeing = false,
         .vao = -1,
         .vbo = -1
     });
 }
 
 void player_init(world_t *w, player_t *p) {
-    vec3 start = {0.f, 50.f, 0.f};
+    vec3 start = {0.f, 100.f, 0.f};
 
     while (true) {
         blockData_t bd;
@@ -47,7 +48,7 @@ void player_init(world_t *w, player_t *p) {
             .yaw = 0,
         },
         .lookVector = { 0.f, 0.f, 0.f },
-        .cameraOffset = {0.3f, 1.6f, 0.3f},
+        .cameraOffset = {0.3f, 1.8f, 0.3f},
         .hotbar = {
             .slots = {
                 {ITEM_PICKAXE, 1},
@@ -56,7 +57,7 @@ void player_init(world_t *w, player_t *p) {
                 {ITEM_DIRT, 64},
                 {ITEM_GRASS, 32},
                 {ITEM_STONE, 16},
-                {NOTHING, 0},
+                {ITEM_GLOWSTONE, 64},
                 {NOTHING, 0},
                 {NOTHING, 0},
             },
@@ -102,7 +103,7 @@ void player_mineBlock(player_t *p, world_t *w, const double dt) {
     vec3 lookVector;
     glm_vec3_scale(p->lookVector, -1, lookVector);
 
-    const raycast_t raycastBlock = world_raycast(w, camPos, lookVector);
+    const raycast_t raycastBlock = world_raycast(w, camPos, lookVector, 6.f);
 
     blockData_t block;
     if (world_getBlock(w, raycastBlock.blockPosition, &block)) {
@@ -141,7 +142,7 @@ void player_placeBlock(player_t *p, world_t *w) {
     vec3 lookVector;
     glm_vec3_scale(p->lookVector, -1, lookVector);
 
-    const raycast_t raycastBlock = world_raycast(w, camPos, lookVector);
+    const raycast_t raycastBlock = world_raycast(w, camPos, lookVector, 6.f);
 
     if (raycastBlock.found) {
         const int *moveDelta = faceToBlock[raycastBlock.face];
@@ -211,7 +212,7 @@ void player_printHotbar(const player_t *p) {
 void player_pickUpItemsCheck(player_t *p, world_t *w) {
     for (int i = 0; i < w->numEntities; i++) {
         const worldEntity_t worldEntity = w->entities[i];
-        if (worldEntity.type == ITEM && entitiesIntersect(p->entity, *worldEntity.entity)) {
+        if (worldEntity.type == WE_ITEM && entitiesIntersect(p->entity, *worldEntity.entity)) {
             // checking if player already has those items
             for (int j = 0; j < 9; j++) {
                 hotbarItem_t *slot = &p->hotbar.slots[j];

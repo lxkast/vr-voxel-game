@@ -7,10 +7,11 @@
 #include "world.h"
 
 #define BLOCK_COOLDOWN_TIME 0.5
+#define HOTBAR_SLOTS 9
 
 typedef struct {
     /// each of the slots in the hotbar
-    hotbarItem_t slots[9];
+    hotbarItem_t slots[HOTBAR_SLOTS];
     /// the slot that is currently active
     hotbarItem_t *currentSlot;
     /// the index of the current slot
