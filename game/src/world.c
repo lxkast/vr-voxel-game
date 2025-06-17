@@ -702,6 +702,9 @@ bool world_placeBlock(world_t *w, const int x, const int y, const int z, const b
 
     if (*bp != BL_AIR) return false;
 
+    // audio found here: https://pixabay.com/sound-effects/stone-effect-254998/
+    play3DAudio(w, "../../src/audio/block_place.mp3", (float)x, (float)y, (float)z);
+
     *bp = block;
     cp->tainted = true;
 
