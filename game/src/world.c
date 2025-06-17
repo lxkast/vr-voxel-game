@@ -513,13 +513,11 @@ static bool world_initStructure(world_t *w, structure_t *structure, chunkValue_t
                                         structure->blocks[i].allowOverlap ? structure->blocks[i].type : BL_AIR)) {
             return false;
         }
-        if (flat && structure->blocks[i].y == 0) {
-            if (decorator_testBlock(&d, w, structure->blocks[i].x,
-                                           -1,
-                                           structure->blocks[i].z,
-                                           BL_AIR)) {
-                return false;
-            }
+        if (flat && structure->blocks[i].y == 0 && decorator_testBlock(&d, w, structure->blocks[i].x,
+                                                                              -1,
+                                                                              structure->blocks[i].z,
+                                                                        BL_AIR)) {
+            return false;
         }
     }
 
