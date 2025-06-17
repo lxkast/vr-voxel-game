@@ -9,7 +9,9 @@
 #include "uthash.h"
 #include "noise.h"
 
-#define ENABLE_AUDIO
+/*
+ * NOTE: ENABLE_AUDIO is defined in block.h
+ */
 
 #ifdef ENABLE_AUDIO
 #include "../external/miniaudio/miniaudio.h"

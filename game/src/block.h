@@ -2,6 +2,8 @@
 
 #include <cglm/cglm.h>
 
+#define ENABLE_AUDIO
+
 typedef enum {
     BL_AIR,
     BL_GRASS,
@@ -64,6 +66,7 @@ typedef struct {
  *
  */
 
+#ifdef ENABLE_AUDIO
 static const char *BLOCK_TO_AUDIO[] = {
     [BL_DIRT]  = "../../src/audio/sand_dirt_grass_destroy.mp3",
     [BL_GRASS] = "../../src/audio/sand_dirt_grass_destroy.mp3",
@@ -78,3 +81,4 @@ static const char *BLOCK_TO_AUDIO[] = {
     [BL_JUNGLE_LOG] = "../../src/audio/log_destroy.mp3",
     [BL_JUNGLE_LEAF] = "../../src/audio/leaf_destroy.mp3",
 };
+#endif
