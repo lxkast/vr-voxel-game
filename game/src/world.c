@@ -146,6 +146,7 @@ static chunkValue_t *world_loadChunk(world_t *w,
         if (ll > LL_PARTIAL) {
             chunk_generate(cv->chunk);
             world_decorateChunk(w, cv);
+            chunk_initSun(cv->chunk);
         }
         cv->ll = ll;
     }
@@ -255,6 +256,27 @@ void world_draw(const world_t *w, const int modelLocation, camera_t *cam, mat4 p
     cluster_t *cluster, *tmp;
     double planes[6][4];
     calculatePlanes(cam, projection, planes);
+
+    // only draw chunks after lighting is fully processed
+    while (true) {
+        bool lightingFinished = true;
+        HASH_ITER(hh, w->clusterTable, cluster, tmp) {
+            for (int i = 0; i < C_T * C_T * C_T; i++) {
+                if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
+                if (cluster->cells[i].chunk &&
+                    (cluster->cells[i].chunk->lightTorchInsertionQueue.size > 0
+                     || cluster->cells[i].chunk->lightTorchDeletionQueue.size > 0
+                     || cluster->cells[i].chunk->lightSunInsertionQueue.size > 0
+                     || cluster->cells[i].chunk->lightSunDeletionQueue.size > 0)) {
+                    chunk_processLighting(cluster->cells[i].chunk);
+                    lightingFinished = false;
+                }
+            }
+        }
+        if (lightingFinished) {
+            break;
+        }
+    }
 
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
         for (int i = 0; i < C_T * C_T * C_T; i++) {

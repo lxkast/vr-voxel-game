@@ -228,16 +228,6 @@ static void processTorchLight(chunk_t *c) {
 
 // performs a BFS flood-fill to approximate the sunlight values of each chunk
 static void processSunLight(chunk_t *c) {
-    // TODO: check chunk above current (if loaded) to propagate downwards all sunlight from above
-    // assuming current chunk is exposed to sunlight
-    for (int i = 0; i < CHUNK_SIZE; ++i) {
-        for (int j = 0; j < CHUNK_SIZE; ++j) {
-            if (c->blocks[i][CHUNK_SIZE - 1][j] == BL_AIR || c->blocks[i][CHUNK_SIZE - 1][j] == BL_LEAF) {
-                lightQueueItem_t nItem = { .pos = { i, CHUNK_SIZE - 1, j }, .lightValue = LIGHT_MAX_VALUE };
-                queue_push(&c->lightSunInsertionQueue, nItem);
-            }
-        }
-    }
     while (c->lightSunDeletionQueue.size > 0) {
         lightQueueItem_t head = queue_pop(&c->lightSunDeletionQueue);
         unsigned char lightLevel = EXTRACT_SUN(c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]]);

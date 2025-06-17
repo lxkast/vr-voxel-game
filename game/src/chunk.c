@@ -5,6 +5,7 @@
 #include <math.h>
 #include "vertices.h"
 #include "noise.h"
+#include "lighting.h"
 
 extern void chunk_createMesh(chunk_t *c);
 
@@ -117,6 +118,17 @@ void chunk_createDeserialise(chunk_t *c, FILE *fp) {
     fread(&c->blocks, sizeof(int), CHUNK_SIZE_CUBED, fp);
 
     c->tainted = true;
+}
+
+void chunk_initSun(chunk_t *c) {
+    for (int i = 0; i < CHUNK_SIZE; ++i) {
+        for (int j = 0; j < CHUNK_SIZE; ++j) {
+            if (c->blocks[i][CHUNK_SIZE - 1][j] == BL_AIR || c->blocks[i][CHUNK_SIZE - 1][j] == BL_LEAF) {
+                lightQueueItem_t nItem = { .pos = { i, CHUNK_SIZE - 1, j }, .lightValue = LIGHT_MAX_VALUE };
+                queue_push(&c->lightSunInsertionQueue, nItem);
+            }
+        }
+    }
 }
 
 void chunk_generate(chunk_t *c) {

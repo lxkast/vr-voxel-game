@@ -83,6 +83,12 @@ void chunk_fill(chunk_t *c, block_t block);
 void chunk_createDeserialise(chunk_t *c, FILE *fp);
 
 /**
+* @brief Queues sunlight values in transparent blocks at the top of the chunk to be propagated downwards
+* @param c A pointer to a chunk
+*/
+void chunk_initSun(chunk_t *c);
+
+/**
  * @brief A function to generate a chunk
  * @param c A pointer to a chunk
  * @note The chunk object should be empty/uninitialised.

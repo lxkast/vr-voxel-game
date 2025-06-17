@@ -192,7 +192,7 @@ int main(void) {
 
     // World setup
     world_t world;
-    world_init(&world, program, 1021);
+    world_init(&world, program, 40);
 
     unsigned int spawnLoader, cameraLoader;
     world_genChunkLoader(&world, &spawnLoader);
