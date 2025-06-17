@@ -1,4 +1,6 @@
-#pragma once
+#ifndef LIGHTING_H
+#define LIGHTING_H
+
 #include "chunk.h"
 #include "vertices.h"
 
@@ -10,3 +12,5 @@
 
 float computeVertexLight(chunk_t *c, int vx, int vy, int vz, direction_e dir);
 void chunk_processLighting(chunk_t *c);
+
+#endif

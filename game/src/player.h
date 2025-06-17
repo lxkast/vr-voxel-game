@@ -1,4 +1,5 @@
-#pragma once
+#ifndef PLAYER_H
+#define PLAYER_H
 
 #include <cglm/cglm.h>
 #include "camera.h"
@@ -55,3 +56,5 @@ void player_placeBlock(player_t *p, world_t *w);
 void player_printHotbar(const player_t *p);
 
 void player_pickUpItemsCheck(player_t *p, world_t *w);
+
+#endif

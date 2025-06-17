@@ -1,4 +1,5 @@
-#pragma once
+#ifndef INPUT_H
+#define INPUT_H
 #include <cglm/mat4.h>
 
 #include "camera.h"
@@ -23,3 +24,5 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
  * @param camera A pointer to a camera
  */
 void processCameraInput(GLFWwindow *window, camera_t *camera);
+
+#endif

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ITEM_H
+#define ITEM_H
 
 #include "block.h"
 
@@ -98,3 +99,5 @@ typedef struct {
     /// this will have to be fleshed out more later
     /// maybe members like "isBlock" or "isWeapon"
 } hotbarItem_t;
+
+#endif

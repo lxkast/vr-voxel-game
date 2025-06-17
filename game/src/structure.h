@@ -1,4 +1,6 @@
-#pragma once
+#ifndef STRUCTURE_H
+#define STRUCTURE_H
+
 #include "block.h"
 
 #define STRUCTURE_SIZE(pattern) sizeof(pattern) / sizeof(structureBlock_t)
@@ -231,3 +233,5 @@ structure_t structures[] = {
 };
 
 const int numStructures = sizeof(structures)/sizeof(structure_t);
+
+#endif
