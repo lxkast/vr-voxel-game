@@ -189,7 +189,8 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
         printf("const structure_t generatedStructure = {\n");
         printf("    .numBlocks = %d,\n", numBlocks);
         printf("    .blocks = generated,\n");
-        printf("    .base = %d,\n};\n\n", originBlock);
+        printf("    .base = %d,\n", originBlock);
+        printf("    .allowOverlap = false,\n};\n\n");
     }
     #endif
 
