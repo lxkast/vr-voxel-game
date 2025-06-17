@@ -145,7 +145,7 @@ static void processTorchLight(chunk_t *c, world_t *w) {
     // propagate darkness
     while (c->lightTorchDeletionQueue.size > 0) {
         lightQueueItem_t head = queue_pop(&c->lightTorchDeletionQueue);
-        unsigned char lightLevel = LIGHT_TORCH_MASK & c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]];
+        unsigned char lightLevel = EXTRACT_TORCH(c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]]);
         if (lightLevel <= 0) {
             continue;
         }
@@ -188,8 +188,8 @@ static void processTorchLight(chunk_t *c, world_t *w) {
     while (c->lightTorchInsertionQueue.size > 0) {
         lightQueueItem_t head = queue_pop(&c->lightTorchInsertionQueue);
         unsigned char lightLevel = LIGHT_TORCH_MASK & c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]];
-        if (!BL_TRANSPARENT(c->blocks[head.pos[0]][head.pos[1]][head.pos[2]])) {
-            //continue;
+        if (!BL_TRANSPARENT(c->blocks[head.pos[0]][head.pos[1]][head.pos[2]]) && c->blocks[head.pos[0]][head.pos[1]][head.pos[2]] != BL_GLOWSTONE) {
+            continue;
         }
         if (lightLevel < head.lightValue) {
             c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]] =
@@ -233,7 +233,6 @@ static void processTorchLight(chunk_t *c, world_t *w) {
                 }
                 c->tainted = true;
             } else {
-                // continue;
                 ivec3 cPos = { c->cx, c->cy, c->cz };
                 glm_ivec3_add(cPos, offset, cPos);
                 chunk_t *nChunk = world_getFullyLoadedChunk(w, cPos[0], cPos[1], cPos[2]);

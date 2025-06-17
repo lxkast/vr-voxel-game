@@ -708,28 +708,28 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
             .lightValue = torchValue };
         queue_push(&cp->lightTorchDeletionQueue, qi);
     }
-    if (*bp != BL_LEAF) {
-        for (int dir = 0; dir < 6; ++dir) {
-            ivec3 nPos;
-            memcpy(nPos, directions[dir], sizeof(ivec3));
-            glm_ivec3_add(nPos, blockPos, nPos);
-            if (nPos[0] < 0 || nPos[0] >= CHUNK_SIZE ||
-                nPos[1] < 0 || nPos[1] >= CHUNK_SIZE ||
-                nPos[2] < 0 || nPos[2] >= CHUNK_SIZE) {
-                continue;
-            }
-            unsigned char neighborLightMapValue = cp->lightMap[nPos[0]][nPos[1]][nPos[2]];
-            unsigned char neighborSun = EXTRACT_SUN(neighborLightMapValue);
-            unsigned char neighborTorch = EXTRACT_TORCH(neighborLightMapValue);
-
-            if (neighborSun > 0) {
-                queue_push(&cp->lightSunInsertionQueue, (lightQueueItem_t){ .pos = {nPos[0], nPos[1], nPos[2]}, .lightValue = neighborSun });
-            }
-            if (neighborTorch > 0) {
-                queue_push(&cp->lightTorchInsertionQueue, (lightQueueItem_t){ .pos = {nPos[0], nPos[1], nPos[2]}, .lightValue = neighborTorch });
-            }
-        }
-    }
+    // if (*bp != BL_LEAF) {
+    //     for (int dir = 0; dir < 6; ++dir) {
+    //         ivec3 nPos;
+    //         memcpy(nPos, directions[dir], sizeof(ivec3));
+    //         glm_ivec3_add(nPos, blockPos, nPos);
+    //         if (nPos[0] < 0 || nPos[0] >= CHUNK_SIZE ||
+    //             nPos[1] < 0 || nPos[1] >= CHUNK_SIZE ||
+    //             nPos[2] < 0 || nPos[2] >= CHUNK_SIZE) {
+    //             continue;
+    //         }
+    //         unsigned char neighborLightMapValue = cp->lightMap[nPos[0]][nPos[1]][nPos[2]];
+    //         unsigned char neighborSun = EXTRACT_SUN(neighborLightMapValue);
+    //         unsigned char neighborTorch = EXTRACT_TORCH(neighborLightMapValue);
+    //
+    //         if (neighborSun > 0) {
+    //             queue_push(&cp->lightSunInsertionQueue, (lightQueueItem_t){ .pos = {nPos[0], nPos[1], nPos[2]}, .lightValue = neighborSun });
+    //         }
+    //         if (neighborTorch > 0) {
+    //             queue_push(&cp->lightTorchInsertionQueue, (lightQueueItem_t){ .pos = {nPos[0], nPos[1], nPos[2]}, .lightValue = neighborTorch });
+    //         }
+    //     }
+    // }
 
 
     const worldEntity_t entity = createItemEntity(w, (vec3){(float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f}, BLOCK_TO_ITEM[*bp]);
