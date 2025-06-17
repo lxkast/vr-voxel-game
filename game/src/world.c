@@ -1,4 +1,5 @@
 #include "world.h"
+#include <uthash.h>
 #include <cglm/cglm.h>
 #include <errno.h>
 #include <logging.h>
@@ -6,11 +7,10 @@
 #include <sys/stat.h>
 #include "chunk.h"
 #include "entity.h"
-#include "noise.h"
-#include "uthash.h"
-#include "vertices.h"
-#include "structure.h"
 #include "lighting.h"
+#include "noise.h"
+#include "structure.h"
+#include "vertices.h"
 
 #define MAX_RAYCAST_DISTANCE 6.f
 #define RAYCAST_STEP_MAGNITUDE 0.1f
