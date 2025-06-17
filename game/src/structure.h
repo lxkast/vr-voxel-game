@@ -6,23 +6,34 @@
 typedef struct chunkValue_t chunkValue_t;
 
 typedef struct {
+    /// The cache number
     int cacheN;
+    /// The chunkValues in the cache
     chunkValue_t *cache[3][3][3];
 
+    /// The origin chunk
     chunkValue_t *origin;
+    /// The x,y and z coords of the origin
     int ox, oy, oz;
 } decorator_t;
 
 typedef struct {
+    /// The type of the block
     block_t type;
+    /// The offset of the block from the origin
     int x,y,z;
+    /// The chance the block has to appear
     float chanceToAppear;
+    /// Whether the block can appear if placing it would overlap the same type of block
     bool allowOverlap;
 } structureBlock_t;
 
 typedef struct {
+    /// The decorator for the structure
     decorator_t decorator;
+    /// How many blocks are in the structure
     int numBlocks;
+    /// The array of blocks making up the structure
     structureBlock_t *blocks;
 } structure_t;
 
