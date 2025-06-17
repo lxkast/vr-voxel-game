@@ -178,6 +178,52 @@ const structure_t woodenHouseStructure = {
     .blocks = woodenHousePattern,
 };
 
+static const structureBlock_t iglooPattern[] = {
+    {8, -3, 0, -1, 1.f, false},
+    {8, -3, 0, 1, 1.f, false},
+    {8, -3, 1, -1, 1.f, false},
+    {8, -3, 1, 1, 1.f, false},
+    {8, -3, 2, 0, 1.f, false},
+    {8, -2, 0, -1, 1.f, false},
+    {8, -2, 0, 1, 1.f, false},
+    {8, -2, 1, -1, 1.f, false},
+    {8, -2, 1, 1, 1.f, false},
+    {8, -2, 2, 0, 1.f, false},
+    {8, -1, 0, -2, 1.f, false},
+    {8, -1, 0, 2, 1.f, false},
+    {8, -1, 1, -2, 1.f, false},
+    {8, -1, 1, 2, 1.f, false},
+    {8, -1, 2, -1, 1.f, false},
+    {8, -1, 2, 1, 1.f, false},
+    {8, -1, 3, 0, 1.f, false},
+    {8, 0, 0, -2, 1.f, false},
+    {8, 0, 0, 2, 1.f, false},
+    {8, 0, 1, -2, 1.f, false},
+    {8, 0, 1, 2, 1.f, false},
+    {8, 0, 2, -1, 1.f, false},
+    {8, 0, 2, 1, 1.f, false},
+    {8, 0, 3, 0, 1.f, false},
+    {8, 1, 0, -2, 1.f, false},
+    {8, 1, 0, 2, 1.f, false},
+    {8, 1, 1, -2, 1.f, false},
+    {8, 1, 1, 2, 1.f, false},
+    {8, 1, 2, -1, 1.f, false},
+    {8, 1, 2, 1, 1.f, false},
+    {8, 1, 3, 0, 1.f, false},
+    {8, 2, 0, -1, 1.f, false},
+    {8, 2, 0, 1, 1.f, false},
+    {8, 2, 1, -1, 1.f, false},
+    {8, 2, 1, 1, 1.f, false},
+    {8, 2, 2, 0, 1.f, false},
+    {8, 3, 0, 0, 1.f, false},
+    {8, 3, 1, 0, 1.f, false},
+};
+
+const structure_t iglooStructure = {
+    .numBlocks = STRUCTURE_SIZE(iglooPattern),
+    .blocks = iglooPattern,
+};
+
 structure_t structures[] = {
     treeStructure,
     stoneTStructure,

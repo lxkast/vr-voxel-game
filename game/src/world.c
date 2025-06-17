@@ -500,7 +500,7 @@ static bool decorator_testBlock(decorator_t *d, world_t *world, int x, int y, in
 }
 
 
-static bool world_initStructure(world_t *w, structure_t *structure, chunkValue_t *origin, const int x, const int z, const block_t block) {
+static bool world_initStructure(world_t *w, structure_t *structure, chunkValue_t *origin, const int x, const int z, const block_t block, const bool flat) {
     decorator_t d;
     if (!decorator_initSurface(&d, origin, x, z, block)) {
         return false;
@@ -511,6 +511,12 @@ static bool world_initStructure(world_t *w, structure_t *structure, chunkValue_t
                                         structure->blocks[i].y,
                                         structure->blocks[i].z,
                                         structure->blocks[i].allowOverlap ? structure->blocks[i].type : BL_AIR)) {
+            return false;
+        }
+        if (flat && structure->blocks[i].y == 0 && decorator_testBlock(&d, w, structure->blocks[i].x,
+                                                                              -1,
+                                                                              structure->blocks[i].z,
+                                                                        BL_AIR)) {
             return false;
         }
     }
@@ -577,29 +583,32 @@ static void world_placeStructure(world_t *world, structure_t *structure) {
 
 
 static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
-#define STRUCTURE(type, chance, base)                             \
-    for (int x = 0; x < CHUNK_SIZE; x++) {                        \
-        for (int z = 0; z < CHUNK_SIZE; z++) {                    \
-            if (rng_float(&cv->chunk->rng) < chance) {            \
-                structure_t s = type;                             \
-                if (world_initStructure(w, &s, cv, x, z, base)) { \
-                    world_placeStructure(w, &s);                  \
-                }                                                 \
-            }                                                     \
-        }                                                         \
+#define STRUCTURE(type, chance, base, flat)                             \
+    for (int x = 0; x < CHUNK_SIZE; x++) {                              \
+        for (int z = 0; z < CHUNK_SIZE; z++) {                          \
+            if (rng_float(&cv->chunk->rng) < chance) {                  \
+                structure_t s = type;                                   \
+                if (world_initStructure(w, &s, cv, x, z, base, flat)) { \
+                    world_placeStructure(w, &s);                        \
+                }                                                       \
+            }                                                           \
+        }                                                               \
     }
 
     if (cv->chunk->biome == BIO_FOREST) {
-        STRUCTURE(treeStructure, 0.05f, BL_GRASS);
+        STRUCTURE(treeStructure, 0.05f, BL_GRASS, false);
     }
     if (cv->chunk->biome == BIO_PLAINS) {
-        STRUCTURE(treeStructure, 0.001f, BL_GRASS);
+        STRUCTURE(treeStructure, 0.001f, BL_GRASS, false);
     }
     if (cv->chunk->biome == BIO_DESERT) {
-        STRUCTURE(cactusStructure, 0.003f, BL_SAND);
+        STRUCTURE(cactusStructure, 0.003f, BL_SAND, false);
     }
     if (cv->chunk->biome == BIO_JUNGLE) {
-        STRUCTURE(jungleTreeStructure, 0.05f, BL_JUNGLE_GRASS);
+        STRUCTURE(jungleTreeStructure, 0.05f, BL_JUNGLE_GRASS, false);
+    }
+    if (cv->chunk->biome == BIO_TUNDRA) {
+        STRUCTURE(iglooStructure, 0.003f, BL_SNOW, true);
     }
 }
 

@@ -175,22 +175,20 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
 
         world_getBlocksInRange(w, minPoint, maxPoint, buf);
 
-        printf("static const structureBlock_t generated[] = {\n");
+        printf("static const structureBlock_t generatedPattern[] = {\n");
 
         for (int i = 0; i < numBlocks; i++) {
             const blockData_t block = buf[i];
             if (block.type!= BL_AIR) {
-                printf("    {%d, %d, %d, %d, 1.f},\n", block.type, block.x - (int)origin[0], block.y - (int)origin[1], block.z - (int)origin[2]);
+                printf("    {%d, %d, %d, %d, 1.f, false},\n", block.type, block.x - (int)origin[0], block.y - (int)origin[1], block.z - (int)origin[2]);
             }
         }
 
         printf("};\n\n");
 
         printf("const structure_t generatedStructure = {\n");
-        printf("    .numBlocks = %d,\n", numBlocks);
-        printf("    .blocks = generated,\n");
-        printf("    .base = %d,\n", originBlock);
-        printf("    .allowOverlap = false,\n};\n\n");
+        printf("    .numBlocks = STRUCTURE_SIZE(generatedPattern),\n");
+        printf("    .blocks = generatedPattern,\n};\n\n");
     }
     #endif
 
