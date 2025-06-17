@@ -200,10 +200,11 @@ void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, bl
  * @param w a pointer to the world
  * @param startPosition the position to start the raycast from
  * @param viewDirection the direction to raycast along
+ * @param raycastDistance the maximum distance to check with raycasting
  * @return whether the raycast was successful - found = False mean no block was found, otherwise found = true
  *         and block = found block
  */
-raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection);
+raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection, float raycastDistance);
 
 /**
  * @brief Tries to remove a block at a position.
@@ -269,6 +270,14 @@ void world_addEntity(world_t *w, worldEntity_t we);
 void world_removeItemEntity(world_t *w, int entityIndex);
 
 void world_drawAllEntities(const world_t *w, int modelLocation);
+
+/**
+ * @brief Gets the type of block at a chosen position
+ * @param w a pointer to the world
+ * @param position the position to get a block at
+ * @return The type of the block
+ */
+block_t getBlockType(world_t *w, vec3 position);
 
 #ifdef ENABLE_AUDIO
 void world_updateEngine(world_t *w, vec3 pos, vec3 lookDir);

@@ -25,7 +25,7 @@ static void player_addToWorld(player_t *p, world_t *w) {
 }
 
 void player_init(world_t *w, player_t *p) {
-    vec3 start = {0.f, 50.f, 0.f};
+    vec3 start = {0.f, 100.f, 0.f};
 
     while (true) {
         blockData_t bd;
@@ -46,13 +46,13 @@ void player_init(world_t *w, player_t *p) {
             .yaw = 0,
         },
         .lookVector = { 0.f, 0.f, 0.f },
-        .cameraOffset = {0.3f, 1.6f, 0.3f},
+        .cameraOffset = {0.3f, 1.8f, 0.3f},
         .hotbar = {
             .slots = {
                 {ITEM_DIRT, 64},
                 {ITEM_GRASS, 32},
                 {ITEM_STONE, 16},
-                {NOTHING, 0},
+                {ITEM_GLOWSTONE, 64},
                 {NOTHING, 0},
                 {NOTHING, 0},
                 {NOTHING, 0},
@@ -103,7 +103,7 @@ void player_removeBlock(player_t *p, world_t *w) {
     vec3 lookVector;
     glm_vec3_scale(p->lookVector, -1, lookVector);
 
-    const raycast_t raycastBlock = world_raycast(w, camPos, lookVector);
+    const raycast_t raycastBlock = world_raycast(w, camPos, lookVector, 6.f);
 
     if (raycastBlock.found) {
         world_removeBlock(w,(int)raycastBlock.blockPosition[0], (int)raycastBlock.blockPosition[1], (int)raycastBlock.blockPosition[2]);
@@ -123,7 +123,7 @@ void player_placeBlock(player_t *p, world_t *w) {
     vec3 lookVector;
     glm_vec3_scale(p->lookVector, -1, lookVector);
 
-    const raycast_t raycastBlock = world_raycast(w, camPos, lookVector);
+    const raycast_t raycastBlock = world_raycast(w, camPos, lookVector, 6.f);
 
     if (raycastBlock.found) {
         const int *moveDelta = faceToBlock[raycastBlock.face];

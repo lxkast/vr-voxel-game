@@ -1,9 +1,12 @@
 #include "entity.h"
+#include "logging.h"
 
 #define vec3_SIZE 12
 #define VELOCITY_CUTOFF 0.05f
 #define GROUND_FRICTION_CONSTANT 0.2f
 #define AIR_FRICTION_CONSTANT 0.6f
+
+extern raycast_t world_raycast(world_t *w, vec3 startPos, vec3 lookDirection, float raycastDistance);
 
 /**
  * @brief Determines if two bounding boxes intersect in the X-axis
@@ -68,6 +71,7 @@ bool intersectsWithBlock(const entity_t entity, ivec3 blockPosition) {
 /**
  * @brief Handles a collision of an entity and a block along a specific axis. Tries to
  *        resolve collisions by updating deltaP so the entity never moves inside a block.
+ * @param w A pointer to a world
  * @param entity The entity that is colliding
  * @param aabb The entity's bounding box
  * @param block The block we are checking for collisions with
@@ -83,10 +87,12 @@ static void handleAxisCollision(entity_t *entity, const aabb_t aabb, const block
         if (deltaP[axisNum] < 0) {
             // if velocity is negative, makes the entity's min point end up at the block's max point
             deltaP[axisNum] = block.aabb.max[axisNum] - aabb.min[axisNum];
+
             if (axisNum == 1) {
                 // if the entity lands on a block from above, set grounded to true
                 entity->grounded = true;
             }
+
         } else {
             // if velocity is positive, makes the entity's max point end up at the block's min point
             deltaP[axisNum] = block.aabb.min[axisNum] - aabb.max[axisNum];
@@ -104,7 +110,7 @@ static void handleAxisCollision(entity_t *entity, const aabb_t aabb, const block
 static void blockDataToBlockBounding(const blockData_t *buf, const unsigned int numBlocks, blockBounding_t *result) {
     vec3 blockSize = {1.f, 1.f, 1.f};
     for (int i = 0; i < numBlocks; i++) {
-        const blockData_t block = buf[i];
+        const blockData_t block = buf[numBlocks - i - 1];
 
         vec3 position = {(float)block.x, (float)block.y, (float)block.z};
 
@@ -120,12 +126,13 @@ void glm_vec3_ceil(vec3 v, vec3 dest) {
 
 /**
  * @brief Updates the entity's position using deltaP, whilst checking for possible collisions
+ * @param w A pointer to a world
  * @param entity the entity whose position you're changing
  * @param deltaP the amount you want to change it by
  */
 static void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
     // defining the entity's AABB bounding box
-    const aabb_t aabb = makeAABB(entity->position, entity->size);
+    aabb_t aabb = makeAABB(entity->position, entity->size);
 
     // working out the bottom left and top right corners of the cuboid of blocks
     // around the player we want to check collisions with
@@ -166,6 +173,22 @@ static void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
         }
     }
 
+    if (deltaP[1] < -2) {
+        vec3 centerUnderside = {entity->position[0] + entity->size[0] / 2, entity->position[1], entity->position[2] + entity->size[2] / 2};
+
+        const raycast_t raycast = world_raycast(w, centerUnderside, (vec3){0.f, -1.f, 0.f}, fabsf(deltaP[1])+1);
+
+        if (raycast.found) {
+            if (fabsf(entity->position[1] - (raycast.blockPosition[1] + 1)) < fabsf(deltaP[1])) {
+                deltaP[1] = (raycast.blockPosition[1] + 1) - entity->position[1];
+                entity->grounded = true;
+            }
+        }
+    }
+
+    aabb.max[1] += deltaP[1];
+    aabb.min[1] += deltaP[1];
+
     // resolves collisions in X-axis
     for (int i = 0; i < numBlocks; i++) {
         if (blocks[i].data.type == BL_AIR) {
@@ -175,6 +198,9 @@ static void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
             handleAxisCollision(entity, aabb, blocks[i], deltaP, 0);
         }
     }
+
+    aabb.max[0] += deltaP[0];
+    aabb.min[0] += deltaP[0];
 
     // resolves collisions in Z-axis
     for (int i = 0; i < numBlocks; i++) {
@@ -186,7 +212,6 @@ static void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
         }
     }
 
-    // updates position
     glm_vec3_add(entity->position, deltaP, entity->position);
 }
 
