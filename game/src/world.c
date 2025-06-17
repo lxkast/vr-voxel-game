@@ -209,6 +209,8 @@ void world_init(world_t *w, uint64_t seed) {
     rng_init(&w->worldRng, seed);
     rng_init(&w->generalRng, rng_ull(&w->worldRng));
     w->noise.seed = (uint32_t)rng_ull(&w->worldRng);
+
+    spscRing_init(&w->meshQueue, 64);
 }
 
 vec3 chunkBounds = {15.f, 15.f, 15.f};
