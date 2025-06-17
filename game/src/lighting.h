@@ -10,4 +10,5 @@
 #define EXTRACT_TORCH(light) ((light) & LIGHT_TORCH_MASK)
 
 float computeVertexLight(chunk_t *c, int vx, int vy, int vz, direction_e dir);
-void chunk_processLighting(chunk_t *c, world_t *w);
+void chunk_processLightInsertion(chunk_t *c, world_t *w);
+void chunk_processLightDeletion(chunk_t *c, world_t *w);

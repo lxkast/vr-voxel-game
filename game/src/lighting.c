@@ -140,9 +140,8 @@ float computeVertexLight(chunk_t *c, int vx, int vy, int vz, direction_e dir) {
     return ((float)sum / (float)count) / (float)LIGHT_MAX_VALUE;
 }
 
-// performs a BFS flood-fill to approximate the torchlight values of each chunk
-static void processTorchLight(chunk_t *c, world_t *w) {
-    // propagate darkness
+// propagate darkness across chunks using a BFS flood fill until queue is empty
+static void processTorchLightDeletion(chunk_t *c, world_t *w) {
     while (c->lightTorchDeletionQueue.size > 0) {
         lightQueueItem_t head = queue_pop(&c->lightTorchDeletionQueue);
         unsigned char lightLevel = EXTRACT_TORCH(c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]]);
@@ -209,10 +208,13 @@ static void processTorchLight(chunk_t *c, world_t *w) {
                     }
                     nChunk->tainted = true;
                 }
-
             }
         }
     }
+}
+
+// propagate light across chunks using a BFS flood fill until queue is empty
+static void processTorchLightInsertion(chunk_t *c, world_t *w) {
     // propagate light
     while (c->lightTorchInsertionQueue.size > 0) {
         lightQueueItem_t head = queue_pop(&c->lightTorchInsertionQueue);
@@ -377,7 +379,10 @@ static void processSunLight(chunk_t *c) {
     }
 }
 
-void chunk_processLighting(chunk_t *c, world_t *w) {
-    processTorchLight(c, w);
-    processSunLight(c);
+void chunk_processLightInsertion(chunk_t *c, world_t *w) {
+    processTorchLightInsertion(c, w);
+}
+
+void chunk_processLightDeletion(chunk_t *c, world_t *w) {
+    processTorchLightDeletion(c, w);
 }

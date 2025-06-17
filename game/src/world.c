@@ -252,21 +252,36 @@ void world_draw(const world_t *w, const int modelLocation, camera_t *cam, mat4 p
 
     // only draw chunks after lighting is fully processed
     while (true) {
-        bool lightingFinished = true;
+        bool deletionFinished = true;
+        HASH_ITER(hh, w->clusterTable, cluster, tmp) {
+            for (int i = 0; i < C_T * C_T * C_T; i++) {
+                if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
+                if (cluster->cells[i].chunk &&
+                    (cluster->cells[i].chunk->lightTorchDeletionQueue.size > 0
+                     || cluster->cells[i].chunk->lightSunDeletionQueue.size > 0)) {
+                    chunk_processLightDeletion(cluster->cells[i].chunk, w);
+                    deletionFinished = false;
+                }
+            }
+        }
+        if (deletionFinished) {
+            break;
+        }
+    }
+    while (true) {
+        bool insertionFinished = true;
         HASH_ITER(hh, w->clusterTable, cluster, tmp) {
             for (int i = 0; i < C_T * C_T * C_T; i++) {
                 if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
                 if (cluster->cells[i].chunk &&
                     (cluster->cells[i].chunk->lightTorchInsertionQueue.size > 0
-                     || cluster->cells[i].chunk->lightTorchDeletionQueue.size > 0
-                     || cluster->cells[i].chunk->lightSunInsertionQueue.size > 0
-                     || cluster->cells[i].chunk->lightSunDeletionQueue.size > 0)) {
-                    chunk_processLighting(cluster->cells[i].chunk, w);
-                    lightingFinished = false;
+                     || cluster->cells[i].chunk->lightSunInsertionQueue.size > 0)) {
+                    chunk_processLightInsertion(cluster->cells[i].chunk, w);
+                    insertionFinished = false;
                 }
             }
         }
-        if (lightingFinished) {
+        if (insertionFinished) {
             break;
         }
     }
