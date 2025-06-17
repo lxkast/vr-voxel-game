@@ -209,7 +209,7 @@ void player_pickUpItemsCheck(player_t *p, world_t *w) {
                     #ifdef ENABLE_AUDIO
                     // this sound is from: https://pixabay.com/sound-effects/sharp-pop-328170/
                     ma_engine_play_sound(&w->engine, "../../src/audio/item_pickup.mp3", NULL);
-                    #endif ENABLE_AUDIO
+                    #endif
                     return;
                 }
             }
@@ -225,7 +225,7 @@ void player_pickUpItemsCheck(player_t *p, world_t *w) {
                     #ifdef ENABLE_AUDIO
                     // this sound is from: https://pixabay.com/sound-effects/sharp-pop-328170/
                     ma_engine_play_sound(&w->engine, "../../src/audio/item_pickup.mp3", NULL);
-                    #endif ENABLE_AUDIO
+                    #endif
                     return;
                 }
             }

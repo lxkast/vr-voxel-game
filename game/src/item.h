@@ -34,27 +34,48 @@ typedef struct {
     /// the durability of the item (if it is a tool)
     /// -1 means N/A - otherwise decreases by 1 each time it is used
     int durability;
+    /// A relative file path to the audio file to be play when breaking a block
+    char *breakSound;
     /// Any other flags (yet to be implemented)
 } itemProperties_t;
 
+/*
+ * All audio files are free to use under copyright laws.
+ * See the pixabay content license here:
+ * https://pixabay.com/service/license-summary/
+ *
+ * Below I have included links to all audio files used in the project.
+ * Please note the majority have been edited to some degree (either by
+ * changing the volume or cutting them down in size).
+ *
+ * All files available and free to use as of 17/06/2025.
+ *
+ * Glass Breaking: https://pixabay.com/sound-effects/breaking-glass-83809/
+ * Dirt/Sand/Grass... Breaking: https://pixabay.com/sound-effects/footsteps-dirt-gravel-6823/
+ * Leaf Breaking: https://pixabay.com/sound-effects/rustling-bushes-dried-leaves-5-230204/
+ * Stone Breaking: https://pixabay.com/sound-effects/rock-destroy-6409/
+ * Log Breaking: https://pixabay.com/sound-effects/log-split-88986/
+ *
+ */
+
 /// a mapping from the item type to its properties.
 static const itemProperties_t ITEM_PROPERTIES[] = {
-    [NOTHING]    = {"Empty",      false, false, 0, -1},
-    [ITEM_DIRT]  = {"Dirt Block",       true,  false,  64, -1},
-    [ITEM_GRASS] = {"Grass Block",      true,  false,  64,-1},
-    [ITEM_STONE] = {"Stone Block",       true,  false,  64,-1},
-    [ITEM_SWORD] = {"Sword",      false, true, 1,200},
-    [ITEM_SHOVEL] = {"Shovel",      false, true, 1,200},
-    [ITEM_PICKAXE] = {"Pickaxe",      false, true, 1,200},
-    [ITEM_LOG] = {"Log",       true,  false,  64,-1},
-    [ITEM_LEAF] = {"Leaf block",       true,  false,  64,-1},
-    [ITEM_GLOWSTONE] = { "Glowstone", true, false, 64, -1},
-    [ITEM_SNOW] = { "Snow", true, false, 64, -1},
-    [ITEM_JUNGLE_GRASS] = { "Jungle grass", true, false, 64, -1},
-    [ITEM_MUD] = { "Mud", true, false, 64, -1},
-    [ITEM_CACTUS] = { "Cactus", true, false, 64, -1},
-    [ITEM_JUNGLE_LOG] = { "Jungle log", true, false, 64, -1},
-    [ITEM_JUNGLE_LEAF] = { "Jungle leaf", true, false, 64, -1},
+    [NOTHING]    = {"Empty",      false, false, 0, -1, ""},
+    [ITEM_DIRT]  = {"Dirt Block",       true,  false,  64, -1,"../../src/audio/sand_dirt_grass_destroy.mp3"},
+    [ITEM_GRASS] = {"Grass Block",      true,  false,  64,-1, "../../src/audio/sand_dirt_grass_destroy.mp3"},
+    [ITEM_STONE] = {"Stone Block",       true,  false,  64,-1, "../../src/audio/stone_destroy.mp3"},
+    [ITEM_SWORD] = {"Sword",      false, true, 1,200, ""},
+    [ITEM_SHOVEL] = {"Shovel",      false, true, 1,200, ""},
+    [ITEM_PICKAXE] = {"Pickaxe",      false, true, 1,200, ""},
+    [ITEM_LOG] = {"Log",       true,  false,  64,-1, "../../src/audio/log_destroy.mp3"},
+    [ITEM_LEAF] = {"Leaf block",       true,  false,  64,-1, "../../src/audio/leaf_destroy.mp3"},
+    [ITEM_GLOWSTONE] = { "Glowstone", true, false, 64, -1, "../../src/audio/glass_breaking.mp3"},
+    [ITEM_SNOW] = { "Snow", true, false, 64, -1, "../../src/audio/sand_dirt_grass_destroy.mp3"},
+    [ITEM_JUNGLE_GRASS] = { "Jungle grass", true, false, 64, -1, "../../src/audio/sand_dirt_grass_destroy.mp3"},
+    [ITEM_MUD] = { "Mud", true, false, 64, -1, "../../src/audio/sand_dirt_grass_destroy.mp3"},
+    [ITEM_CACTUS] = { "Cactus", true, false, 64, -1, "../../src/audio/log_destroy.mp3"},
+    [ITEM_JUNGLE_LOG] = { "Jungle log", true, false, 64, -1, "../../src/audio/log_destroy.mp3"},
+    [ITEM_JUNGLE_LEAF] = { "Jungle leaf", true, false, 64, -1, "../../src/audio/leaf_destroy.mp3"},
 };
 
 /// a mapping from block item types to the block types

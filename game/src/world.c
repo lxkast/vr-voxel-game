@@ -740,23 +740,23 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
 
 
     #ifdef ENABLE_AUDIO
-    if (*bp == BL_DIRT || *bp == BL_GRASS || *bp == BL_SAND) {
-        // audio found here: https://pixabay.com/sound-effects/footsteps-dirt-gravel-6823/
-        play3DAudio(w, "../../src/audio/sand_dirt_grass_destroy.mp3", (float)x, (float)y, (float)z);
-
-    } else if (*bp == BL_LEAF) {
-        // audio found here: https://pixabay.com/sound-effects/rustling-bushes-dried-leaves-5-230204/
-        play3DAudio(w, "../../src/audio/leaf_destroy.mp3", (float)x, (float)y, (float)z);
-
-    } else if (*bp == BL_STONE) {
-        LOG_DEBUG("Playing sound");
-        // audio found here: https://pixabay.com/sound-effects/rock-destroy-6409/
-        play3DAudio(w, "../../src/audio/stone_destroy.mp3", (float)x, (float)y, (float)z);
-    }else if (*bp == BL_LOG) {
-        // audio found here https://pixabay.com/sound-effects/log-split-88986/
-        play3DAudio(w, "../../src/audio/log_destroy.mp3", (float)x, (float)y, (float)z);
-
-    }
+    play3DAudio(w, ITEM_PROPERTIES[BLOCK_TO_ITEM[*bp]].breakSound, (float)x, (float)y, (float)z);
+    // if (*bp == BL_DIRT || *bp == BL_GRASS || *bp == BL_SAND) {
+    //     // audio found here: https://pixabay.com/sound-effects/footsteps-dirt-gravel-6823/
+    //     play3DAudio(w, "../../src/audio/sand_dirt_grass_destroy.mp3", (float)x, (float)y, (float)z);
+    //
+    // } else if (*bp == BL_LEAF) {
+    //     // audio found here: https://pixabay.com/sound-effects/rustling-bushes-dried-leaves-5-230204/
+    //     play3DAudio(w, "../../src/audio/leaf_destroy.mp3", (float)x, (float)y, (float)z);
+    //
+    // } else if (*bp == BL_STONE) {
+    //     // audio found here: https://pixabay.com/sound-effects/rock-destroy-6409/
+    //     play3DAudio(w, "../../src/audio/stone_destroy.mp3", (float)x, (float)y, (float)z);
+    // }else if (*bp == BL_LOG) {
+    //     // audio found here https://pixabay.com/sound-effects/log-split-88986/
+    //     play3DAudio(w, "../../src/audio/log_destroy.mp3", (float)x, (float)y, (float)z);
+    //
+    // }
 
     #endif
 
