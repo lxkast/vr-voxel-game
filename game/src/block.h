@@ -57,7 +57,10 @@ typedef enum {
  * @brief Struct that holds data about the result of a raycast
  */
 typedef struct {
+    /// The position of the block found by the raycast (if it finds one)
     vec3 blockPosition;
+    /// The face the raycast hits
     raycastFace_e face;
+    /// Wether a raycast is actually found
     bool found;
 } raycast_t;

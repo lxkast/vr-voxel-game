@@ -103,7 +103,7 @@ void player_mineBlock(player_t *p, world_t *w, const double dt) {
     vec3 lookVector;
     glm_vec3_scale(p->lookVector, -1, lookVector);
 
-    const raycast_t raycastBlock = world_raycast(w, camPos, lookVector, 6.f);
+    raycast_t raycastBlock = world_raycast(w, camPos, lookVector, 6.f);
 
     blockData_t block;
     if (world_getBlock(w, raycastBlock.blockPosition, &block)) {
