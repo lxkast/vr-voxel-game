@@ -459,6 +459,46 @@ static bool decorator_initSurface(decorator_t *d, chunkValue_t *origin, const in
     return false;
 }
 
+static bool decorator_testBlock(decorator_t *d, world_t *world, int x, int y, int z) {
+    x = d->ox + x;
+    y = d->oy + y;
+    z = d->oz + z;
+
+    const int cx = x >> 4;
+    const int cy = y >> 4;
+    const int cz = z >> 4;
+
+    if (-1 <= cx && cx <= 1 && -1 <= cy && cy <= 1 && -1 <= cz && cz <= 1) {
+        chunkValue_t **cacheValue = &d->cache[cx + 1][cy + 1][cz + 1];
+        if (!*cacheValue) {
+            *cacheValue = world_loadChunk(world,
+                                          d->origin->chunk->cx + cx,
+                                          d->origin->chunk->cy + cy,
+                                          d->origin->chunk->cz + cz,
+                                          LL_INIT,
+                                          REL_CHILD);
+            if (d->origin->loadData.nChildren > 31) {
+                LOG_FATAL("Buffer overflow in chunk children");
+            }
+            bool found = false;
+            for (int i = 0; i < d->origin->loadData.nChildren; i++) {
+                if (d->origin->loadData.children[i] == *cacheValue) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                d->origin->loadData.children[d->origin->loadData.nChildren++] = *cacheValue;
+            }
+        }
+
+        return (*cacheValue)->chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)] == BL_AIR;
+    }
+
+    return false;
+}
+
+
 static bool world_initStructure(world_t *w, structure_t *structure, chunkValue_t *origin, const int x, const int z, const block_t block) {
     for (int y = CHUNK_SIZE - 1; y >= 0; y--) {
         const block_t currBlock = origin->chunk->blocks[x][y][z];
