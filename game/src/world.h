@@ -2,7 +2,6 @@
 
 #include <cglm/cglm.h>
 #include <glad/gl.h>
-#include <uthash.h>
 #include "camera.h"
 #include "chunk.h"
 #include "item.h"
