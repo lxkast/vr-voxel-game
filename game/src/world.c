@@ -209,6 +209,9 @@ void world_init(world_t *w, uint64_t seed) {
     rng_init(&w->worldRng, seed);
     rng_init(&w->generalRng, rng_ull(&w->worldRng));
     w->noise.seed = (uint32_t)rng_ull(&w->worldRng);
+
+    spscRing_init(&w->queues.chunkBufferCreationQueue, 64);
+    spscRing_init(&w->queues.chunkBufferFreeQueue, 64);
 }
 
 vec3 chunkBounds = {15.f, 15.f, 15.f};
@@ -345,6 +348,9 @@ void world_free(world_t *w) {
             freeEntity(&w->entities[i]);
         }
     }
+
+    spscRing_free(&w->queues.chunkBufferCreationQueue);
+    spscRing_free(&w->queues.chunkBufferFreeQueue);
 }
 
 bool world_genChunkLoader(world_t *w, unsigned int *id) {

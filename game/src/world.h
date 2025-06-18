@@ -74,6 +74,11 @@ typedef struct world_t {
     rng_t generalRng;
     rng_t worldRng;
     noise_t noise;
+
+    struct {
+        spscRing_t chunkBufferCreationQueue;
+        spscRing_t chunkBufferFreeQueue;
+    } queues;
 } world_t;
 
 /**
@@ -125,6 +130,12 @@ void world_init(world_t *w, uint64_t seed);
  * @param w A pointer to a world
  */
 void world_remeshChunks(world_t *w);
+
+/**
+ * @brief Processes all the concurrent queues of the world
+ * @param w A pointer to a world
+ */
+void world_processQueues(world_t *w);
 
 /**
  * @brief Draws the world.
