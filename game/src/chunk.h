@@ -99,12 +99,19 @@ void chunk_initSun(chunk_t *c);
 void chunk_generate(chunk_t *c);
 
 /**
+ * @brief Remeshes the chunk if necessary
+ * @param c A pointer to a chunk
+ * @param w A pointer to a world
+ */
+void chunk_checkMesh(chunk_t *c, world_t *w);
+
+/**
  * @brief Draws a chunk.
  * @param c A pointer to a chunk
  * @param w A pointer to a world
  * @param modelLocation The location of the model matrix in the shader program
  */
-void chunk_draw(chunk_t *c, world_t *w, const int modelLocation);
+void chunk_draw(const chunk_t *c, int modelLocation);
 
 /**
 * @brief A function for freeing a chunk

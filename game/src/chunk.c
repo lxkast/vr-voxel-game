@@ -187,10 +187,14 @@ void chunk_generate(chunk_t *c) {
     c->tainted = true;
 }
 
-void chunk_draw(chunk_t *c, world_t *w, const int modelLocation) {
-    if (c->tainted) chunk_createMesh(c, w);
+void chunk_checkMesh(chunk_t *c, world_t *w) {
+    if (c->tainted) {
+        chunk_createMesh(c, w);
+    }
     c->tainted = false;
+}
 
+void chunk_draw(const chunk_t *c, const int modelLocation) {
     mat4 model;
     const vec3 cPos = { c->cx * CHUNK_SIZE, c->cy * CHUNK_SIZE, c->cz * CHUNK_SIZE };
     glm_translate_make(model, cPos);

@@ -252,7 +252,20 @@ static void calculatePlanes(camera_t *cam, mat4 projection, double res[6][4]) {
     }
 }
 
-void world_draw(const world_t *w, const int modelLocation, camera_t *cam, mat4 projection) {
+void world_remeshChunks(world_t *w) {
+    cluster_t *cluster, *tmp;
+
+    HASH_ITER(hh, w->clusterTable, cluster, tmp) {
+        for (int i = 0; i < C_T * C_T * C_T; i++) {
+            if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
+            if (cluster->cells[i].chunk) {
+                chunk_checkMesh(cluster->cells[i].chunk, w);
+            }
+        }
+    }
+}
+
+void world_draw(world_t *w, const int modelLocation, camera_t *cam, mat4 projection) {
     cluster_t *cluster, *tmp;
     double planes[6][4];
     calculatePlanes(cam, projection, planes);
@@ -301,7 +314,7 @@ void world_draw(const world_t *w, const int modelLocation, camera_t *cam, mat4 p
             const bool renderingChunk = shouldRender(cam, cluster->cells[i].chunk, planes);
 
             if (cluster->cells[i].chunk && renderingChunk) {
-                chunk_draw(cluster->cells[i].chunk, w, modelLocation);
+                chunk_draw(cluster->cells[i].chunk, modelLocation);
             }
         }
     }
