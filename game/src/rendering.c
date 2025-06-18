@@ -7,7 +7,7 @@
 #include <logging.h>
 #include <cglm/cam.h>
 #include <cglm/mat4.h>
-#include <GL/gl.h>
+#include <glad/gl.h>
 
 #include "hud.h"
 #include "postprocess.h"
