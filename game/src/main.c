@@ -27,7 +27,7 @@
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
 #ifdef BUILD_FOR_RPI
-#define FOV_Y 0.785f
+#define FOV_Y 1.5f
 #else
 #define FOV_Y 1.0177f
 #endif
