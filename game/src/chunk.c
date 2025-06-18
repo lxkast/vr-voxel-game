@@ -8,7 +8,8 @@
 
 #define LIGHT_MAX_VALUE 15
 
-extern void chunk_createMesh(void *w, chunk_t *c);
+typedef struct world_t world_t;
+extern void chunk_createMesh(world_t *w, chunk_t *c);
 
 static float smoothstep(const float min, const float max, float x) {
     x = glm_clamp((x - min) / (max - min), 0.f, 1.f);
