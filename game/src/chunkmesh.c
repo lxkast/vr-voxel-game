@@ -7,23 +7,39 @@
 #include "vertices.h"
 
 // helper to check if a block's face neighbours air or the chunk edge
-static bool faceIsVisible(chunk_t *c, ivec3 blockPos, direction_e dir) {
+static bool faceIsVisible(world_t *w, chunk_t *c, ivec3 blockPos, direction_e dir) {
     ivec3 dirVec;
     memcpy(&dirVec, &directions[dir], sizeof(ivec3));
     ivec3 neighbourPos;
     glm_ivec3_add(blockPos, dirVec, neighbourPos);
+    ivec3 chunkOffset = { 0, 0, 0 };
     for (int i = 0; i < 3; i++) {
-        if (neighbourPos[i] < 0 || neighbourPos[i] >= CHUNK_SIZE) {
-            return true;
+        if (neighbourPos[i] < 0) {
+            neighbourPos[i] = CHUNK_SIZE - 1;
+            chunkOffset[i] = -1;
+        } else if (neighbourPos[i] >= CHUNK_SIZE) {
+            neighbourPos[i] = 0;
+            chunkOffset[i] = 1;
         }
     }
-    block_t type = c->blocks[neighbourPos[0]][neighbourPos[1]][neighbourPos[2]];
-    return type == BL_AIR || type == BL_LEAF;
+    if (chunkOffset[0] == 0 && chunkOffset[1] == 0 && chunkOffset[2] == 0) {
+        block_t type = c->blocks[neighbourPos[0]][neighbourPos[1]][neighbourPos[2]];
+        return BL_TRANSPARENT(type);
+    } else {
+        ivec3 cPos = { c->cx, c->cy, c->cz };
+        glm_ivec3_add(cPos, chunkOffset, cPos);
+        chunk_t *nChunk = world_getFullyLoadedChunk(w, cPos[0], cPos[1], cPos[2]);
+        if (!nChunk) {
+            return true;
+        }
+        block_t type = nChunk->blocks[neighbourPos[0]][neighbourPos[1]][neighbourPos[2]];
+        return BL_TRANSPARENT(type);
+    }
 }
 
 // writes vertices of a face specified by buf
 // returns pointer to next free position in the buffer
-static vertex_t *writeFace(chunk_t *c, vertex_t *buf, ivec3 blockPos, direction_e dir, int width, int height, int type) {
+static vertex_t *writeFace(world_t *w, chunk_t *c, vertex_t *buf, ivec3 blockPos, direction_e dir, int width, int height, int type) {
     ivec3 dirVec;
     memcpy(&dirVec, &directions[dir], sizeof(ivec3));
     int texIndex = type * 4;
@@ -36,7 +52,7 @@ static vertex_t *writeFace(chunk_t *c, vertex_t *buf, ivec3 blockPos, direction_
                 buf[i].y = buf[i].y * height + blockPos[1];
                 buf[i].z += blockPos[2];
                 buf[i].texIndex += texIndex;
-                buf[i].lightValue = computeVertexLight(c, buf[i].x, buf[i].y, buf[i].z, dir);
+                buf[i].lightValue = computeVertexLight(w, c, buf[i].x, buf[i].y, buf[i].z, dir);
             }
             break;
         case DIR_PLUSY:
@@ -46,7 +62,7 @@ static vertex_t *writeFace(chunk_t *c, vertex_t *buf, ivec3 blockPos, direction_
                 buf[i].y += blockPos[1];
                 buf[i].z = buf[i].z * height + blockPos[2];
                 buf[i].texIndex += texIndex;
-                buf[i].lightValue = computeVertexLight(c, buf[i].x, buf[i].y, buf[i].z, dir);
+                buf[i].lightValue = computeVertexLight(w, c, buf[i].x, buf[i].y, buf[i].z, dir);
             }
             break;
         case DIR_PLUSX:
@@ -56,7 +72,7 @@ static vertex_t *writeFace(chunk_t *c, vertex_t *buf, ivec3 blockPos, direction_
                 buf[i].y = buf[i].y * width + blockPos[1];
                 buf[i].z = buf[i].z * height + blockPos[2];
                 buf[i].texIndex += texIndex;
-                buf[i].lightValue = computeVertexLight(c, buf[i].x, buf[i].y, buf[i].z, dir);
+                buf[i].lightValue = computeVertexLight(w, c, buf[i].x, buf[i].y, buf[i].z, dir);
             }
             break;
     }
@@ -90,7 +106,7 @@ static void getNextCoord(ivec3 out, int i, int j, int k, direction_e dir, int wi
 }
 
 // greedy meshing in one direction, writes quads to buf, returns updated pointer
-static vertex_t *greedyMeshDirection(chunk_t *c, direction_e dir, vertex_t *buf) {
+static vertex_t *greedyMeshDirection(world_t *world, chunk_t *c, direction_e dir, vertex_t *buf) {
     ivec3 dirVec;
     memcpy(&dirVec, &directions[dir], sizeof(ivec3));
     vertex_t *nextPtr = buf;
@@ -100,71 +116,76 @@ static vertex_t *greedyMeshDirection(chunk_t *c, direction_e dir, vertex_t *buf)
             for (int k = 0; k < CHUNK_SIZE; ++k) {
                 ivec3 base = {i, j, k};
                 block_t type = c->blocks[i][j][k];
-                if (seen[i][j][k] || type == BL_AIR || !faceIsVisible(c, base, dir)) {
+                if (seen[i][j][k] || type == BL_AIR || !faceIsVisible(world, c, base, dir)) {
                     continue;
                 }
                 seen[i][j][k] = true;
-                float light = c->lightMap[i][j][k];
+                unsigned char light = glm_imax(EXTRACT_SUN(c->lightMap[i][j][k]), EXTRACT_TORCH(c->lightMap[i][j][k]));
                 int width = 1;
                 int height = 1;
-                // expand width
-                for (; width < CHUNK_SIZE; ++width) {
-                    ivec3 nextCoord;
-                    getNextCoord(nextCoord, i, j, k, dir, width, 0);
-                    ivec3 normalNextCoord;
-                    glm_ivec3_add(nextCoord, dirVec, normalNextCoord);
-                    int nx = nextCoord[0], ny = nextCoord[1], nz = nextCoord[2];
-                    if (nx < 0 || ny < 0 || nz < 0 || nx >= CHUNK_SIZE || ny >= CHUNK_SIZE || nz >= CHUNK_SIZE) {
-                        break;
-                    }
-                    if (normalNextCoord[0] >= 0 && normalNextCoord[1] >= 0 && normalNextCoord[2] >= 0 &&
-                        normalNextCoord[0] < CHUNK_SIZE && normalNextCoord[1] < CHUNK_SIZE && normalNextCoord[2] < CHUNK_SIZE) {
-                        if (light != c->lightMap[normalNextCoord[0]][normalNextCoord[1]][normalNextCoord[2]]) {
-                            break;
-                        }
-                    }
-                    if (seen[nx][ny][nz] || c->blocks[nx][ny][nz] != type || !faceIsVisible(c, nextCoord, dir) || light != c->lightMap[nextCoord[0]][nextCoord[1]][nextCoord[2]]) {
-                        break;
-                    }
-                    seen[nx][ny][nz] = true;
-                }
-                // expand height
-                bool ok;
-                for (; height < CHUNK_SIZE; ++height) {
-                    ok = true;
-                    for (int w = 0; w < width; ++w) {
-                        ivec3 nextCoord;
-                        getNextCoord(nextCoord, i, j, k, dir, w, height);
-                        ivec3 normalNextCoord;
-                        glm_ivec3_add(nextCoord, dirVec, normalNextCoord);
-                        int nx = nextCoord[0], ny = nextCoord[1], nz = nextCoord[2];
-                        if (nx < 0 || ny < 0 || nz < 0 || nx >= CHUNK_SIZE || ny >= CHUNK_SIZE || nz >= CHUNK_SIZE) {
-                            ok = false;
-                            break;
-                        }
-                        if (normalNextCoord[0] >= 0 && normalNextCoord[1] >= 0 && normalNextCoord[2] >= 0 &&
-                            normalNextCoord[0] < CHUNK_SIZE && normalNextCoord[1] < CHUNK_SIZE && normalNextCoord[2] < CHUNK_SIZE) {
-                            if (light != c->lightMap[normalNextCoord[0]][normalNextCoord[1]][normalNextCoord[2]]) {
-                                ok = false;
-                                break;
-                            }
-                        }
-                        if (seen[nx][ny][nz] || c->blocks[nx][ny][nz] != type || !faceIsVisible(c, nextCoord, dir)) {
-                            ok = false;
-                            break;
-                        }
-                    }
-                    if (!ok) {
-                        break;
-                    }
-                    for (int w = 0; w < width; ++w) {
-                        ivec3 nextCoord;
-                        getNextCoord(nextCoord, i, j, k, dir, w, height);
-                        int nx = nextCoord[0], ny = nextCoord[1], nz = nextCoord[2];
-                        seen[nx][ny][nz] = true;
-                    }
-                }
-                nextPtr = writeFace(c, nextPtr, base, dir, width, height, type);
+
+                // removed greedy meshing due to vertex lighting making merged faces look strange
+
+            //     // expand width
+            //     for (; width < CHUNK_SIZE; ++width) {
+            //         ivec3 nextCoord;
+            //         getNextCoord(nextCoord, i, j, k, dir, width, 0);
+            //         ivec3 normalNextCoord;
+            //         glm_ivec3_add(nextCoord, dirVec, normalNextCoord);
+            //         int nx = nextCoord[0], ny = nextCoord[1], nz = nextCoord[2];
+            //         if (nx < 0 || ny < 0 || nz < 0 || nx >= CHUNK_SIZE || ny >= CHUNK_SIZE || nz >= CHUNK_SIZE) {
+            //             break;
+            //         }
+            //         if (normalNextCoord[0] >= 0 && normalNextCoord[1] >= 0 && normalNextCoord[2] >= 0 &&
+            //             normalNextCoord[0] < CHUNK_SIZE && normalNextCoord[1] < CHUNK_SIZE && normalNextCoord[2] < CHUNK_SIZE) {
+            //             if (light != glm_imax(EXTRACT_SUN(c->lightMap[normalNextCoord[0]][normalNextCoord[1]][normalNextCoord[2]]),
+            //                 EXTRACT_TORCH(c->lightMap[normalNextCoord[0]][normalNextCoord[1]][normalNextCoord[2]]))) {
+            //                 break;
+            //             }
+            //         }
+            //         if (seen[nx][ny][nz] || c->blocks[nx][ny][nz] != type || !faceIsVisible(world, c, nextCoord, dir)) {
+            //             break;
+            //         }
+            //         seen[nx][ny][nz] = true;
+            //     }
+            //     // expand height
+            //     bool ok;
+            //     for (; height < CHUNK_SIZE; ++height) {
+            //         ok = true;
+            //         for (int w = 0; w < width; ++w) {
+            //             ivec3 nextCoord;
+            //             getNextCoord(nextCoord, i, j, k, dir, w, height);
+            //             ivec3 normalNextCoord;
+            //             glm_ivec3_add(nextCoord, dirVec, normalNextCoord);
+            //             int nx = nextCoord[0], ny = nextCoord[1], nz = nextCoord[2];
+            //             if (nx < 0 || ny < 0 || nz < 0 || nx >= CHUNK_SIZE || ny >= CHUNK_SIZE || nz >= CHUNK_SIZE) {
+            //                 ok = false;
+            //                 break;
+            //             }
+            //             if (normalNextCoord[0] >= 0 && normalNextCoord[1] >= 0 && normalNextCoord[2] >= 0 &&
+            //                 normalNextCoord[0] < CHUNK_SIZE && normalNextCoord[1] < CHUNK_SIZE && normalNextCoord[2] < CHUNK_SIZE) {
+            //                 if (light != glm_imax(EXTRACT_SUN(c->lightMap[normalNextCoord[0]][normalNextCoord[1]][normalNextCoord[2]]),
+            //                 EXTRACT_TORCH(c->lightMap[normalNextCoord[0]][normalNextCoord[1]][normalNextCoord[2]]))) {
+            //                     ok = false;
+            //                     break;
+            //                 }
+            //             }
+            //             if (seen[nx][ny][nz] || c->blocks[nx][ny][nz] != type || !faceIsVisible(world, c, nextCoord, dir)) {
+            //                 ok = false;
+            //                 break;
+            //             }
+            //         }
+            //         if (!ok) {
+            //             break;
+            //         }
+            //         for (int w = 0; w < width; ++w) {
+            //             ivec3 nextCoord;
+            //             getNextCoord(nextCoord, i, j, k, dir, w, height);
+            //             int nx = nextCoord[0], ny = nextCoord[1], nz = nextCoord[2];
+            //             seen[nx][ny][nz] = true;
+            //         }
+            //     }
+                nextPtr = writeFace(world, c, nextPtr, base, dir, width, height, type);
             }
         }
     }
@@ -174,15 +195,15 @@ static vertex_t *greedyMeshDirection(chunk_t *c, direction_e dir, vertex_t *buf)
 /**
  * @brief Creates the mesh from a chunk
  * @param c A pointer to a chunk
+ * @param w A pointer to a world
  */
-void chunk_createMesh(chunk_t *c) {
-    chunk_processLighting(c);
+void chunk_createMesh(chunk_t *c, world_t *w) {
     const size_t bytesPerBlock = sizeof(vertex_t) * 36;
 
     vertex_t *buf = malloc(CHUNK_SIZE_CUBED * bytesPerBlock);
     vertex_t *nextPtr = buf;
     for (direction_e dir = 0; dir < 6; ++dir) {
-        nextPtr = greedyMeshDirection(c, dir, nextPtr);
+        nextPtr = greedyMeshDirection(w, c, dir, nextPtr);
     }
     const GLsizeiptr sizeToWrite = sizeof(vertex_t) * (nextPtr - buf);
     c->meshVertices = sizeToWrite / sizeof(vertex_t);

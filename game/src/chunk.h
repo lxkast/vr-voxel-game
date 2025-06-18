@@ -12,6 +12,8 @@
 #define CHUNK_SIZE 16
 #define CHUNK_SIZE_CUBED 4096
 
+typedef struct world_t world_t;
+
 /**
  * @brief An enum containing biome information
  */
@@ -84,6 +86,12 @@ void chunk_fill(chunk_t *c, block_t block);
 void chunk_createDeserialise(chunk_t *c, FILE *fp);
 
 /**
+* @brief Queues sunlight values in transparent blocks at the top of the chunk to be propagated downwards
+* @param c A pointer to a chunk
+*/
+void chunk_initSun(chunk_t *c);
+
+/**
  * @brief A function to generate a chunk
  * @param c A pointer to a chunk
  * @note The chunk object should be empty/uninitialised.
@@ -93,9 +101,10 @@ void chunk_generate(chunk_t *c);
 /**
  * @brief Draws a chunk.
  * @param c A pointer to a chunk
+ * @param w A pointer to a world
  * @param modelLocation The location of the model matrix in the shader program
  */
-void chunk_draw(chunk_t *c, int modelLocation);
+void chunk_draw(chunk_t *c, world_t *w, const int modelLocation);
 
 /**
 * @brief A function for freeing a chunk

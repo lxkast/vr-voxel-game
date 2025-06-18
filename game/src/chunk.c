@@ -6,7 +6,9 @@
 #include "vertices.h"
 #include "noise.h"
 
-extern void chunk_createMesh(chunk_t *c);
+#define LIGHT_MAX_VALUE 15
+
+extern void chunk_createMesh(chunk_t *c, world_t *w);
 
 static float smoothstep(const float min, const float max, float x) {
     x = glm_clamp((x - min) / (max - min), 0.f, 1.f);
@@ -119,6 +121,18 @@ void chunk_createDeserialise(chunk_t *c, FILE *fp) {
     c->tainted = true;
 }
 
+void chunk_initSun(chunk_t *c) {
+    // return;
+    for (int i = 0; i < CHUNK_SIZE; ++i) {
+        for (int j = 0; j < CHUNK_SIZE; ++j) {
+            if (c->blocks[i][CHUNK_SIZE - 1][j] == BL_AIR || c->blocks[i][CHUNK_SIZE - 1][j] == BL_LEAF) {
+                lightQueueItem_t nItem = { .pos = { i, CHUNK_SIZE - 1, j }, .lightValue = LIGHT_MAX_VALUE };
+                queue_push(&c->lightSunInsertionQueue, nItem);
+            }
+        }
+    }
+}
+
 void chunk_generate(chunk_t *c) {
     int (*ptr)[CHUNK_SIZE][CHUNK_SIZE] = (int (*)[CHUNK_SIZE][CHUNK_SIZE]) c->blocks;
     for (int x = 0; x < CHUNK_SIZE; x++) {
@@ -173,8 +187,8 @@ void chunk_generate(chunk_t *c) {
     c->tainted = true;
 }
 
-void chunk_draw(chunk_t *c, const int modelLocation) {
-    if (c->tainted) chunk_createMesh(c);
+void chunk_draw(chunk_t *c, world_t *w, const int modelLocation) {
+    if (c->tainted) chunk_createMesh(c, w);
     c->tainted = false;
 
     mat4 model;

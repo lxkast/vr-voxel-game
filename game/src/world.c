@@ -23,22 +23,6 @@ typedef struct {
     int x, y, z;
 } clusterKey_t;
 
-/**
- * @brief Value stored in hashmap entry array
- */
-typedef struct chunkValue_t {
-    /// The pointer to a heap allocated chunk
-    chunk_t *chunk;
-    /// The current level of loading the chunk is in
-    chunkLoadLevel_e ll;
-
-    struct {
-        reloadData_e reload;
-        size_t nChildren;
-        chunkValue_t *children[32];
-    } loadData;
-
-} chunkValue_t;
 
 /**
  * @brief A cluster and also hashmap
@@ -104,6 +88,15 @@ static cluster_t *clusterGet(world_t *w, const int cx, const int cy, const int c
 
 static void world_decorateChunk(world_t *w, chunkValue_t *cv);
 
+chunk_t *world_getFullyLoadedChunk(world_t *w, const int cx, const int cy, const int cz) {
+    size_t offset;
+
+    cluster_t *cluster = clusterGet(w, cx, cy, cz, true, &offset);
+    chunkValue_t *cv = &cluster->cells[offset];
+
+    return cv->chunk && cv->ll > LL_PARTIAL ? cv->chunk : NULL;
+}
+
 /**
  * @brief Loads a chunk.
  * @param w A pointer to a world
@@ -113,7 +106,7 @@ static void world_decorateChunk(world_t *w, chunkValue_t *cv);
  * @param ll The load level to load to if the chunk doesn't exist
  * @param r The reload style of the chunk
  */
-static chunkValue_t *world_loadChunk(world_t *w,
+chunkValue_t *world_loadChunk(world_t *w,
                      const int cx,
                      const int cy,
                      const int cz,
@@ -146,6 +139,22 @@ static chunkValue_t *world_loadChunk(world_t *w,
         if (ll > LL_PARTIAL) {
             chunk_generate(cv->chunk);
             world_decorateChunk(w, cv);
+            chunk_initSun(cv->chunk);
+            // flag all neighbouring chunks for re-meshing
+            int offsets[] = { -1, 0, 1 };
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 3; j++) {
+                    for (int k = 0; k < 3; k++) {
+                        chunk_t *neighbour = world_getFullyLoadedChunk(w,
+                            cv->chunk->cx + offsets[i],
+                            cv->chunk->cy + offsets[j],
+                            cv->chunk->cz + offsets[k]);
+                        if (neighbour) {
+                            neighbour->tainted = true;
+                        }
+                    }
+                }
+            }
         }
         cv->ll = ll;
     }
@@ -248,13 +257,51 @@ void world_draw(const world_t *w, const int modelLocation, camera_t *cam, mat4 p
     double planes[6][4];
     calculatePlanes(cam, projection, planes);
 
+    // process darkness propagation between all chunks
+    while (true) {
+        bool deletionFinished = true;
+        HASH_ITER(hh, w->clusterTable, cluster, tmp) {
+            for (int i = 0; i < C_T * C_T * C_T; i++) {
+                if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
+                if (cluster->cells[i].chunk &&
+                    (cluster->cells[i].chunk->lightTorchDeletionQueue.size > 0
+                     || cluster->cells[i].chunk->lightSunDeletionQueue.size > 0)) {
+                    chunk_processLightDeletion(cluster->cells[i].chunk, w);
+                    deletionFinished = false;
+                }
+            }
+        }
+        if (deletionFinished) {
+            break;
+        }
+    }
+    // process light propagation between all chunks
+    while (true) {
+        bool insertionFinished = true;
+        HASH_ITER(hh, w->clusterTable, cluster, tmp) {
+            for (int i = 0; i < C_T * C_T * C_T; i++) {
+                if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
+                if (cluster->cells[i].chunk &&
+                    (cluster->cells[i].chunk->lightTorchInsertionQueue.size > 0
+                     || cluster->cells[i].chunk->lightSunInsertionQueue.size > 0)) {
+                    chunk_processLightInsertion(cluster->cells[i].chunk, w);
+                    insertionFinished = false;
+                }
+            }
+        }
+        if (insertionFinished) {
+            break;
+        }
+    }
+
+    // draw all chunks that are visible
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
         for (int i = 0; i < C_T * C_T * C_T; i++) {
             if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
             const bool renderingChunk = shouldRender(cam, cluster->cells[i].chunk, planes);
 
             if (cluster->cells[i].chunk && renderingChunk) {
-                chunk_draw(cluster->cells[i].chunk, modelLocation);
+                chunk_draw(cluster->cells[i].chunk, w, modelLocation);
             }
         }
     }
@@ -725,25 +772,24 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
             .lightValue = torchValue };
         queue_push(&cp->lightTorchDeletionQueue, qi);
     }
-    if (*bp != BL_LEAF) {
-        for (int dir = 0; dir < 6; ++dir) {
-            ivec3 nPos;
-            memcpy(nPos, directions[dir], sizeof(ivec3));
-            glm_ivec3_add(nPos, blockPos, nPos);
-            if (nPos[0] < 0 || nPos[0] >= CHUNK_SIZE ||
-                nPos[1] < 0 || nPos[1] >= CHUNK_SIZE ||
-                nPos[2] < 0 || nPos[2] >= CHUNK_SIZE) {
-                continue;
+    for (int dir = 0; dir < 6; ++dir) {
+        ivec3 nPos;
+        memcpy(nPos, directions[dir], sizeof(ivec3));
+        glm_ivec3_add(nPos, blockPos, nPos);
+        ivec3 chunkOffset = { 0, 0, 0 };
+        for (int i = 0; i < 3; ++i) {
+            if (nPos[i] < 0) {
+                chunkOffset[i] = -1;
+            } else if (nPos[i] >= CHUNK_SIZE) {
+                chunkOffset[i] = 1;
             }
-            unsigned char neighborLightMapValue = cp->lightMap[nPos[0]][nPos[1]][nPos[2]];
-            unsigned char neighborSun = EXTRACT_SUN(neighborLightMapValue);
-            unsigned char neighborTorch = EXTRACT_TORCH(neighborLightMapValue);
-
-            if (neighborSun > 0) {
-                queue_push(&cp->lightSunInsertionQueue, (lightQueueItem_t){ .pos = {nPos[0], nPos[1], nPos[2]}, .lightValue = neighborSun });
-            }
-            if (neighborTorch > 0) {
-                queue_push(&cp->lightTorchInsertionQueue, (lightQueueItem_t){ .pos = {nPos[0], nPos[1], nPos[2]}, .lightValue = neighborTorch });
+        }
+        if (chunkOffset[0] != 0 || chunkOffset[1] != 0 || chunkOffset[2] != 0) {
+            ivec3 cPos = {cp->cx, cp->cy, cp->cz};
+            glm_ivec3_add(cPos, chunkOffset, cPos);
+            chunk_t *nChunk = world_getFullyLoadedChunk(w, cPos[0], cPos[1], cPos[2]);
+            if (nChunk) {
+                nChunk->tainted = true;
             }
         }
     }
@@ -777,6 +823,7 @@ bool world_placeBlock(world_t *w, const int x, const int y, const int z, const b
     }
     int sunValue = EXTRACT_SUN(cp->lightMap[blockPos[0]][blockPos[1]][blockPos[2]]);
     int torchValue = EXTRACT_TORCH(cp->lightMap[blockPos[0]][blockPos[1]][blockPos[2]]);
+    LOG_DEBUG("torch value: %d, sun value: %d", torchValue, sunValue);
     if (sunValue > 0 && block != BL_LEAF) {
         lightQueueItem_t qi = {
             .lightValue = sunValue };

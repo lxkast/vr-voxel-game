@@ -93,6 +93,24 @@ typedef enum {
     REL_TOMBSTONE = 3
 } reloadData_e;
 
+
+/**
+ * @brief Value stored in hashmap entry array
+ */
+typedef struct chunkValue_t {
+    /// The pointer to a heap allocated chunk
+    chunk_t *chunk;
+    /// The current level of loading the chunk is in
+    chunkLoadLevel_e ll;
+
+    struct {
+        reloadData_e reload;
+        size_t nChildren;
+        struct chunkValue_t *children[32];
+    } loadData;
+
+} chunkValue_t;
+
 /**
  * @brief Initialises a world struct.
  * @param w A pointer to a world
@@ -114,6 +132,16 @@ void world_draw(const world_t *w, int modelLocation, camera_t *cam, mat4 project
  * @param w A pointer to a world
  */
 void world_free(world_t *w);
+
+/**
+* @brief Gets a fully loaded chunk from chunk coordinates.
+* @param w A pointer to a world
+* @param cx Target chunk's x coordinate
+* @param cy Target chunk's y coordinate
+* @param cz Target chunk's z coordinate
+* @return A pointer to the chunk. Returns NULL if chunk isn't fully loaded.
+*/
+chunk_t *world_getFullyLoadedChunk(world_t *w, const int cx, const int cy, const int cz);
 
 /**
  * @brief Tries to assign a new chunk loader id.
@@ -266,5 +294,21 @@ void world_drawAllEntities(const world_t *w, int modelLocation);
  * @return The type of the block
  */
 block_t getBlockType(world_t *w, vec3 position);
+
+/**
+ * @brief Loads a chunk.
+ * @param w A pointer to a world
+ * @param cx Chunk x coordinate
+ * @param cy Chunk y coordinate
+ * @param cz Chunk z coordinate
+ * @param ll The load level to load to if the chunk doesn't exist
+ * @param r The reload style of the chunk
+ */
+chunkValue_t *world_loadChunk(world_t *w,
+                     const int cx,
+                     const int cy,
+                     const int cz,
+                     const chunkLoadLevel_e ll,
+                     const reloadData_e r);
 
 #endif
