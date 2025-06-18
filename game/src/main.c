@@ -3,6 +3,8 @@
 #include <GLFW/glfw3.h>
 #include <logging.h>
 #include <stdio.h>
+#include <pthread.h>
+#include <time.h>
 #include "analytics.h"
 #include "camera.h"
 #include "entity.h"
@@ -77,6 +79,21 @@ void initialiseWindow() {
     initialiseInput(window, toggle_wireframeView, toggle_postprocessing);
 }
 
+struct chunkWorkerData {
+    world_t *world;
+};
+void *chunkWorker(void *arg) {
+    struct chunkWorkerData data = *(struct chunkWorkerData *)arg;
+
+    const struct timespec ts = { .tv_sec = 1, .tv_nsec = 0 };
+
+    while (true) {
+        nanosleep(&ts, NULL);
+        LOG_DEBUG("Loading chunks.");
+        world_doChunkLoading(data.world);
+    }
+}
+
 int main(void) {
     /*
         Initialisation
@@ -115,11 +132,16 @@ int main(void) {
     analytics_init(&analytics);
     double fpsDisplayAcc = 0;
 
+    struct chunkWorkerData thData = {
+        .world = &world
+    };
+    pthread_t th;
+    pthread_create(&th, NULL, chunkWorker, &thData);
+
     while (!glfwWindowShouldClose(window)) {
         analytics_startFrame(&analytics);
         processPlayerInput(window, &camera, &player, &world);
         processCameraInput(window, &camera);
-        world_doChunkLoading(&world);
 
         world_updateChunkLoader(&world, cameraLoader, camera.eye);
 
