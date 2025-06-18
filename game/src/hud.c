@@ -8,6 +8,7 @@
 #include "player.h"
 #include "vertices.h"
 #include "item.h"
+#include "font.h"
 
 #define ANGLE_BETWEEN 0.2617
 
@@ -16,6 +17,8 @@ static versor GAP_BETWEEN;
 
 static const vec4 PANE_COLOUR = {0.8f, 0.8f, 0.8f, 1.f};
 static const vec4 SELECTED_COLOUR = {0.8f, 0.8f, 0.4f, 1.f};
+static const vec4 TEXT_COLOUR = {0.f, 0.f, 0.f, 1.f};
+
 
 static GLuint itemVao;
 static GLuint itemVbo;
@@ -26,6 +29,7 @@ static GLuint borderVbo;
 static versor initialRot;
 
 bool shouldRender = false;
+font_t font;
 
 static void meshItemEntity(void) {
     glGenVertexArrays(1, &itemVao);
@@ -66,8 +70,8 @@ static void initBorder(void) {
     glm_quat(GAP_BETWEEN, -ANGLE_BETWEEN, 0.f,1.f, 0.f);
 }
 
-GLuint blockItemProgram;
-GLuint borderProgram;
+static GLuint blockItemProgram;
+static GLuint borderProgram;
 void hud_init(void) {
     BUILD_SHADER_PROGRAM(
         &blockItemProgram, {
@@ -91,6 +95,8 @@ void hud_init(void) {
         "shaders/blockFrame.vert",
         "shaders/blockFrame.frag"
     );
+
+    font_init(&font, "textures/font.png");
     meshItemEntity();
     initBorder();
     glm_quat_init(initialRot, 0.f, 0.f, 0.f, 1.f);
@@ -178,6 +184,30 @@ static void render_item(mat4 projview, hotbarItem_t item, vec3 centercoords, ver
     glClear(GL_DEPTH_BUFFER_BIT);
     if (item.type != NOTHING) {
         render_block_in_pane(projview, ITEM_TO_BLOCK[item.type], centercoords, BLOCK_ORIENTATION, SCALE , orientation, textureAtlas);
+    }
+
+    if (item.type != NOTHING) {
+        glClear(GL_DEPTH_BUFFER_BIT);
+        glDisable(GL_DEPTH_TEST);
+        mat4 rot;
+        glm_quat_mat4(orientation, rot);
+        mat4 translate;
+        glm_translate_make(translate, centercoords);
+        mat4 scaleM;
+        vec3 t = {0.11, -0.15, 0};
+        glm_translate_make(scaleM, t);
+        glm_scale_uni(scaleM, 0.03);
+        mat4 res;
+        glm_mat4_mul(translate, scaleM, res);
+        glm_mat4_mul(rot, res, res);
+        glm_mat4_mul(projview, res, res);
+        mat4 ident;
+        glm_mat4_identity(ident);
+
+        char quantityString[5];
+        snprintf(quantityString, 5, "%d", item.count);
+        font_render(&font, quantityString, res, ident, TEXT_COLOUR);
+        glEnable(GL_DEPTH_TEST);
     }
 }
 

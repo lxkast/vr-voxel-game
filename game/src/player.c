@@ -1,6 +1,7 @@
 #include "player.h"
 #include "GLFW/glfw3.h"
 #include "logging.h"
+#include "string.h"
 #include "block.h"
 
 static const int faceToBlock[6][3] = {{-1,0,0}, {1,0,0}, {0,-1,0}, {0,1,0}, {0,0,-1}, {0,0,1} };
@@ -53,7 +54,7 @@ void player_init(world_t *w, player_t *p) {
                 {ITEM_GRASS, 32},
                 {ITEM_STONE, 16},
                 {ITEM_GLOWSTONE, 64},
-                {NOTHING, 0},
+                {ITEM_SNOW, 64},
                 {NOTHING, 0},
                 {NOTHING, 0},
                 {NOTHING, 0},
