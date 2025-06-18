@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SHADERUTIL_H
+#define SHADERUTIL_H
 
 #include <glad/gl.h>
 
@@ -105,3 +106,5 @@ int su_linkProgram(GLuint program);
         } \
         if (!success) fail; \
     } while(0)
+
+#endif

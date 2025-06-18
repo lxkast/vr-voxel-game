@@ -1,7 +1,3 @@
-//
-// Created by src24 on 27/05/25.
-//
-
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -77,7 +73,7 @@ void stressTest() {
         sprintf(string, "%ld", i);
         string[9] = '\0';
         hashmap_setElement(&map, string, (void *)i);
-        ASSERT(map.size <= i, "Size mismatch");
+        ASSERT((uint64_t)map.size <= i, "Size mismatch");
     }
     srand(0);
     for (uint64_t i = 1; i < 1000; i++) {

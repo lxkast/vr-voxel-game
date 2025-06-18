@@ -1,3 +1,5 @@
+#ifndef LINALG_H
+#define LINALG_H
 
 typedef double quaternion[4];
 
@@ -19,3 +21,5 @@ void inverse4x4(double a[4][4], double res[4][4]);
 void inverse3x3(double a[3][3], double res[3][3]);
 double dotProduct3(const double a[3], const double b[3]);
 void crossProduct3(const double a[3], const double b[3], double res[3]);
+
+#endif

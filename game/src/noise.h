@@ -1,4 +1,5 @@
-#pragma once
+#ifndef NOISE_H
+#define NOISE_H
 
 #include <stdint.h>
 
@@ -89,3 +90,5 @@ float noise_smoothValue(noise_t *n, float x, float y);
  * @return float The value from the noise
  */
 float noise_fbm(noise_t *n, float x, float y, int octaves, float persistence, float baseFrequency);
+
+#endif

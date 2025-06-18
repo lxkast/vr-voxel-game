@@ -1,4 +1,5 @@
-#pragma once
+#ifndef WORLD_H
+#define WORLD_H
 
 #include <cglm/cglm.h>
 #include <glad/gl.h>
@@ -265,3 +266,5 @@ void world_drawAllEntities(const world_t *w, int modelLocation);
  * @return The type of the block
  */
 block_t getBlockType(world_t *w, vec3 position);
+
+#endif

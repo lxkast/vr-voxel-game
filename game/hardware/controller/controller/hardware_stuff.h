@@ -1,4 +1,6 @@
-#pragma once
+#ifndef HARDWARE_STUFF_H
+#define HARDWARE_STUFF_H
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -14,3 +16,5 @@ int hardware_init();
 
 
 int read_data(ReadData* data);
+
+#endif

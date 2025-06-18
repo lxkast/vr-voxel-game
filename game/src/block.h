@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BLOCK_H_
+#define BLOCK_H_
 
 #include <cglm/cglm.h>
 
@@ -44,3 +45,5 @@ typedef struct {
     raycastFace_e face;
     bool found;
 } raycast_t;
+
+#endif
