@@ -1,4 +1,5 @@
 #include "world.h"
+#include <uthash.h>
 #include <cglm/cglm.h>
 #include <errno.h>
 #include <logging.h>
@@ -6,10 +7,10 @@
 #include <sys/stat.h>
 #include "chunk.h"
 #include "entity.h"
+#include "lighting.h"
 #include "noise.h"
-#include "uthash.h"
-#include "vertices.h"
 #include "structure.h"
+#include "vertices.h"
 
 #define MAX_RAYCAST_DISTANCE 6.f
 #define RAYCAST_STEP_MAGNITUDE 0.1f
@@ -184,10 +185,12 @@ static void highlightInit(world_t *w) {
     glGenBuffers(1, &w->highlightVbo);
     glBindVertexArray(w->highlightVao);
     glBindBuffer(GL_ARRAY_BUFFER, w->highlightVbo);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *) 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
     glEnableVertexAttribArray(0);
-    glVertexAttribIPointer(1, 2, GL_INT, 4 * sizeof(float), (void *) (3 * sizeof(float)));
+    glVertexAttribIPointer(1, 1, GL_INT, 5 * sizeof(float), (void *) (3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (4 * sizeof(float)));
+    glEnableVertexAttribArray(2);
     glBindVertexArray(0);
 }
 
@@ -456,34 +459,71 @@ static bool decorator_initSurface(decorator_t *d, chunkValue_t *origin, const in
     return false;
 }
 
-static bool world_initStructure(world_t *w, structure_t *structure, chunkValue_t *origin, const int x, const int z, const block_t block) {
-    for (int y = CHUNK_SIZE - 1; y >= 0; y--) {
-        const block_t currBlock = origin->chunk->blocks[x][y][z];
-        if (currBlock != BL_AIR) {
-            if (currBlock == block) {
+static bool decorator_testBlock(decorator_t *d, world_t *world, int x, int y, int z, const block_t match) {
+    x = d->ox + x;
+    y = d->oy + y;
+    z = d->oz + z;
 
-                for (int i = 0; i < structure->numBlocks; i++) {
-                    const int testX = x + structure->blocks[i].x;
-                    const int testY = y + structure->blocks[i].y + 1;
-                    const int testZ = z + structure->blocks[i].z;
-                    if (testX < 0 || testX > CHUNK_SIZE - 1 || testY < 0 || testY > CHUNK_SIZE - 1 || testZ < 0 || testZ > CHUNK_SIZE - 1 ) {
-                        if (getBlockType(w, (vec3){(float)(origin->chunk->cx*CHUNK_SIZE + testX), (float)(origin->chunk->cy*CHUNK_SIZE + testY), (float)(origin->chunk->cz*CHUNK_SIZE + testZ)}) != BL_AIR) {
-                            return false;
-                        }
-                    } else {
-                        if (origin->chunk->blocks[testX][testY][testZ] != BL_AIR) {
-                            return false;
-                        }
-                    }
-                }
+    const int cx = x >> 4;
+    const int cy = y >> 4;
+    const int cz = z >> 4;
 
-                decorator_init(&structure->decorator, origin, x, y + 1, z);
-                return true;
+    if (-1 <= cx && cx <= 1 && -1 <= cy && cy <= 1 && -1 <= cz && cz <= 1) {
+        chunkValue_t **cacheValue = &d->cache[cx + 1][cy + 1][cz + 1];
+        if (!*cacheValue) {
+            *cacheValue = world_loadChunk(world,
+                                          d->origin->chunk->cx + cx,
+                                          d->origin->chunk->cy + cy,
+                                          d->origin->chunk->cz + cz,
+                                          LL_INIT,
+                                          REL_CHILD);
+            if (d->origin->loadData.nChildren > 31) {
+                LOG_FATAL("Buffer overflow in chunk children");
             }
+            bool found = false;
+            for (int i = 0; i < d->origin->loadData.nChildren; i++) {
+                if (d->origin->loadData.children[i] == *cacheValue) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                d->origin->loadData.children[d->origin->loadData.nChildren++] = *cacheValue;
+            }
+        }
+
+        const block_t b = (*cacheValue)->chunk->blocks[x - (cx << 4)][y - (cy << 4)][z - (cz << 4)];
+        return  b == BL_AIR || b == match;
+    }
+
+    return false;
+}
+
+
+static bool world_initStructure(world_t *w, structure_t *structure, chunkValue_t *origin, const int x, const int z, const block_t block, const bool flat) {
+    decorator_t d;
+    if (!decorator_initSurface(&d, origin, x, z, block)) {
+        return false;
+    }
+
+    for (int i = 0; i < structure->numBlocks; i++) {
+        if (!decorator_testBlock(&d, w, structure->blocks[i].x,
+                                        structure->blocks[i].y,
+                                        structure->blocks[i].z,
+                                        structure->blocks[i].allowOverlap ? structure->blocks[i].type : BL_AIR)) {
+            return false;
+        }
+        if (flat && structure->blocks[i].y == 0 && decorator_testBlock(&d, w, structure->blocks[i].x,
+                                                                              -1,
+                                                                              structure->blocks[i].z,
+                                                                        BL_AIR)) {
             return false;
         }
     }
-    return false;
+
+    structure->decorator = d;
+
+    return true;
 }
 
 static void decorator_placeBlock(decorator_t *d,
@@ -541,19 +581,34 @@ static void world_placeStructure(world_t *world, structure_t *structure) {
     }
 }
 
+
 static void world_decorateChunk(world_t *w, chunkValue_t *cv) {
-    for (int x = 0; x < CHUNK_SIZE; x++) {
-        for (int z = 0; z < CHUNK_SIZE; z++) {
-            for (int i = 0; i < numStructures; i++) {
-                structure_t structure = structures[i];
-                if (rng_float(&cv->chunk->rng) < 0.01) {
-                    if (world_initStructure(w, &structure, cv, x, z, structure.base)) {
-                        world_placeStructure(w, &structure);
-                        break;
-                    }
-                }
-            }
-        }
+#define STRUCTURE(type, chance, base, flat)                             \
+    for (int x = 0; x < CHUNK_SIZE; x++) {                              \
+        for (int z = 0; z < CHUNK_SIZE; z++) {                          \
+            if (rng_float(&cv->chunk->rng) < chance) {                  \
+                structure_t s = type;                                   \
+                if (world_initStructure(w, &s, cv, x, z, base, flat)) { \
+                    world_placeStructure(w, &s);                        \
+                }                                                       \
+            }                                                           \
+        }                                                               \
+    }
+
+    if (cv->chunk->biome == BIO_FOREST) {
+        STRUCTURE(treeStructure, 0.05f, BL_GRASS, false);
+    }
+    if (cv->chunk->biome == BIO_PLAINS) {
+        STRUCTURE(treeStructure, 0.001f, BL_GRASS, false);
+    }
+    if (cv->chunk->biome == BIO_DESERT) {
+        STRUCTURE(cactusStructure, 0.003f, BL_SAND, false);
+    }
+    if (cv->chunk->biome == BIO_JUNGLE) {
+        STRUCTURE(jungleTreeStructure, 0.05f, BL_JUNGLE_GRASS, false);
+    }
+    if (cv->chunk->biome == BIO_TUNDRA) {
+        STRUCTURE(iglooStructure, 0.003f, BL_SNOW, true);
     }
 }
 
@@ -668,6 +723,40 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
 
     if (*bp == BL_AIR) return false;
 
+    ivec3 blockPos = { x - ((x >> 4) << 4), y - ((y >> 4) << 4), z - ((z >> 4) << 4) };
+
+    unsigned char torchValue = EXTRACT_TORCH(cp->lightMap[blockPos[0]][blockPos[1]][blockPos[2]]);
+
+    if (*bp == BL_GLOWSTONE) {
+        lightQueueItem_t qi = {
+            .pos = { x - ((x >> 4) << 4), y - ((y >> 4) << 4), z - ((z >> 4) << 4) },
+            .lightValue = torchValue };
+        queue_push(&cp->lightTorchDeletionQueue, qi);
+    }
+    if (*bp != BL_LEAF) {
+        for (int dir = 0; dir < 6; ++dir) {
+            ivec3 nPos;
+            memcpy(nPos, directions[dir], sizeof(ivec3));
+            glm_ivec3_add(nPos, blockPos, nPos);
+            if (nPos[0] < 0 || nPos[0] >= CHUNK_SIZE ||
+                nPos[1] < 0 || nPos[1] >= CHUNK_SIZE ||
+                nPos[2] < 0 || nPos[2] >= CHUNK_SIZE) {
+                continue;
+            }
+            unsigned char neighborLightMapValue = cp->lightMap[nPos[0]][nPos[1]][nPos[2]];
+            unsigned char neighborSun = EXTRACT_SUN(neighborLightMapValue);
+            unsigned char neighborTorch = EXTRACT_TORCH(neighborLightMapValue);
+
+            if (neighborSun > 0) {
+                queue_push(&cp->lightSunInsertionQueue, (lightQueueItem_t){ .pos = {nPos[0], nPos[1], nPos[2]}, .lightValue = neighborSun });
+            }
+            if (neighborTorch > 0) {
+                queue_push(&cp->lightTorchInsertionQueue, (lightQueueItem_t){ .pos = {nPos[0], nPos[1], nPos[2]}, .lightValue = neighborTorch });
+            }
+        }
+    }
+
+
     const worldEntity_t entity = createItemEntity(w, (vec3){(float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f}, BLOCK_TO_ITEM[*bp]);
     world_addEntity(w, entity);
 
@@ -682,8 +771,32 @@ bool world_placeBlock(world_t *w, const int x, const int y, const int z, const b
     chunk_t *cp;
     if (!getBlockAddr(w, x, y, z, &bp, &cp)) return false;
 
-    if (*bp != BL_AIR) return false;
+    if (*bp != BL_AIR) {
+        return false;
+    }
 
+    ivec3 blockPos = { x - ((x >> 4) << 4), y - ((y >> 4) << 4), z - ((z >> 4) << 4) };
+
+    if (block == BL_GLOWSTONE) {
+        lightQueueItem_t qi = {
+            .lightValue = LIGHT_MAX_VALUE };
+        memcpy(&qi.pos, &blockPos, sizeof(ivec3));
+        queue_push(&cp->lightTorchInsertionQueue, qi);
+    }
+    int sunValue = EXTRACT_SUN(cp->lightMap[blockPos[0]][blockPos[1]][blockPos[2]]);
+    int torchValue = EXTRACT_TORCH(cp->lightMap[blockPos[0]][blockPos[1]][blockPos[2]]);
+    if (sunValue > 0 && block != BL_LEAF) {
+        lightQueueItem_t qi = {
+            .lightValue = sunValue };
+        memcpy(&qi.pos, &blockPos, sizeof(ivec3));
+        queue_push(&cp->lightSunDeletionQueue, qi);
+    }
+    if (torchValue > 0 && block != BL_LEAF) {
+        lightQueueItem_t qi = {
+            .lightValue = torchValue };
+        memcpy(&qi.pos, &blockPos, sizeof(ivec3));
+        queue_push(&cp->lightTorchDeletionQueue, qi);
+    }
     *bp = block;
     cp->tainted = true;
 

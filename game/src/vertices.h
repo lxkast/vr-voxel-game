@@ -4,6 +4,7 @@
 typedef struct {
     float x,y,z;
     int texIndex;
+    float lightValue;
 } vertex_t;
 
 extern ivec3 directions[6];
@@ -17,7 +18,7 @@ typedef enum {
     DIR_MINUSZ,
 } direction_e;
 
-#define ATLAS_LENGTH 128
+#define ATLAS_LENGTH 256
 #define ATLAS_HEIGHT 64
 #define TEXTURE_LENGTH 16
 #define TEXTURE_HEIGHT 16
@@ -30,3 +31,6 @@ extern const unsigned int itemBlockVerticesSize;
 
 extern const float quadVertices[];
 extern const unsigned int quadVerticesSize;
+
+extern const float squareVertices[];
+extern const unsigned int squareVerticesSize;

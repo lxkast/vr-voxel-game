@@ -1,13 +1,14 @@
 #version 140
 #define TEXTURE_WIDTH 16
 #define TEXTURE_HEIGHT 16
-#define ATLAS_WIDTH 128
+#define ATLAS_WIDTH 256
 #define ATLAS_HEIGHT 64
 #define HIGHLIGHT_COLUMN 0
 #define FACE_BOTTOM 1
 #define FACE_SIDE 2
 
 flat in int vTexIndex;
+in float vLightValue;
 in float vFogDepth;
 in vec3 vPos;
 
@@ -46,15 +47,9 @@ void main() {
     if (finalRGB.a == 0.0) {
         discard;
     }
-    // normal-based lighting
-    // only shade block if not the highlight texture
+
     if (textureCol > HIGHLIGHT_COLUMN) {
-        if (textureRow == FACE_SIDE) {
-            finalRGB *= 0.8;
-        } else if (textureRow == FACE_BOTTOM) {
-            finalRGB *= 0.5;
-        }
-        finalRGB = vec4(finalRGB.xyz, 1);
+        finalRGB = vec4(finalRGB.xyz * pow(vLightValue, 1.4), 1);
     }
     FragColor = mix(fogColor, finalRGB, f);
 }

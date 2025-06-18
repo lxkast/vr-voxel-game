@@ -40,10 +40,10 @@ int read_data(ReadData* data) {
         uint16_t joy_y = adc_read();
         data->dx = (float) joy_x / 4098.0f;
         data->dy = (float) joy_y / 4098.0f;
-        if (fabs(data->dx) < DEADZONE) {
-            data->dx = 0.f;
+        if (fabs(data->dx - 0.5) < DEADZONE) {
+            data->dx = 0.5f;
         }
-        if (fabs(data->dy) < DEADZONE) {
-            data->dy = 0.f;
+        if (fabs(data->dy - 0.5) < DEADZONE) {
+            data->dy = 0.5f;
         }
 }

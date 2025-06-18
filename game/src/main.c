@@ -11,8 +11,11 @@
 #include "shaderutil.h"
 #include "texture.h"
 #include "world.h"
+#include "entity.h"
+#include "player.h"
 
 #include "input.h"
+#include "hud.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #define MINOR_VERSION 2
@@ -106,6 +109,7 @@ int main(void) {
         &program, {
             glBindAttribLocation(program, 0, "aPos");
             glBindAttribLocation(program, 1, "aTexIndex");
+            glBindAttribLocation(program, 2, "aLightValue");
         }, {
             LOG_ERROR("Couldn't build shader program");
             return -1;
@@ -176,6 +180,8 @@ int main(void) {
         LOG_ERROR("OpenGL error: %d", err);
     }
 
+    hud_init();
+
 
     /*
         Main loop
@@ -190,7 +196,7 @@ int main(void) {
 
     // World setup
     world_t world;
-    world_init(&world, program, 1ULL);
+    world_init(&world, program, 1021);
 
     unsigned int spawnLoader, cameraLoader;
     world_genChunkLoader(&world, &spawnLoader);
@@ -210,10 +216,11 @@ int main(void) {
     analytics_init(&analytics);
     double fpsDisplayAcc = 0;
 
+    glEnable(GL_CULL_FACE);
     while (!glfwWindowShouldClose(window)) {
         analytics_startFrame(&analytics);
         glUseProgram(program);
-        processPlayerInput(window, &player, &world);
+        processPlayerInput(window, &camera, &player, &world);
         processCameraInput(window, &camera);
         world_doChunkLoading(&world);
 
@@ -225,7 +232,7 @@ int main(void) {
 
         player_attachCamera(&player, &camera);
 
-
+        camera_update(&camera);
         glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
         glClear(GL_DEPTH_BUFFER_BIT);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -254,15 +261,17 @@ int main(void) {
         GET_PROJECTION
         world_draw(&world, mainModelLocation, &camera, projection);
         world_drawHighlight(&world, mainModelLocation);
+
         glUseProgram(blockEntityProgram);
-
         set_projection(blockEntityProjectionLocation);
-
         camera_setView(&camera, blockEntityProgram);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
         glUniform1i(glGetUniformLocation(blockEntityProgram, "uTextureAtlas"), 0);
         world_drawAllEntities(&world, blockEntityModelLocation);
+
+        vec3 offset = {postProcessingEnabled ? -EYE_OFFSET: 0, 0, 0};
+        hud_render(projection, offset, &camera, &player, texture);
         glUseProgram(program);
         if (postProcessingEnabled) {
             postProcess_bindBuffer(&postProcess.rightFramebuffer);
@@ -280,7 +289,8 @@ int main(void) {
             glBindTexture(GL_TEXTURE_2D, texture);
             glUniform1i(glGetUniformLocation(blockEntityProgram, "uTextureAtlas"), 0);
             world_drawAllEntities(&world, blockEntityModelLocation);
-
+            vec3 offset = {EYE_OFFSET, 0, 0};
+            hud_render(projection, offset, &camera, &player, texture);
             {
                 static int width, height;
                 glfwGetFramebufferSize(window, &width, &height);
