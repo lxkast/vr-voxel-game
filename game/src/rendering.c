@@ -33,9 +33,6 @@ static mat4 projection;
 static postProcess_t postProcess;
 static int width, height;
 
-static GLuint blockOverlayVAO;
-static GLuint blockOverlayVBO;
-
 void update_projection(const bool postProcessingEnabled, const float fov, const int screenWidth, const int screenHeight, const float renderDistance) {
     width = screenWidth;
     height = screenHeight;
@@ -77,7 +74,7 @@ static void shader_init(void) {
         "shaders/postprocess.frag"
     );
 
-    blockAtlasTexture = loadTextureRGBA("textures/atlas.png", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
+    blockAtlasTexture = loadTexture("textures/atlas.png", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
 
     glUseProgram(chunkShader);
     chunkShaderModelLocation = glGetUniformLocation(chunkShader, "model");
