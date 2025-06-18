@@ -194,10 +194,10 @@ static vertex_t *greedyMeshDirection(world_t *world, chunk_t *c, direction_e dir
 
 /**
  * @brief Creates the mesh from a chunk
- * @param w A pointer to a world
  * @param c A pointer to a chunk
+ * @param w A pointer to a world
  */
-void chunk_createMesh(world_t *w, chunk_t *c) {
+void chunk_createMesh(chunk_t *c, world_t *w) {
     const size_t bytesPerBlock = sizeof(vertex_t) * 36;
 
     vertex_t *buf = malloc(CHUNK_SIZE_CUBED * bytesPerBlock);
