@@ -5,10 +5,24 @@
 #include <stdio.h>
 
 #include "block.h"
+#include "queue.h"
 #include "noise.h"
 
 #define CHUNK_SIZE 16
 #define CHUNK_SIZE_CUBED 4096
+
+/**
+ * @brief An enum containing biome information
+ */
+typedef enum {
+    BIO_NIL,
+    BIO_FOREST,
+    BIO_PLAINS,
+    BIO_DESERT,
+    BIO_TUNDRA,
+    BIO_CAVE,
+    BIO_JUNGLE,
+} biome_e;
 
 /**
  * @brief A struct containing data about a chunk.
@@ -18,6 +32,14 @@ typedef struct {
     int cx, cy, cz;
     /// The array of blocks in the chunk.
     block_t blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
+    /// The array of light levels in the chunk.
+    unsigned char lightMap[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
+    /// The queue of light values used for adding lights to the lightMap
+    lightQueue_t lightTorchInsertionQueue;
+    lightQueue_t lightSunInsertionQueue;
+    /// The queue of PREVIOUS light values for deleting lights from the lightMap
+    lightQueue_t lightTorchDeletionQueue;
+    lightQueue_t lightSunDeletionQueue;
     /// The VBO that holds the mesh.
     GLuint vbo;
     /// The VAO that is used for drawing.
@@ -30,6 +52,8 @@ typedef struct {
     rng_t rng;
     /// A noise object
     noise_t noise;
+    /// The biome of the chunk
+    biome_e biome;
 } chunk_t;
 
 /**

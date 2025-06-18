@@ -6,15 +6,19 @@
 /**
  * @brief A mixer function to make a pseudorandom 64-bit number
  * @note https://gee.cs.oswego.edu/dl/papers/oopsla14.pdf
- * @param rng The random number generator
+ * @param x The number to mix
  * @return The new number
  */
-static uint64_t mix64(rng_t *rng) {
+static uint64_t mix64(uint64_t x) {
     // Standard implementation of the splitmix64 function, see note in docstring
-    uint64_t z = rng->state += 0x9E3779B97F4A7C15ULL;
+    uint64_t z = x;
     z = (z ^ z >> 30) * 0xBF58476D1CE4E5B9ULL;
     z = (z ^ z >> 27) * 0x94D049BB133111EBULL;
     return z ^ (z >> 31);
+}
+
+static void rng_update(rng_t *rng) {
+    rng->state += 0x9E3779B97F4A7C15ULL;
 }
 
 void rng_init(rng_t *rng, const uint64_t seed) {
@@ -22,11 +26,12 @@ void rng_init(rng_t *rng, const uint64_t seed) {
 }
 
 uint64_t rng_ull(rng_t *rng) {
-    return mix64(rng);
+    rng_update(rng);
+    return mix64(rng->state);
 }
 
 float rng_float(rng_t *rng) {
-    return (float)mix64(rng) / (float)UINT64_MAX;
+    return (float)rng_ull(rng) / (float)UINT64_MAX;
 }
 
 float rng_floatRange(rng_t *rng, const float min, const float max) {
@@ -34,12 +39,10 @@ float rng_floatRange(rng_t *rng, const float min, const float max) {
 }
 
 float noise_value(noise_t *n, const int x, const int y) {
-    // Simple integer hash to generate noise
-    int k = (x + y * 57) ^ (int)n->seed;
-    k = (k << 13) ^ k;
-    // 0x7FFFFFFF is a mask that removes the MSB
-    const int kk = (k * (k * k * 15731 + 789221) + 1376312589) & 0x7FFFFFFF;
-    return 1.0f - ((float)kk / 1073741824.f);
+    const uint64_t z0 = mix64(57 * x ^ 97 * y);
+    const int z1 = 0x7FFFFFFF & (int)mix64(z0 ^ n->seed);
+
+    return 1.0f - ((float)z1 / 1073741824.f);
 }
 
 static float ease(const float t) {
@@ -63,18 +66,18 @@ float noise_smoothValue(noise_t *n, const float x, const float y) {
     return glm_lerp(i1, i2, yFrac);
 }
 
-float noise_height(noise_t *n, const int x, const int z) {
-    float totalHeight = 0.f;
-    float frequency = 0.01f;
+float noise_fbm(noise_t *n, float x, float y, int octaves, float persistence, float baseFrequency) {
+    float total = 0.f;
+    float frequency = baseFrequency;
     float amplitude = 1.f;
     float maxAmplitude = 0.f;
 
-    for (int octave = 0; octave < 4; octave++) {
-        totalHeight += noise_smoothValue(n, (float)x * frequency, (float)z * frequency) * amplitude;
+    for (int i = 0; i < octaves; i++) {
+        total += noise_smoothValue(n, x * frequency, y * frequency) * amplitude;
         maxAmplitude += amplitude;
-        amplitude *= 0.5f;
+        amplitude *= persistence;
         frequency *= 2.f;
     }
 
-    return totalHeight / maxAmplitude;
+    return total / maxAmplitude;
 }

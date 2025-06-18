@@ -10,13 +10,16 @@
 #include "world.h"
 #include "hud.h"
 
+#ifdef BUILD_FOR_RPI
+#include "hardware/orientation.h"
+#endif
+
 #define SPRINT_MULTIPLIER 1.3f
 #define GROUND_ACCELERATION 35.f
 #define AIR_ACCELERATION 10.f
 
 #define STRUCTURE_BUILD_TOOL
 
-static double previousMouse[2];
 static int joystickID = -1;
 
 static void (*toggle_wireframe)();
@@ -172,21 +175,20 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
 
         world_getBlocksInRange(w, minPoint, maxPoint, buf);
 
-        printf("static const structureBlock_t generated[] = {\n");
+        printf("static const structureBlock_t generatedPattern[] = {\n");
 
         for (int i = 0; i < numBlocks; i++) {
             const blockData_t block = buf[i];
             if (block.type!= BL_AIR) {
-                printf("    {%d, %d, %d, %d, 1.f},\n", block.type, block.x - (int)origin[0], block.y - (int)origin[1], block.z - (int)origin[2]);
+                printf("    {%d, %d, %d, %d, 1.f, false},\n", block.type, block.x - (int)origin[0], block.y - (int)origin[1], block.z - (int)origin[2]);
             }
         }
 
         printf("};\n\n");
 
         printf("const structure_t generatedStructure = {\n");
-        printf("    .numBlocks = %d,\n", numBlocks);
-        printf("    .blocks = generated,\n");
-        printf("    .base = %d,\n};\n\n", originBlock);
+        printf("    .numBlocks = STRUCTURE_SIZE(generatedPattern),\n");
+        printf("    .blocks = generatedPattern,\n};\n\n");
     }
     #endif
 
@@ -215,18 +217,25 @@ void joystickEvent(const int jid, const int event) {
     }
 }
 
+static double previousMouse[2];
 void processCameraInput(GLFWwindow *window, camera_t *camera) {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
-
-    double currentMouse[2];
-    glfwGetCursorPos(window, &currentMouse[0], &currentMouse[1]);
-    const float dX = (float)(currentMouse[0] - previousMouse[0]);
-    const float dY = (float)(currentMouse[1] - previousMouse[1]);
-    previousMouse[0] = currentMouse[0];
-    previousMouse[1] = currentMouse[1];
-    camera_fromMouse(camera, -dX, -dY);
+    #ifdef BUILD_FOR_RPI
+        quaternion orientation;
+        imu_getOrientation(orientation);
+        camera->ori[0] = orientation[1];
+        camera->ori[1] = orientation[2];
+        camera->ori[2] = orientation[3];
+        camera->ori[3] = orientation[0];
+        camera_update(camera);
+    #else
+        double currentMouse[2];
+        glfwGetCursorPos(window, &currentMouse[0], &currentMouse[1]);
+        const float dX = (float)(currentMouse[0] - previousMouse[0]);
+        const float dY = (float)(currentMouse[1] - previousMouse[1]);
+        previousMouse[0] = currentMouse[0];
+        previousMouse[1] = currentMouse[1];
+        camera_fromMouse(camera, -dX, -dY);
+    #endif
 }
 
 /*
@@ -249,6 +258,10 @@ void initialiseInput(GLFWwindow *window, void (*wireframe)(), void (*vr)()) {
     glfwGetCursorPos(window, previousMouse, previousMouse + 1);
     glfwSetJoystickCallback(joystickEvent);
     glfwSetKeyCallback(window, key_callback);
+
+    #ifdef BUILD_FOR_RPI
+        startOrientationThread();
+    #endif
 
     for (int i = GLFW_JOYSTICK_1; i < GLFW_JOYSTICK_LAST; i++) {
         if (glfwJoystickPresent(i)) {

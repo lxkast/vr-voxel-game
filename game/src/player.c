@@ -1,6 +1,7 @@
 #include "player.h"
 #include "GLFW/glfw3.h"
 #include "logging.h"
+#include "string.h"
 #include "block.h"
 
 static const int faceToBlock[6][3] = {{-1,0,0}, {1,0,0}, {0,-1,0}, {0,1,0}, {0,0,-1}, {0,0,1} };
@@ -25,7 +26,7 @@ static void player_addToWorld(player_t *p, world_t *w) {
 }
 
 void player_init(world_t *w, player_t *p) {
-    vec3 start = {0.f, 50.f, 0.f};
+    vec3 start = {0.f, 100.f, 0.f};
 
     while (true) {
         blockData_t bd;
@@ -50,10 +51,10 @@ void player_init(world_t *w, player_t *p) {
         .hotbar = {
             .slots = {
                 {ITEM_DIRT, 64},
-                {ITEM_STONE, 64},
-                {ITEM_LOG, 64},
-                {NOTHING, 0},
-                {NOTHING, 0},
+                {ITEM_GRASS, 32},
+                {ITEM_STONE, 16},
+                {ITEM_GLOWSTONE, 64},
+                {ITEM_SNOW, 64},
                 {NOTHING, 0},
                 {NOTHING, 0},
                 {NOTHING, 0},
