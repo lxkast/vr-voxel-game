@@ -13,7 +13,7 @@ bool spscRing_init(spscRing_t *r, const size_t cap) {
 
     r->mask = cap - 1;
     atomic_init(&r->head, 0);
-    atomic_init(&r->head, 0);
+    atomic_init(&r->tail, 0);
 
     return true;
 }
