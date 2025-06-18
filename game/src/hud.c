@@ -4,6 +4,7 @@
 #include <cglm/cglm.h>
 #include "block.h"
 #include <logging.h>
+#include <string.h>
 #include "shaderutil.h"
 #include "player.h"
 #include "vertices.h"

@@ -55,7 +55,7 @@ void font_init(font_t *font, const char *font_path) {
     );
 }
 
-static render_char(font_t *font, char character, mat4 projview, mat4 model, vec4 colour) {
+static void render_char(font_t *font, char character, mat4 projview, mat4 model, vec4 colour) {
     glUseProgram(fontProgram);
 
     glActiveTexture(GL_TEXTURE0);
