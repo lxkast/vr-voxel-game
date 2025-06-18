@@ -7,18 +7,34 @@
 #include "vertices.h"
 
 // helper to check if a block's face neighbours air or the chunk edge
-static bool faceIsVisible(chunk_t *c, ivec3 blockPos, direction_e dir) {
+static bool faceIsVisible(world_t *w, chunk_t *c, ivec3 blockPos, direction_e dir) {
     ivec3 dirVec;
     memcpy(&dirVec, &directions[dir], sizeof(ivec3));
     ivec3 neighbourPos;
     glm_ivec3_add(blockPos, dirVec, neighbourPos);
+    ivec3 chunkOffset = { 0, 0, 0 };
     for (int i = 0; i < 3; i++) {
-        if (neighbourPos[i] < 0 || neighbourPos[i] >= CHUNK_SIZE) {
-            return true;
+        if (neighbourPos[i] < 0) {
+            neighbourPos[i] = CHUNK_SIZE - 1;
+            chunkOffset[i] = -1;
+        } else if (neighbourPos[i] >= CHUNK_SIZE) {
+            neighbourPos[i] = 0;
+            chunkOffset[i] = 1;
         }
     }
-    block_t type = c->blocks[neighbourPos[0]][neighbourPos[1]][neighbourPos[2]];
-    return type == BL_AIR || type == BL_LEAF;
+    if (chunkOffset[0] == 0 && chunkOffset[1] == 0 && chunkOffset[2] == 0) {
+        block_t type = c->blocks[neighbourPos[0]][neighbourPos[1]][neighbourPos[2]];
+        return BL_TRANSPARENT(type);
+    } else {
+        ivec3 cPos = { c->cx, c->cy, c->cz };
+        glm_ivec3_add(cPos, chunkOffset, cPos);
+        chunk_t *nChunk = world_getFullyLoadedChunk(w, cPos[0], cPos[1], cPos[2]);
+        if (!nChunk) {
+            return true;
+        }
+        block_t type = nChunk->blocks[neighbourPos[0]][neighbourPos[1]][neighbourPos[2]];
+        return BL_TRANSPARENT(type);
+    }
 }
 
 // writes vertices of a face specified by buf
@@ -90,7 +106,7 @@ static void getNextCoord(ivec3 out, int i, int j, int k, direction_e dir, int wi
 }
 
 // greedy meshing in one direction, writes quads to buf, returns updated pointer
-static vertex_t *greedyMeshDirection(world_t *w, chunk_t *c, direction_e dir, vertex_t *buf) {
+static vertex_t *greedyMeshDirection(world_t *world, chunk_t *c, direction_e dir, vertex_t *buf) {
     ivec3 dirVec;
     memcpy(&dirVec, &directions[dir], sizeof(ivec3));
     vertex_t *nextPtr = buf;
@@ -100,7 +116,7 @@ static vertex_t *greedyMeshDirection(world_t *w, chunk_t *c, direction_e dir, ve
             for (int k = 0; k < CHUNK_SIZE; ++k) {
                 ivec3 base = {i, j, k};
                 block_t type = c->blocks[i][j][k];
-                if (seen[i][j][k] || type == BL_AIR || !faceIsVisible(c, base, dir)) {
+                if (seen[i][j][k] || type == BL_AIR || !faceIsVisible(world, c, base, dir)) {
                     continue;
                 }
                 seen[i][j][k] = true;
@@ -124,7 +140,7 @@ static vertex_t *greedyMeshDirection(world_t *w, chunk_t *c, direction_e dir, ve
                             break;
                         }
                     }
-                    if (seen[nx][ny][nz] || c->blocks[nx][ny][nz] != type || !faceIsVisible(c, nextCoord, dir)) {
+                    if (seen[nx][ny][nz] || c->blocks[nx][ny][nz] != type || !faceIsVisible(world, c, nextCoord, dir)) {
                         break;
                     }
                     seen[nx][ny][nz] = true;
@@ -151,7 +167,7 @@ static vertex_t *greedyMeshDirection(world_t *w, chunk_t *c, direction_e dir, ve
                                 break;
                             }
                         }
-                        if (seen[nx][ny][nz] || c->blocks[nx][ny][nz] != type || !faceIsVisible(c, nextCoord, dir)) {
+                        if (seen[nx][ny][nz] || c->blocks[nx][ny][nz] != type || !faceIsVisible(world, c, nextCoord, dir)) {
                             ok = false;
                             break;
                         }
@@ -166,7 +182,7 @@ static vertex_t *greedyMeshDirection(world_t *w, chunk_t *c, direction_e dir, ve
                         seen[nx][ny][nz] = true;
                     }
                 }
-                nextPtr = writeFace(w, c, nextPtr, base, dir, width, height, type);
+                nextPtr = writeFace(world, c, nextPtr, base, dir, width, height, type);
             }
         }
     }
