@@ -94,9 +94,9 @@ static void shader_init(void) {
 }
 
 static void fog_init() {
-    glUseProgram(chunkShaderModelLocation);
-    glUniform1f(glGetUniformLocation(chunkShaderModelLocation, "fogStart"), FOG_START);
-    glUniform1f(glGetUniformLocation(chunkShaderModelLocation, "fogEnd"), FOG_END);
+    glUseProgram(chunkShader);
+    glUniform1f(glGetUniformLocation(chunkShader, "fogStart"), FOG_START);
+    glUniform1f(glGetUniformLocation(chunkShader, "fogEnd"), FOG_END);
     glUseProgram(0);
 }
 
@@ -107,7 +107,9 @@ void rendering_init(const int screen_width, const int screen_height) {
 
     postProcess_init(&postProcess, postProcessShader, screen_width, screen_height);
 
+
     hud_init();
+
 
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
