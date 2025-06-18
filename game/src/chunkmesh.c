@@ -123,65 +123,68 @@ static vertex_t *greedyMeshDirection(world_t *world, chunk_t *c, direction_e dir
                 unsigned char light = glm_imax(EXTRACT_SUN(c->lightMap[i][j][k]), EXTRACT_TORCH(c->lightMap[i][j][k]));
                 int width = 1;
                 int height = 1;
-                // expand width
-                for (; width < CHUNK_SIZE; ++width) {
-                    ivec3 nextCoord;
-                    getNextCoord(nextCoord, i, j, k, dir, width, 0);
-                    ivec3 normalNextCoord;
-                    glm_ivec3_add(nextCoord, dirVec, normalNextCoord);
-                    int nx = nextCoord[0], ny = nextCoord[1], nz = nextCoord[2];
-                    if (nx < 0 || ny < 0 || nz < 0 || nx >= CHUNK_SIZE || ny >= CHUNK_SIZE || nz >= CHUNK_SIZE) {
-                        break;
-                    }
-                    if (normalNextCoord[0] >= 0 && normalNextCoord[1] >= 0 && normalNextCoord[2] >= 0 &&
-                        normalNextCoord[0] < CHUNK_SIZE && normalNextCoord[1] < CHUNK_SIZE && normalNextCoord[2] < CHUNK_SIZE) {
-                        if (light != glm_imax(EXTRACT_SUN(c->lightMap[normalNextCoord[0]][normalNextCoord[1]][normalNextCoord[2]]),
-                            EXTRACT_TORCH(c->lightMap[normalNextCoord[0]][normalNextCoord[1]][normalNextCoord[2]]))) {
-                            break;
-                        }
-                    }
-                    if (seen[nx][ny][nz] || c->blocks[nx][ny][nz] != type || !faceIsVisible(world, c, nextCoord, dir)) {
-                        break;
-                    }
-                    seen[nx][ny][nz] = true;
-                }
-                // expand height
-                bool ok;
-                for (; height < CHUNK_SIZE; ++height) {
-                    ok = true;
-                    for (int w = 0; w < width; ++w) {
-                        ivec3 nextCoord;
-                        getNextCoord(nextCoord, i, j, k, dir, w, height);
-                        ivec3 normalNextCoord;
-                        glm_ivec3_add(nextCoord, dirVec, normalNextCoord);
-                        int nx = nextCoord[0], ny = nextCoord[1], nz = nextCoord[2];
-                        if (nx < 0 || ny < 0 || nz < 0 || nx >= CHUNK_SIZE || ny >= CHUNK_SIZE || nz >= CHUNK_SIZE) {
-                            ok = false;
-                            break;
-                        }
-                        if (normalNextCoord[0] >= 0 && normalNextCoord[1] >= 0 && normalNextCoord[2] >= 0 &&
-                            normalNextCoord[0] < CHUNK_SIZE && normalNextCoord[1] < CHUNK_SIZE && normalNextCoord[2] < CHUNK_SIZE) {
-                            if (light != glm_imax(EXTRACT_SUN(c->lightMap[normalNextCoord[0]][normalNextCoord[1]][normalNextCoord[2]]),
-                            EXTRACT_TORCH(c->lightMap[normalNextCoord[0]][normalNextCoord[1]][normalNextCoord[2]]))) {
-                                ok = false;
-                                break;
-                            }
-                        }
-                        if (seen[nx][ny][nz] || c->blocks[nx][ny][nz] != type || !faceIsVisible(world, c, nextCoord, dir)) {
-                            ok = false;
-                            break;
-                        }
-                    }
-                    if (!ok) {
-                        break;
-                    }
-                    for (int w = 0; w < width; ++w) {
-                        ivec3 nextCoord;
-                        getNextCoord(nextCoord, i, j, k, dir, w, height);
-                        int nx = nextCoord[0], ny = nextCoord[1], nz = nextCoord[2];
-                        seen[nx][ny][nz] = true;
-                    }
-                }
+
+                // removed greedy meshing due to vertex lighting making merged faces look strange
+
+            //     // expand width
+            //     for (; width < CHUNK_SIZE; ++width) {
+            //         ivec3 nextCoord;
+            //         getNextCoord(nextCoord, i, j, k, dir, width, 0);
+            //         ivec3 normalNextCoord;
+            //         glm_ivec3_add(nextCoord, dirVec, normalNextCoord);
+            //         int nx = nextCoord[0], ny = nextCoord[1], nz = nextCoord[2];
+            //         if (nx < 0 || ny < 0 || nz < 0 || nx >= CHUNK_SIZE || ny >= CHUNK_SIZE || nz >= CHUNK_SIZE) {
+            //             break;
+            //         }
+            //         if (normalNextCoord[0] >= 0 && normalNextCoord[1] >= 0 && normalNextCoord[2] >= 0 &&
+            //             normalNextCoord[0] < CHUNK_SIZE && normalNextCoord[1] < CHUNK_SIZE && normalNextCoord[2] < CHUNK_SIZE) {
+            //             if (light != glm_imax(EXTRACT_SUN(c->lightMap[normalNextCoord[0]][normalNextCoord[1]][normalNextCoord[2]]),
+            //                 EXTRACT_TORCH(c->lightMap[normalNextCoord[0]][normalNextCoord[1]][normalNextCoord[2]]))) {
+            //                 break;
+            //             }
+            //         }
+            //         if (seen[nx][ny][nz] || c->blocks[nx][ny][nz] != type || !faceIsVisible(world, c, nextCoord, dir)) {
+            //             break;
+            //         }
+            //         seen[nx][ny][nz] = true;
+            //     }
+            //     // expand height
+            //     bool ok;
+            //     for (; height < CHUNK_SIZE; ++height) {
+            //         ok = true;
+            //         for (int w = 0; w < width; ++w) {
+            //             ivec3 nextCoord;
+            //             getNextCoord(nextCoord, i, j, k, dir, w, height);
+            //             ivec3 normalNextCoord;
+            //             glm_ivec3_add(nextCoord, dirVec, normalNextCoord);
+            //             int nx = nextCoord[0], ny = nextCoord[1], nz = nextCoord[2];
+            //             if (nx < 0 || ny < 0 || nz < 0 || nx >= CHUNK_SIZE || ny >= CHUNK_SIZE || nz >= CHUNK_SIZE) {
+            //                 ok = false;
+            //                 break;
+            //             }
+            //             if (normalNextCoord[0] >= 0 && normalNextCoord[1] >= 0 && normalNextCoord[2] >= 0 &&
+            //                 normalNextCoord[0] < CHUNK_SIZE && normalNextCoord[1] < CHUNK_SIZE && normalNextCoord[2] < CHUNK_SIZE) {
+            //                 if (light != glm_imax(EXTRACT_SUN(c->lightMap[normalNextCoord[0]][normalNextCoord[1]][normalNextCoord[2]]),
+            //                 EXTRACT_TORCH(c->lightMap[normalNextCoord[0]][normalNextCoord[1]][normalNextCoord[2]]))) {
+            //                     ok = false;
+            //                     break;
+            //                 }
+            //             }
+            //             if (seen[nx][ny][nz] || c->blocks[nx][ny][nz] != type || !faceIsVisible(world, c, nextCoord, dir)) {
+            //                 ok = false;
+            //                 break;
+            //             }
+            //         }
+            //         if (!ok) {
+            //             break;
+            //         }
+            //         for (int w = 0; w < width; ++w) {
+            //             ivec3 nextCoord;
+            //             getNextCoord(nextCoord, i, j, k, dir, w, height);
+            //             int nx = nextCoord[0], ny = nextCoord[1], nz = nextCoord[2];
+            //             seen[nx][ny][nz] = true;
+            //         }
+            //     }
                 nextPtr = writeFace(world, c, nextPtr, base, dir, width, height, type);
             }
         }

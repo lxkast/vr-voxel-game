@@ -772,28 +772,27 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
             .lightValue = torchValue };
         queue_push(&cp->lightTorchDeletionQueue, qi);
     }
-    // if (*bp != BL_LEAF) {
-    //     for (int dir = 0; dir < 6; ++dir) {
-    //         ivec3 nPos;
-    //         memcpy(nPos, directions[dir], sizeof(ivec3));
-    //         glm_ivec3_add(nPos, blockPos, nPos);
-    //         if (nPos[0] < 0 || nPos[0] >= CHUNK_SIZE ||
-    //             nPos[1] < 0 || nPos[1] >= CHUNK_SIZE ||
-    //             nPos[2] < 0 || nPos[2] >= CHUNK_SIZE) {
-    //             continue;
-    //         }
-    //         unsigned char neighborLightMapValue = cp->lightMap[nPos[0]][nPos[1]][nPos[2]];
-    //         unsigned char neighborSun = EXTRACT_SUN(neighborLightMapValue);
-    //         unsigned char neighborTorch = EXTRACT_TORCH(neighborLightMapValue);
-    //
-    //         if (neighborSun > 0) {
-    //             queue_push(&cp->lightSunInsertionQueue, (lightQueueItem_t){ .pos = {nPos[0], nPos[1], nPos[2]}, .lightValue = neighborSun });
-    //         }
-    //         if (neighborTorch > 0) {
-    //             queue_push(&cp->lightTorchInsertionQueue, (lightQueueItem_t){ .pos = {nPos[0], nPos[1], nPos[2]}, .lightValue = neighborTorch });
-    //         }
-    //     }
-    // }
+    for (int dir = 0; dir < 6; ++dir) {
+        ivec3 nPos;
+        memcpy(nPos, directions[dir], sizeof(ivec3));
+        glm_ivec3_add(nPos, blockPos, nPos);
+        ivec3 chunkOffset = { 0, 0, 0 };
+        for (int i = 0; i < 3; ++i) {
+            if (nPos[i] < 0) {
+                chunkOffset[i] = -1;
+            } else if (nPos[i] >= CHUNK_SIZE) {
+                chunkOffset[i] = 1;
+            }
+        }
+        if (chunkOffset[0] != 0 || chunkOffset[1] != 0 || chunkOffset[2] != 0) {
+            ivec3 cPos = {cp->cx, cp->cy, cp->cz};
+            glm_ivec3_add(cPos, chunkOffset, cPos);
+            chunk_t *nChunk = world_getFullyLoadedChunk(w, cPos[0], cPos[1], cPos[2]);
+            if (nChunk) {
+                nChunk->tainted = true;
+            }
+        }
+    }
 
 
     const worldEntity_t entity = createItemEntity(w, (vec3){(float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f}, BLOCK_TO_ITEM[*bp]);
