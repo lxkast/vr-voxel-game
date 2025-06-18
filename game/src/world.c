@@ -1,4 +1,5 @@
 #include "world.h"
+#include <uthash.h>
 #include <cglm/cglm.h>
 #include <errno.h>
 #include <logging.h>
@@ -6,11 +7,10 @@
 #include <sys/stat.h>
 #include "chunk.h"
 #include "entity.h"
-#include "noise.h"
-#include "uthash.h"
-#include "vertices.h"
-#include "structure.h"
 #include "lighting.h"
+#include "noise.h"
+#include "structure.h"
+#include "vertices.h"
 
 #define MAX_RAYCAST_DISTANCE 6.f
 #define RAYCAST_STEP_MAGNITUDE 0.1f
@@ -173,13 +173,6 @@ static bool getBlockAddr(world_t *w, const int x, const int y, const int z, bloc
     return true;
 }
 
-static void fogInit(world_t *w, const GLuint program) {
-    glUseProgram(program);
-    glUniform1f(glGetUniformLocation(program, "fogStart"), FOG_START);
-    glUniform1f(glGetUniformLocation(program, "fogEnd"), FOG_END);
-    glUseProgram(0);
-}
-
 static void highlightInit(world_t *w) {
     glGenVertexArrays(1, &w->highlightVao);
     glGenBuffers(1, &w->highlightVbo);
@@ -194,10 +187,9 @@ static void highlightInit(world_t *w) {
     glBindVertexArray(0);
 }
 
-void world_init(world_t *w, GLuint program, uint64_t seed) {
+void world_init(world_t *w, uint64_t seed) {
     memset(w, 0, sizeof(world_t));
     w->clusterTable = NULL;
-    fogInit(w, program);
     highlightInit(w);
 
     w->numEntities = 0;

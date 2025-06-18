@@ -1,6 +1,7 @@
 #include "player.h"
 #include "GLFW/glfw3.h"
 #include "logging.h"
+#include "string.h"
 #include "block.h"
 
 static const int faceToBlock[6][3] = {{-1,0,0}, {1,0,0}, {0,-1,0}, {0,1,0}, {0,0,-1}, {0,0,1} };
