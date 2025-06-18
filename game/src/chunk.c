@@ -8,7 +8,6 @@
 
 #define LIGHT_MAX_VALUE 15
 
-typedef struct world_t world_t;
 extern void chunk_createMesh(chunk_t *c, world_t *w);
 
 static float smoothstep(const float min, const float max, float x) {
@@ -188,7 +187,7 @@ void chunk_generate(chunk_t *c) {
     c->tainted = true;
 }
 
-void chunk_draw(chunk_t *c, void *w, const int modelLocation) {
+void chunk_draw(chunk_t *c, world_t *w, const int modelLocation) {
     if (c->tainted) chunk_createMesh(c, w);
     c->tainted = false;
 

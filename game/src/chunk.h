@@ -12,6 +12,8 @@
 #define CHUNK_SIZE 16
 #define CHUNK_SIZE_CUBED 4096
 
+typedef struct world_t world_t;
+
 /**
  * @brief An enum containing biome information
  */
@@ -102,7 +104,7 @@ void chunk_generate(chunk_t *c);
  * @param w A pointer to a world
  * @param modelLocation The location of the model matrix in the shader program
  */
-void chunk_draw(chunk_t *c, void *w, int modelLocation);
+void chunk_draw(chunk_t *c, world_t *w, const int modelLocation);
 
 /**
 * @brief A function for freeing a chunk
