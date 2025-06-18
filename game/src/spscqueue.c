@@ -6,7 +6,7 @@ bool spscRing_init(spscRing_t *r, const size_t cap) {
         return false;
     }
 
-    r->buf = calloc(cap, sizeof(chunkValue_t *));
+    r->buf = calloc(cap, sizeof(void *));
     if (!r->buf) {
         return false;
     }
@@ -18,7 +18,7 @@ bool spscRing_init(spscRing_t *r, const size_t cap) {
     return true;
 }
 
-bool spscRing_offer(spscRing_t *r, chunkValue_t *item) {
+bool spscRing_offer(spscRing_t *r, void *item) {
     size_t tail = atomic_load_explicit(&r->tail, memory_order_relaxed);
     size_t next = (tail + 1) % r->mask;
 
@@ -30,7 +30,7 @@ bool spscRing_offer(spscRing_t *r, chunkValue_t *item) {
     return true;
 }
 
-bool spscRing_poll(spscRing_t *r, chunkValue_t **item) {
+bool spscRing_poll(spscRing_t *r, void **item) {
     size_t h = atomic_load_explicit(&r->head, memory_order_relaxed);
 
     if (h == atomic_load_explicit(&r->tail, memory_order_acquire)) {

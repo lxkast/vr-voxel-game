@@ -74,7 +74,6 @@ typedef struct world_t {
     rng_t generalRng;
     rng_t worldRng;
     noise_t noise;
-    spscRing_t meshQueue;
 } world_t;
 
 /**
