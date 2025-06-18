@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ENTITY_H
+#define ENTITY_H
 
 #include <cglm/cglm.h>
 #include <stdbool.h>
@@ -68,3 +69,5 @@ void processEntity(world_t *w, entity_t *entity, double dt);
 void glm_vec3_ceil(vec3 v, vec3 dest);
 
 bool entitiesIntersect(entity_t entity1, entity_t entity2);
+
+#endif

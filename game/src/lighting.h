@@ -1,4 +1,6 @@
-#pragma once
+#ifndef LIGHTING_H
+#define LIGHTING_H
+
 #include "chunk.h"
 #include "vertices.h"
 #include "world.h"
@@ -12,3 +14,5 @@
 float computeVertexLight(world_t *w, chunk_t *c, int vx, int vy, int vz, direction_e dir);
 void chunk_processLightInsertion(chunk_t *c, world_t *w);
 void chunk_processLightDeletion(chunk_t *c, world_t *w);
+
+#endif

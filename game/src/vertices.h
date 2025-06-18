@@ -1,4 +1,6 @@
-#pragma once
+#ifndef VERTICES_H
+#define VERTICES_H
+
 #include <cglm/cglm.h>
 
 typedef struct {
@@ -34,3 +36,5 @@ extern const unsigned int quadVerticesSize;
 
 extern const float squareVertices[];
 extern const unsigned int squareVerticesSize;
+
+#endif

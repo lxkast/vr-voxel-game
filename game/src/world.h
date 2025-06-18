@@ -1,4 +1,5 @@
-#pragma once
+#ifndef WORLD_H
+#define WORLD_H
 
 #include <cglm/cglm.h>
 #include <glad/gl.h>
@@ -309,3 +310,5 @@ chunkValue_t *world_loadChunk(world_t *w,
                      const int cz,
                      const chunkLoadLevel_e ll,
                      const reloadData_e r);
+
+#endif

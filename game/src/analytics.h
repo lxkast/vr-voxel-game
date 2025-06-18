@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ANALYTICS_H
+#define ANALYTICS_H
 
 #define FPS_QUEUE_SIZE 1024
 
@@ -16,3 +17,5 @@ typedef struct {
 void analytics_init(analytics_t *a);
 
 void analytics_startFrame(analytics_t *a);
+
+#endif

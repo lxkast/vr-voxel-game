@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LOGGING_H
+#define LOGGING_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -52,3 +53,5 @@ Beautiful macro definitions.
         log_log(LEVEL_FATAL, __FILE__, __LINE__, __func__, __VA_ARGS__); \
         exit(EXIT_FAILURE);                                              \
     } while (0)
+
+#endif

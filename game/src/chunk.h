@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CHUNK_H
+#define CHUNK_H
 
 #include <glad/gl.h>
 #include <stdbool.h>
@@ -115,3 +116,5 @@ void chunk_free(const chunk_t *c);
 * @param fp A file pointer
 */
 void chunk_serialise(chunk_t *c, FILE *fp);
+
+#endif
