@@ -95,10 +95,9 @@ typedef enum {
 /**
  * @brief Initialises a world struct.
  * @param w A pointer to a world
- * @param program A shader program for setting effects
  * @param seed The world seed
  */
-void world_init(world_t *w, GLuint program, uint64_t seed);
+void world_init(world_t *w, uint64_t seed);
 
 /**
  * @brief Draws the world.
