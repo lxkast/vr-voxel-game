@@ -29,10 +29,18 @@ static mat4 projection;
 static postProcess_t postProcess;
 static int width, height;
 
-void update_projection(const bool postProcessingEnabled, const float fov, const int screenWidth, const int screenHeight, const float renderDistance) {
+void rendering_updateProjection(const bool postProcessingEnabled,
+                                const float fov,
+                                const int screenWidth,
+                                const int screenHeight,
+                                const float renderDistance) {
     width = screenWidth;
     height = screenHeight;
-    glm_perspective(fov, (float)screenWidth / (float)((postProcessingEnabled ? 2 : 1) * screenHeight), 0.1f, 16.f * (renderDistance + 1), projection);
+    glm_perspective(fov,
+                    (float)screenWidth / (float)((postProcessingEnabled ? 2 : 1) * screenHeight),
+                    0.1f,
+                    16.f * (renderDistance + 1),
+                    projection);
 }
 
 static void shader_init(void) {

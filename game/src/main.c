@@ -159,7 +159,7 @@ int main(void) {
         player_attachCamera(&player, &camera);
         camera_update(&camera);
 
-        update_projection(postProcessingEnabled, FOV_Y, actual_screen_width, actual_screen_height, CHUNK_LOAD_RADIUS);
+        rendering_updateProjection(postProcessingEnabled, FOV_Y, actual_screen_width, actual_screen_height, CHUNK_LOAD_RADIUS);
         rendering_render(&world, &camera, &player, wireframeView, postProcessingEnabled);
 
         fpsDisplayAcc += analytics.dt;
