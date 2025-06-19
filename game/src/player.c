@@ -1,18 +1,34 @@
 #include "player.h"
 #include "GLFW/glfw3.h"
 #include "logging.h"
+#include "string.h"
 #include "block.h"
+#include "world.h"
 
 static const int faceToBlock[6][3] = {{-1,0,0}, {1,0,0}, {0,-1,0}, {0,1,0}, {0,0,-1}, {0,0,1} };
 
+/**
+ * @brief Sets a player's block cooldown time.
+ * @param p A pointer to a player
+ */
 static void setBlockCooldown(player_t *p) {
     p->blockCooldown = glfwGetTime() + BLOCK_COOLDOWN_TIME;
 }
 
-static bool onBlockCooldown(player_t *p) {
+/**
+ * @brief Checks if a player is currently on block placing/destroying cooldown
+ * @param p A pointer to a player
+ * @return Whether the player is or isn't on cooldown
+ */
+static bool onBlockCooldown(const player_t *p) {
     return glfwGetTime() < p->blockCooldown;
 }
 
+/**
+ * @brief Adds a player to a world as an entity
+ * @param p A pointer to a player
+ * @param w A pointer to a world
+ */
 static void player_addToWorld(player_t *p, world_t *w) {
     world_addEntity(w, (worldEntity_t){
         .type = WE_PLAYER,
@@ -53,7 +69,7 @@ void player_init(world_t *w, player_t *p) {
                 {ITEM_GRASS, 32},
                 {ITEM_STONE, 16},
                 {ITEM_GLOWSTONE, 64},
-                {NOTHING, 0},
+                {ITEM_SNOW, 64},
                 {NOTHING, 0},
                 {NOTHING, 0},
                 {NOTHING, 0},
@@ -106,7 +122,11 @@ void player_removeBlock(player_t *p, world_t *w) {
     const raycast_t raycastBlock = world_raycast(w, camPos, lookVector, 6.f);
 
     if (raycastBlock.found) {
-        world_removeBlock(w,(int)raycastBlock.blockPosition[0], (int)raycastBlock.blockPosition[1], (int)raycastBlock.blockPosition[2]);
+        world_removeBlock(w,
+                          (int)raycastBlock.blockPosition[0],
+                          (int)raycastBlock.blockPosition[1],
+                          (int)raycastBlock.blockPosition[2]);
+
         setBlockCooldown(p);
     }
 }
@@ -135,7 +155,11 @@ void player_placeBlock(player_t *p, world_t *w) {
         newBlockPosition[2] = (int)raycastBlock.blockPosition[2] - moveDelta[2];
 
         if (!intersectsWithBlock(p->entity, newBlockPosition)) {
-            world_placeBlock(w, newBlockPosition[0], newBlockPosition[1], newBlockPosition[2], ITEM_TO_BLOCK[p->hotbar.currentSlot->type]);
+            world_placeBlock(w,
+                             newBlockPosition[0],
+                             newBlockPosition[1],
+                             newBlockPosition[2],
+                             ITEM_TO_BLOCK[p->hotbar.currentSlot->type]);
             setBlockCooldown(p);
             p->hotbar.currentSlot->count--;
             if (p->hotbar.currentSlot->count == 0) {
@@ -147,6 +171,11 @@ void player_placeBlock(player_t *p, world_t *w) {
    }
 }
 
+/**
+ * @brief Prints a character a certain number of time
+ * @param ch The character to repeat
+ * @param num The number of times to repeat it
+ */
 static void repN(const char ch, const unsigned long long num) {
     for (int i = 0; i < num; i++) {
         putchar(ch);
@@ -161,6 +190,7 @@ static void repN(const char ch, const unsigned long long num) {
 void player_printHotbar(const player_t *p) {
     char printStrings[9][30];
 
+    // working out the text for each slot, and how long it will be
     for (int i = 0; i < 9; i++) {
         char *printStr = printStrings[i];
         const hotbarItem_t item = p->hotbar.slots[i];
@@ -176,6 +206,7 @@ void player_printHotbar(const player_t *p) {
     }
 
 
+    // printing line above
     putchar('+');
     for (int i = 0; i < 9; i++) {
         repN('-', 2 + strlen(printStrings[i]));
@@ -183,16 +214,18 @@ void player_printHotbar(const player_t *p) {
     }
     printf("\n|");
 
+    // printing slots
     for (int i = 0; i < 9; i++) {
         printf(" %s |", printStrings[i]);
     }
 
+    // printing line below
     printf("\n+");
     for (int i = 0; i < 9; i++) {
         repN('-', 2 + strlen(printStrings[i]));
         putchar('+');
     }
-    printf("\n"); // Add final newline
+    printf("\n");
 }
 
 void player_pickUpItemsCheck(player_t *p, world_t *w) {

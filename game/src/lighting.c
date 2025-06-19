@@ -1,12 +1,42 @@
+#include <logging.h>
 #include <string.h>
-
 #include "lighting.h"
 
-#include <logging.h>
+static void sumLight(world_t *w, const chunk_t *c, ivec3 nPos, int *sum, int *count) {
+    ivec3 chunkOffset = { 0, 0, 0 };
+    for (int n = 0; n < 3; ++n) {
+        if (nPos[n] < 0) {
+            nPos[n] = CHUNK_SIZE - 1;
+            chunkOffset[n] = -1;
+        } else if (nPos[n] >= CHUNK_SIZE) {
+            nPos[n] = 0;
+            chunkOffset[n] = 1;
+        }
+    }
+    if (chunkOffset[0] == 0 && chunkOffset[1] == 0 && chunkOffset[2] == 0) {
+        const int lv = c->lightMap[nPos[0]][nPos[1]][nPos[2]];
+        *sum += glm_imax(lv & LIGHT_TORCH_MASK, (lv & LIGHT_SUN_MASK) >> 4);
+        (*count)++;
+    } else {
+        ivec3 cPos = { c->cx, c->cy, c->cz };
+        glm_ivec3_add(cPos, chunkOffset, cPos);
+        const chunk_t *nChunk = world_getFullyLoadedChunk(w, cPos[0], cPos[1], cPos[2]);
+        if (nChunk) {
+            const int lv = nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]];
+            *sum += glm_imax(lv & LIGHT_TORCH_MASK, (lv & LIGHT_SUN_MASK) >> 4);
+            (*count)++;
+        }
+    }
+}
 
 // computes the light value of a vertex by averaging the 4 light values in the direction of the normal
-float computeVertexLight(chunk_t *c, int vx, int vy, int vz, direction_e dir) {
-    const int offsets[2] = { 0, -1 };
+float computeVertexLight(world_t *w,
+                         const chunk_t *c,
+                         const int vx,
+                         const int vy,
+                         const int vz,
+                         const direction_e dir) {
+    const int vertexOffset[2] = { 0, -1 };
 
     int count = 0;
     int sum = 0;
@@ -15,38 +45,21 @@ float computeVertexLight(chunk_t *c, int vx, int vy, int vz, direction_e dir) {
         case DIR_PLUSZ: {
             for (int i = 0; i < 2; ++i) {
                 for (int j = 0; j < 2; ++j) {
-                    int nx = vx + offsets[i];
-                    int ny = vy + offsets[j];
-                    int nz = vz;
-                    if (nx >= 0 && nx < CHUNK_SIZE &&
-                        ny >= 0 && ny < CHUNK_SIZE &&
-                        nz >= 0 && nz < CHUNK_SIZE) {
-                        int lv = c->lightMap[nx][ny][nz];
-                        sum += glm_imax(lv & LIGHT_TORCH_MASK, (lv & LIGHT_SUN_MASK) >> 4);
-                        count++;
-                    } else {
-                        // TODO: fetch light value from neighbouring chunk
-                    }
+                    ivec3 nPos = { vx + vertexOffset[i], vy + vertexOffset[j], vz };
+                    sumLight(w, c, nPos, &sum, &count);
                 }
             }
             break;
         }
         case DIR_MINUSZ: {
-            int dz = -1;
+            const int dz = -1;
             for (int i = 0; i < 2; ++i) {
                 for (int j = 0; j < 2; ++j) {
-                    int nx = vx + offsets[i];
-                    int ny = vy + offsets[j];
-                    int nz = vz + dz;
-                    if (nx >= 0 && nx < CHUNK_SIZE &&
-                        ny >= 0 && ny < CHUNK_SIZE &&
-                        nz >= 0 && nz < CHUNK_SIZE) {
-                        int lv = c->lightMap[nx][ny][nz];
-                        sum += glm_imax(lv & LIGHT_TORCH_MASK, (lv & LIGHT_SUN_MASK) >> 4);
-                        count++;
-                    } else {
-                        // TODO: fetch light value from neighbouring chunk
-                    }
+                    const int nx = vx + vertexOffset[i];
+                    const int ny = vy + vertexOffset[j];
+                    const int nz = vz + dz;
+                    ivec3 nPos = { nx, ny, nz };
+                    sumLight(w, c, nPos, &sum, &count);
                 }
             }
             break;
@@ -54,38 +67,24 @@ float computeVertexLight(chunk_t *c, int vx, int vy, int vz, direction_e dir) {
         case DIR_PLUSY: {
             for (int i = 0; i < 2; ++i) {
                 for (int j = 0; j < 2; ++j) {
-                    int nx = vx + offsets[i];
-                    int nz = vz + offsets[j];
-                    int ny = vy;
-                    if (nx >= 0 && nx < CHUNK_SIZE &&
-                        ny >= 0 && ny < CHUNK_SIZE &&
-                        nz >= 0 && nz < CHUNK_SIZE) {
-                        int lv = c->lightMap[nx][ny][nz];
-                        sum += glm_imax(lv & LIGHT_TORCH_MASK, (lv & LIGHT_SUN_MASK) >> 4);
-                        count++;
-                    } else {
-                        // TODO: fetch light value from neighbouring chunk
-                    }
+                    const int nx = vx + vertexOffset[i];
+                    const int nz = vz + vertexOffset[j];
+                    const int ny = vy;
+                    ivec3 nPos = { nx, ny, nz };
+                    sumLight(w, c, nPos, &sum, &count);
                 }
             }
             break;
         }
         case DIR_MINUSY: {
-            int dy = -1;
+            const int dy = -1;
             for (int i = 0; i < 2; ++i) {
                 for (int j = 0; j < 2; ++j) {
-                    int nx = vx + offsets[i];
-                    int nz = vz + offsets[j];
-                    int ny = vy + dy;
-                    if (nx >= 0 && nx < CHUNK_SIZE &&
-                        ny >= 0 && ny < CHUNK_SIZE &&
-                        nz >= 0 && nz < CHUNK_SIZE) {
-                        int lv = c->lightMap[nx][ny][nz];
-                        sum += glm_imax(lv & LIGHT_TORCH_MASK, (lv & LIGHT_SUN_MASK) >> 4);
-                        count++;
-                    } else {
-                        // TODO: fetch light value from neighbouring chunk
-                    }
+                    const int nx = vx + vertexOffset[i];
+                    const int nz = vz + vertexOffset[j];
+                    const int ny = vy + dy;
+                    ivec3 nPos = { nx, ny, nz };
+                    sumLight(w, c, nPos, &sum, &count);
                 }
             }
             break;
@@ -93,38 +92,24 @@ float computeVertexLight(chunk_t *c, int vx, int vy, int vz, direction_e dir) {
         case DIR_PLUSX: {
             for (int i = 0; i < 2; ++i) {
                 for (int j = 0; j < 2; ++j) {
-                    int ny = vy + offsets[i];
-                    int nz = vz + offsets[j];
-                    int nx = vx;
-                    if (nx >= 0 && nx < CHUNK_SIZE &&
-                        ny >= 0 && ny < CHUNK_SIZE &&
-                        nz >= 0 && nz < CHUNK_SIZE) {
-                        int lv = c->lightMap[nx][ny][nz];
-                        sum += glm_imax(lv & LIGHT_TORCH_MASK, (lv & LIGHT_SUN_MASK) >> 4);
-                        count++;
-                    } else {
-                        // TODO: fetch light value from neighbouring chunk
-                    }
+                    const int ny = vy + vertexOffset[i];
+                    const int nz = vz + vertexOffset[j];
+                    const int nx = vx;
+                    ivec3 nPos = { nx, ny, nz };
+                    sumLight(w, c, nPos, &sum, &count);
                 }
             }
             break;
         }
         case DIR_MINUSX: {
-            int dx = -1;
+            const int dx = -1;
             for (int i = 0; i < 2; ++i) {
                 for (int j = 0; j < 2; ++j) {
-                    int ny = vy + offsets[i];
-                    int nz = vz + offsets[j];
-                    int nx = vx + dx;
-                    if (nx >= 0 && nx < CHUNK_SIZE &&
-                        ny >= 0 && ny < CHUNK_SIZE &&
-                        nz >= 0 && nz < CHUNK_SIZE) {
-                        int lv = c->lightMap[nx][ny][nz];
-                        sum += glm_imax(lv & LIGHT_TORCH_MASK, (lv & LIGHT_SUN_MASK) >> 4);
-                        count++;
-                    } else {
-                        // TODO: fetch light value from neighbouring chunk
-                    }
+                    const int ny = vy + vertexOffset[i];
+                    const int nz = vz + vertexOffset[j];
+                    const int nx = vx + dx;
+                    ivec3 nPos = { nx, ny, nz };
+                    sumLight(w, c, nPos, &sum, &count);
                 }
             }
             break;
@@ -139,13 +124,15 @@ float computeVertexLight(chunk_t *c, int vx, int vy, int vz, direction_e dir) {
     return ((float)sum / (float)count) / (float)LIGHT_MAX_VALUE;
 }
 
-// performs a BFS flood-fill to approximate the torchlight values of each chunk
-static void processTorchLight(chunk_t *c) {
-    // propagate darkness
+// propagate darkness across chunks using a BFS flood fill until queue is empty
+static void processTorchLightDeletion(chunk_t *c, world_t *w) {
     while (c->lightTorchDeletionQueue.size > 0) {
         lightQueueItem_t head = queue_pop(&c->lightTorchDeletionQueue);
-        unsigned char lightLevel = LIGHT_TORCH_MASK & c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]];
+        unsigned char lightLevel = EXTRACT_TORCH(c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]]);
         if (lightLevel <= 0) {
+            continue;
+        }
+        if (!BL_TRANSPARENT(c->blocks[head.pos[0]][head.pos[1]][head.pos[2]])) {
             continue;
         }
         lightLevel = head.lightValue;
@@ -158,40 +145,73 @@ static void processTorchLight(chunk_t *c) {
             ivec3 nPos;
             glm_ivec3_add(head.pos, dirVec, nPos);
 
-            bool validNeighbour = true;
+            ivec3 offset = {0, 0, 0};
             for (int i = 0; i < 3; i++) {
-                if (nPos[i] < 0 || nPos[i] >= CHUNK_SIZE) {
-                    validNeighbour = false;
-                    break;
+                if (nPos[i] < 0) {
+                    offset[i] = -1;
+                    nPos[i] = CHUNK_SIZE - 1;
+                }
+                else if (nPos[i] >= CHUNK_SIZE) {
+                    offset[i] = 1;
+                    nPos[i] = 0;
                 }
             }
-            if (!validNeighbour) {
-                continue;
-            }
-            unsigned char neighbourLight = LIGHT_TORCH_MASK & c->lightMap[nPos[0]][nPos[1]][nPos[2]];
-            if ((c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_AIR || c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_LEAF)) {
-                lightQueueItem_t nItem = { .lightValue = neighbourLight };
-                memcpy(&nItem.pos, &nPos, sizeof(ivec3));
-                if (neighbourLight < lightLevel && neighbourLight != 0) {
-                    queue_push(&c->lightTorchDeletionQueue, nItem);
-                } else if (neighbourLight >= lightLevel){
-                    queue_push(&c->lightTorchInsertionQueue, nItem);
+            if (offset[0] == 0 && offset[1] == 0 && offset[2] == 0) {
+                // propagate darkness within current chunk
+                if (BL_TRANSPARENT(c->blocks[nPos[0]][nPos[1]][nPos[2]])) {
+                    const unsigned char neighbourLight = EXTRACT_TORCH(c->lightMap[nPos[0]][nPos[1]][nPos[2]]);
+                    lightQueueItem_t nItem = { .lightValue = neighbourLight };
+                    memcpy(&nItem.pos, &nPos, sizeof(ivec3));
+                    if (neighbourLight < lightLevel && neighbourLight != 0) {
+                        queue_push(&c->lightTorchDeletionQueue, nItem);
+                    } else if (neighbourLight >= lightLevel) {
+                        queue_push(&c->lightTorchInsertionQueue, nItem);
+                    }
+                    c->tainted = true;
+                }
+            } else {
+                // propagate darkness within neighbouring chunk
+                ivec3 cPos = { c->cx, c->cy, c->cz };
+                glm_ivec3_add(cPos, offset, cPos);
+                chunk_t *nChunk = world_getFullyLoadedChunk(w, cPos[0], cPos[1], cPos[2]);
+                if (nChunk == NULL) {
+                    LOG_ERROR("Attempted to propagate torch darkness to unloaded chunk");
+                    // TODO: think about what should happen
+                } else {
+                    if (!BL_TRANSPARENT(nChunk->blocks[nPos[0]][nPos[1]][nPos[2]])) {
+                        continue;
+                    }
+                    const unsigned char neighbourLight = EXTRACT_TORCH(nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]]);
+                    lightQueueItem_t nItem = { .lightValue = neighbourLight };
+                    memcpy(&nItem.pos, &nPos, sizeof(ivec3));
+                    if (neighbourLight < lightLevel && neighbourLight != 0) {
+                        queue_push(&nChunk->lightTorchDeletionQueue, nItem);
+                    } else if (neighbourLight >= lightLevel) {
+                        queue_push(&nChunk->lightTorchInsertionQueue, nItem);
+                    }
+                    nChunk->tainted = true;
                 }
             }
         }
     }
+}
+
+// propagate light across chunks using a BFS flood fill until queue is empty
+static void processTorchLightInsertion(chunk_t *c, world_t *w) {
     // propagate light
     while (c->lightTorchInsertionQueue.size > 0) {
         lightQueueItem_t head = queue_pop(&c->lightTorchInsertionQueue);
         unsigned char lightLevel = LIGHT_TORCH_MASK & c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]];
-
+        if ((c->blocks[head.pos[0]][head.pos[1]][head.pos[2]]) != BL_AIR && c->blocks[head.pos[0]][head.pos[1]][head.pos[2]] != BL_GLOWSTONE) {
+            continue;
+        }
         if (lightLevel < head.lightValue) {
             c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]] =
                 (c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]] & LIGHT_SUN_MASK) | (head.lightValue & LIGHT_TORCH_MASK);
             lightLevel = head.lightValue;
         }
 
-        unsigned char newLight = lightLevel - 1;
+        const unsigned char newLight = lightLevel - 1;
         if (newLight <= 0) {
             continue;
         }
@@ -203,41 +223,139 @@ static void processTorchLight(chunk_t *c) {
             ivec3 nPos;
             glm_ivec3_add(head.pos, dirVec, nPos);
 
-            bool validNeighbour = true;
+            ivec3 offset = {0, 0, 0};
             for (int i = 0; i < 3; i++) {
-                if (nPos[i] < 0 || nPos[i] >= CHUNK_SIZE) {
-                    validNeighbour = false;
-                    break;
+                if (nPos[i] < 0) {
+                    offset[i] = -1;
+                    nPos[i] = CHUNK_SIZE - 1;
+                }
+                else if (nPos[i] >= CHUNK_SIZE) {
+                    offset[i] = 1;
+                    nPos[i] = 0;
                 }
             }
-            if (!validNeighbour) {
-                continue;
-            }
-
-            if ((c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_AIR || c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_LEAF) &&
-                LIGHT_TORCH_MASK & c->lightMap[nPos[0]][nPos[1]][nPos[2]] < newLight) {
-                c->lightMap[nPos[0]][nPos[1]][nPos[2]] =
-                    (c->lightMap[nPos[0]][nPos[1]][nPos[2]] & LIGHT_SUN_MASK) | (newLight & LIGHT_TORCH_MASK);
+            if (offset[0] == 0 && offset[1] == 0 && offset[2] == 0) {
+                // propagate light to current chunk
+                if (BL_TRANSPARENT(c->blocks[nPos[0]][nPos[1]][nPos[2]]) &&
+                    LIGHT_TORCH_MASK & c->lightMap[nPos[0]][nPos[1]][nPos[2]] < newLight) {
+                    c->lightMap[nPos[0]][nPos[1]][nPos[2]] =
+                        (c->lightMap[nPos[0]][nPos[1]][nPos[2]] & LIGHT_SUN_MASK) | (newLight & LIGHT_TORCH_MASK);
+                    lightQueueItem_t nItem = { .lightValue = newLight };
+                    memcpy(&nItem.pos, &nPos, sizeof(ivec3));
+                    queue_push(&c->lightTorchInsertionQueue, nItem);
+                }
+                c->tainted = true;
+            } else {
+                ivec3 cPos = { c->cx, c->cy, c->cz };
+                glm_ivec3_add(cPos, offset, cPos);
+                chunk_t *nChunk = world_getFullyLoadedChunk(w, cPos[0], cPos[1], cPos[2]);
+                if (nChunk == NULL) {
+                    nChunk = world_loadChunk(w, cPos[0], cPos[1], cPos[2], LL_INIT, REL_CHILD)->chunk;
+                } else {
+                    if ((nChunk->blocks[nPos[0]][nPos[1]][nPos[2]]) != BL_AIR) {
+                        nChunk->tainted = true;
+                        continue;
+                    }
+                    if (EXTRACT_TORCH(nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]]) >= newLight) {
+                        continue;
+                    }
+                    nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]] =
+                        (nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]] & LIGHT_SUN_MASK) | (newLight & LIGHT_TORCH_MASK);
+                }
                 lightQueueItem_t nItem = { .lightValue = newLight };
                 memcpy(&nItem.pos, &nPos, sizeof(ivec3));
-                queue_push(&c->lightTorchInsertionQueue, nItem);
+                queue_push(&nChunk->lightTorchInsertionQueue, nItem);
+            }
+        }
+    }
+}
+
+static void processSunLightInsertion(chunk_t *c, world_t *w) {
+    while (c->lightSunInsertionQueue.size > 0) {
+        lightQueueItem_t head = queue_pop(&c->lightSunInsertionQueue);
+        unsigned char lightLevel = EXTRACT_SUN(c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]]);
+        if (c->blocks[head.pos[0]][head.pos[1]][head.pos[2]] != BL_AIR) {
+            continue;
+        }
+        if (lightLevel < head.lightValue) {
+            c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]] =
+                    (c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]] & LIGHT_TORCH_MASK)
+                            | ((head.lightValue & LIGHT_TORCH_MASK) << 4);
+            lightLevel = head.lightValue;
+        }
+
+        if (lightLevel - 1 <= 0) {
+            continue;
+        }
+
+        // check each direction and add to queue if transparent and lightValue less than current
+        // always propagate max sunlight downwards
+        for (int dir = 0; dir < 6; ++dir) {
+            int newNeighbourLevel;
+            if (dir == DIR_MINUSY && lightLevel == LIGHT_MAX_VALUE) {
+                newNeighbourLevel = LIGHT_MAX_VALUE;
+            } else {
+                newNeighbourLevel = lightLevel - 1;
+            }
+            ivec3 dirVec;
+            memcpy(&dirVec, &directions[dir], sizeof(ivec3));
+            ivec3 nPos;
+            glm_ivec3_add(head.pos, dirVec, nPos);
+
+            ivec3 offset = {0, 0, 0};
+            for (int i = 0; i < 3; i++) {
+                if (nPos[i] < 0) {
+                    offset[i] = -1;
+                    nPos[i] = CHUNK_SIZE - 1;
+                }
+                else if (nPos[i] >= CHUNK_SIZE) {
+                    offset[i] = 1;
+                    nPos[i] = 0;
+                }
+            }
+            if (offset[0] == 0 && offset[1] == 0 && offset[2] == 0) {
+                // propagate light to current chunk
+                if (c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_AIR &&
+                    EXTRACT_SUN(c->lightMap[nPos[0]][nPos[1]][nPos[2]]) < newNeighbourLevel) {
+                    c->lightMap[nPos[0]][nPos[1]][nPos[2]] =
+                            (c->lightMap[nPos[0]][nPos[1]][nPos[2]] & LIGHT_TORCH_MASK)
+                                    | ((newNeighbourLevel & LIGHT_TORCH_MASK) << 4);
+                    lightQueueItem_t nItem = { .lightValue = newNeighbourLevel };
+                    memcpy(&nItem.pos, &nPos, sizeof(ivec3));
+                    queue_push(&c->lightSunInsertionQueue, nItem);
+                    c->tainted = true;
+                }
+            } else {
+                // propagate light to neighbouring chunk
+                ivec3 cPos = { c->cx, c->cy, c->cz };
+                glm_ivec3_add(cPos, offset, cPos);
+                chunk_t *nChunk = world_getFullyLoadedChunk(w, cPos[0], cPos[1], cPos[2]);
+                if (nChunk == NULL) {
+                    continue;
+                    nChunk = world_loadChunk(w, cPos[0], cPos[1], cPos[2], LL_INIT, REL_CHILD)->chunk;
+                } else {
+                    if (nChunk->blocks[nPos[0]][nPos[1]][nPos[2]] != BL_AIR) {
+                        nChunk->tainted = true;
+                        continue;
+                    }
+                    if (EXTRACT_SUN(nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]]) >= newNeighbourLevel) {
+                        continue;
+                    }
+                    nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]] =
+                            (nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]] & LIGHT_TORCH_MASK)
+                                    | ((newNeighbourLevel & LIGHT_TORCH_MASK) << 4);
+                }
+                lightQueueItem_t nItem = { .lightValue = newNeighbourLevel };
+                memcpy(&nItem.pos, &nPos, sizeof(ivec3));
+                queue_push(&nChunk->lightSunInsertionQueue, nItem);
+                nChunk->tainted = true;
             }
         }
     }
 }
 
 // performs a BFS flood-fill to approximate the sunlight values of each chunk
-static void processSunLight(chunk_t *c) {
-    // TODO: check chunk above current (if loaded) to propagate downwards all sunlight from above
-    // assuming current chunk is exposed to sunlight
-    for (int i = 0; i < CHUNK_SIZE; ++i) {
-        for (int j = 0; j < CHUNK_SIZE; ++j) {
-            if (c->blocks[i][CHUNK_SIZE - 1][j] == BL_AIR || c->blocks[i][CHUNK_SIZE - 1][j] == BL_LEAF) {
-                lightQueueItem_t nItem = { .pos = { i, CHUNK_SIZE - 1, j }, .lightValue = LIGHT_MAX_VALUE };
-                queue_push(&c->lightSunInsertionQueue, nItem);
-            }
-        }
-    }
+static void processSunLightDeletion(chunk_t *c, world_t *w) {
     while (c->lightSunDeletionQueue.size > 0) {
         lightQueueItem_t head = queue_pop(&c->lightSunDeletionQueue);
         unsigned char lightLevel = EXTRACT_SUN(c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]]);
@@ -265,7 +383,7 @@ static void processSunLight(chunk_t *c) {
                 continue;
             }
 
-            unsigned char neighbourLight = EXTRACT_SUN(c->lightMap[nPos[0]][nPos[1]][nPos[2]]);
+            const unsigned char neighbourLight = EXTRACT_SUN(c->lightMap[nPos[0]][nPos[1]][nPos[2]]);
             if ((c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_AIR || c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_LEAF)) {
                 lightQueueItem_t nItem = { .lightValue = neighbourLight };
                 memcpy(&nItem.pos, &nPos, sizeof(ivec3));
@@ -277,59 +395,14 @@ static void processSunLight(chunk_t *c) {
             }
         }
     }
-
-    while (c->lightSunInsertionQueue.size > 0) {
-        lightQueueItem_t head = queue_pop(&c->lightSunInsertionQueue);
-        unsigned char lightLevel = (LIGHT_SUN_MASK & c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]]) >> 4;
-
-        if (lightLevel < head.lightValue) {
-            c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]] =
-                (c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]] & LIGHT_TORCH_MASK) | ((head.lightValue & LIGHT_TORCH_MASK) << 4);
-            lightLevel = head.lightValue;
-        }
-
-        if (lightLevel - 1 <= 0) {
-            continue;
-        }
-
-        // check each direction and add to queue if transparent and lightValue less than current
-        // always propagate max sunlight downwards
-        for (int dir = 0; dir < 6; ++dir) {
-            int newNeighbourLevel;
-            if (dir == DIR_MINUSY && lightLevel == LIGHT_MAX_VALUE) {
-                newNeighbourLevel = LIGHT_MAX_VALUE;
-            } else {
-                newNeighbourLevel = lightLevel - 1;
-            }
-            ivec3 dirVec;
-            memcpy(&dirVec, &directions[dir], sizeof(ivec3));
-            ivec3 nPos;
-            glm_ivec3_add(head.pos, dirVec, nPos);
-
-            bool validNeighbour = true;
-            for (int i = 0; i < 3; ++i) {
-                if (nPos[i] < 0 || nPos[i] >= CHUNK_SIZE) {
-                    validNeighbour = false;
-                    break;
-                }
-            }
-            if (!validNeighbour) {
-                continue;
-            }
-
-            if ((c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_AIR || c->blocks[nPos[0]][nPos[1]][nPos[2]] == BL_LEAF) &&
-                (LIGHT_SUN_MASK & c->lightMap[nPos[0]][nPos[1]][nPos[2]]) >> 4 < newNeighbourLevel) {
-                c->lightMap[nPos[0]][nPos[1]][nPos[2]] =
-                    (c->lightMap[nPos[0]][nPos[1]][nPos[2]] & LIGHT_TORCH_MASK) | ((newNeighbourLevel & LIGHT_TORCH_MASK) << 4);
-                lightQueueItem_t nItem = { .lightValue = newNeighbourLevel };
-                memcpy(&nItem.pos, &nPos, sizeof(ivec3));
-                queue_push(&c->lightSunInsertionQueue, nItem);
-            }
-        }
-    }
 }
 
-void chunk_processLighting(chunk_t *c) {
-    processTorchLight(c);
-    processSunLight(c);
+void chunk_processLightInsertion(chunk_t *c, world_t *w) {
+    processTorchLightInsertion(c, w);
+    processSunLightInsertion(c, w);
+}
+
+void chunk_processLightDeletion(chunk_t *c, world_t *w) {
+    processTorchLightDeletion(c, w);
+    processSunLightDeletion(c, w);
 }

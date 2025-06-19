@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ICM42688_CONSTS_H
+#define ICM42688_CONSTS_H
 
 /*
  * These numbers are taken straight from the datasheet of the ICM42688, I have ommited registers
@@ -68,3 +69,5 @@
 // IMU which we have got, different IMU's of the same type will have slightly
 // different result
 #define CLOCK_CORRECT_FACTOR 0.991 // WARNING: this is calculated experimentally for this exact chip, it is hardware specific, so won't be common across multiple chips
+
+#endif

@@ -1,5 +1,4 @@
 #include "entity.h"
-#include "logging.h"
 
 #define vec3_SIZE 12
 #define VELOCITY_CUTOFF 0.05f
@@ -61,9 +60,12 @@ static aabb_t makeAABB(vec3 position, vec3 size) {
     return box;
 }
 
-bool intersectsWithBlock(const entity_t entity, ivec3 blockPosition) {
+bool intersectsWithBlock(entity_t entity, ivec3 blockPosition) {
     const aabb_t entityAABB = makeAABB(entity.position, entity.size);
-    const aabb_t blockAABB = makeAABB((vec3){(float)blockPosition[0], (float)blockPosition[1], (float)blockPosition[2]}, (vec3){1.f, 1.f, 1.f});
+    const aabb_t blockAABB = makeAABB((vec3){(float)blockPosition[0],
+                                                    (float)blockPosition[1],
+                                                    (float)blockPosition[2]},
+                                      (vec3){1.f, 1.f, 1.f});
 
     return intersects(entityAABB, blockAABB);
 }
@@ -71,19 +73,23 @@ bool intersectsWithBlock(const entity_t entity, ivec3 blockPosition) {
 /**
  * @brief Handles a collision of an entity and a block along a specific axis. Tries to
  *        resolve collisions by updating deltaP so the entity never moves inside a block.
- * @param w A pointer to a world
  * @param entity The entity that is colliding
  * @param aabb The entity's bounding box
  * @param block The block we are checking for collisions with
  * @param deltaP The amount we were originally planning on moving the entity by
  * @param axisNum The axis we are resolving on
  */
-static void handleAxisCollision(entity_t *entity, const aabb_t aabb, const blockBounding_t block, vec3 deltaP, const int axisNum) {
+static void handleAxisCollision(entity_t *entity,
+                                const aabb_t aabb,
+                                const blockBounding_t block,
+                                vec3 deltaP,
+                                const int axisNum) {
     if (deltaP[axisNum] == 0.f) {
         return;
     }
     // checks to see if it collides in specified axis
-    if (aabb.min[axisNum] + deltaP[axisNum] < block.aabb.max[axisNum] && aabb.max[axisNum] + deltaP[axisNum] > block.aabb.min[axisNum]) {
+    if (aabb.min[axisNum] + deltaP[axisNum] < block.aabb.max[axisNum]
+                && aabb.max[axisNum] + deltaP[axisNum] > block.aabb.min[axisNum]) {
         if (deltaP[axisNum] < 0) {
             // if velocity is negative, makes the entity's min point end up at the block's max point
             deltaP[axisNum] = block.aabb.max[axisNum] - aabb.min[axisNum];
@@ -173,10 +179,16 @@ static void moveEntity(world_t *w, entity_t *entity, vec3 deltaP) {
         }
     }
 
+    // doing a raycast based check to ensure a frame drop doesn't break collisions
     if (deltaP[1] < -2) {
-        vec3 centerUnderside = {entity->position[0] + entity->size[0] / 2, entity->position[1], entity->position[2] + entity->size[2] / 2};
+        vec3 centerUnderside = {entity->position[0] + entity->size[0] / 2,
+                                entity->position[1],
+                                entity->position[2] + entity->size[2] / 2};
 
-        const raycast_t raycast = world_raycast(w, centerUnderside, (vec3){0.f, -1.f, 0.f}, fabsf(deltaP[1])+1);
+        const raycast_t raycast = world_raycast(w,
+                                                centerUnderside,
+                                                (vec3){0.f, -1.f, 0.f},
+                                                fabsf(deltaP[1])+1);
 
         if (raycast.found) {
             if (fabsf(entity->position[1] - (raycast.blockPosition[1] + 1)) < fabsf(deltaP[1])) {
@@ -225,6 +237,11 @@ static float clamp(const float value, const float min, const float max) {
     return (value < min) ? min : ((value > max) ? max : value);
 }
 
+/**
+ * @brief Makes sure a velocity is not below a certain value.
+ * @param velocity The entity's velocity
+ * @return The updated velocity
+ */
 static float velocityCutoff(const float velocity) {
     return ((velocity < 0 ? -velocity : velocity) < VELOCITY_CUTOFF) ? 0 : velocity;
 }

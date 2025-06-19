@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ITEM_H
+#define ITEM_H
 
 #include "block.h"
 
@@ -8,6 +9,7 @@ typedef enum {
     ITEM_DIRT,
     ITEM_GRASS,
     ITEM_STONE,
+    ITEM_SAND,
     ITEM_SWORD,
     ITEM_SHOVEL,
     ITEM_PICKAXE,
@@ -19,7 +21,7 @@ typedef enum {
     ITEM_MUD,
     ITEM_CACTUS,
     ITEM_JUNGLE_LOG,
-    ITEM_JUNGLE_LEAF
+    ITEM_JUNGLE_LEAF,
 } item_e;
 
 typedef struct {
@@ -43,6 +45,7 @@ static const itemProperties_t ITEM_PROPERTIES[] = {
     [ITEM_DIRT]  = {"Dirt Block",       true,  false,  64, -1},
     [ITEM_GRASS] = {"Grass Block",      true,  false,  64,-1},
     [ITEM_STONE] = {"Stone Block",       true,  false,  64,-1},
+    [ITEM_SAND] = {"Sand Block",       true,  false,  64,-1},
     [ITEM_SWORD] = {"Sword",      false, true, 1,200},
     [ITEM_SHOVEL] = {"Shovel",      false, true, 1,200},
     [ITEM_PICKAXE] = {"Pickaxe",      false, true, 1,200},
@@ -61,6 +64,7 @@ static const itemProperties_t ITEM_PROPERTIES[] = {
 static const block_t ITEM_TO_BLOCK[] = {
     [ITEM_DIRT]  = BL_DIRT,
     [ITEM_GRASS] = BL_GRASS,
+    [ITEM_SAND]  = BL_SAND,
     [ITEM_LOG] = BL_LOG,
     [ITEM_LEAF] = BL_LEAF,
     [ITEM_STONE] = BL_STONE,
@@ -78,6 +82,7 @@ static const block_t BLOCK_TO_ITEM[] = {
     [BL_DIRT]  = ITEM_DIRT,
     [BL_GRASS] = ITEM_GRASS,
     [BL_STONE] = ITEM_STONE,
+    [BL_SAND]  = ITEM_SAND,
     [BL_LOG] = ITEM_LOG,
     [BL_LEAF] = ITEM_LEAF,
     [BL_GLOWSTONE] = ITEM_GLOWSTONE,
@@ -98,3 +103,5 @@ typedef struct {
     /// this will have to be fleshed out more later
     /// maybe members like "isBlock" or "isWeapon"
 } hotbarItem_t;
+
+#endif

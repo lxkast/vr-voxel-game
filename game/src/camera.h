@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CAMERA_H
+#define CAMERA_H
 
 #include <glad/gl.h>
 
@@ -97,4 +98,10 @@ void camera_setView(camera_t *c, GLuint program);
  */
 #define camera_right(c) c->ruf[0]
 
+/**
+ * @brief Updates the camera view from the IMU
+ * @param c A pointer to a camera
+ */
 void camera_update(camera_t *c); // update the camera view from imu
+
+#endif

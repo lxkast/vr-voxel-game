@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ENTITY_H
+#define ENTITY_H
 
 #include <cglm/cglm.h>
 #include <stdbool.h>
@@ -6,23 +7,34 @@
 
 typedef struct world_t world_t;
 
+/// A struct holding information on entity
 typedef struct entity_t {
+    /// The entity's position
     vec3 position;
+    /// The entity's velocity
     vec3 velocity;
+    /// The entity's size
     vec3 size;
+    /// The entity's acceleration
     vec3 acceleration;
+    /// Whether the entity is grounded (not in the air)
     bool grounded;
-    // stored in radians
+    /// The yaw of the entity
     float yaw;
 } entity_t;
 
+/// A struct storing the min and max points of an AABB bounding box
 typedef struct {
+    /// The min corner
     vec3 min;
+    /// The max corner
     vec3 max;
 } aabb_t;
 
 typedef struct {
+    /// The block
     blockData_t data;
+    /// The block's bounding box
     aabb_t aabb;
 } blockBounding_t;
 
@@ -64,7 +76,16 @@ void processEntity(world_t *w, entity_t *entity, double dt);
  * @brief Performs the ceil function on a vec3
  * @param v the vector to apply the function to
  * @param dest the vector to store the result in
+ * @note This was based on the existing glm_vec3_floor function
  */
 void glm_vec3_ceil(vec3 v, vec3 dest);
 
+/**
+ * @brief Checks if two entities intersect
+ * @param entity1 The first entity
+ * @param entity2 The second entity
+ * @return Whether they intersect
+ */
 bool entitiesIntersect(entity_t entity1, entity_t entity2);
+
+#endif

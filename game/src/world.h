@@ -1,13 +1,15 @@
-#pragma once
+#ifndef WORLD_H
+#define WORLD_H
 
 #include <cglm/cglm.h>
 #include <glad/gl.h>
 #include "camera.h"
 #include "chunk.h"
 #include "item.h"
+#include "noise.h"
 #include "player.h"
 #include "uthash.h"
-#include "noise.h"
+#include "spscqueue.h"
 
 /*
  * NOTE: ENABLE_AUDIO is defined in block.h
@@ -35,13 +37,14 @@
 
 typedef struct entity_t entity_t;
 
+/// Enum storing the different kinds of entities
 typedef enum {
     WE_NONE,
     WE_PLAYER,
     WE_ITEM,
-    // WE_MOB,   (Not implemented yet)
 } worldEntity_e;
 
+/// A struct containing data about a worldEntity
 typedef struct {
     /// What kind of entity it is
     worldEntity_e type;
@@ -67,24 +70,40 @@ typedef struct world_t {
     } chunkLoaders[MAX_CHUNK_LOADERS];
     /// The hash table used keeping track of chunks
     struct _s_cluster *clusterTable;
+    /// The world's highlight Vao
     GLuint highlightVao;
+    /// The world's highlight Vbo
     GLuint highlightVbo;
+    /// The world's highlight model
     mat4 highlightModel;
+    /// If a current highlight is found in the world
     bool highlightFound;
+    /// The number of entities currently in the world
     int numEntities;
+    /// The array of current entities
     worldEntity_t entities[MAX_NUM_ENTITIES];
+    /// The index of oldest item in the array
     int oldestItem;
+    /// The number of current players in the world
     int numPlayers;
     /// Stores pointers to all current players in the world
     worldEntity_t *players[MAX_NUM_PLAYERS];
+    /// The seed of the world
     uint64_t seed;
+    /// The general RNG
     rng_t generalRng;
+    /// The world's RNG
     rng_t worldRng;
+    /// A noise for the world
     noise_t noise;
     #ifdef ENABLE_AUDIO
     ma_engine engine;
     ma_sound sound;
     #endif
+
+    struct {
+        spscRing_t chunkBufferFreeQueue;
+    } queues;
 } world_t;
 
 /**
@@ -106,13 +125,42 @@ typedef enum {
     REL_TOMBSTONE = 3
 } reloadData_e;
 
+
+/**
+ * @brief Value stored in hashmap entry array
+ */
+typedef struct chunkValue_t {
+    /// The pointer to a heap allocated chunk
+    chunk_t *chunk;
+    /// The current level of loading the chunk is in
+    chunkLoadLevel_e ll;
+
+    struct {
+        reloadData_e reload;
+        size_t nChildren;
+        struct chunkValue_t *children[32];
+    } loadData;
+
+} chunkValue_t;
+
 /**
  * @brief Initialises a world struct.
  * @param w A pointer to a world
- * @param program A shader program for setting effects
  * @param seed The world seed
  */
-void world_init(world_t *w, GLuint program, uint64_t seed);
+void world_init(world_t *w, uint64_t seed);
+
+/**
+ * @brief Remeshes any chunks that need to be remeshed.
+ * @param w A pointer to a world
+ */
+void world_remeshChunks(world_t *w);
+
+/**
+ * @brief Processes all the concurrent queues of the world
+ * @param w A pointer to a world
+ */
+void world_processQueues(world_t *w);
 
 /**
  * @brief Draws the world.
@@ -128,6 +176,16 @@ void world_draw(const world_t *w, int modelLocation, camera_t *cam, mat4 project
  * @param w A pointer to a world
  */
 void world_free(world_t *w);
+
+/**
+* @brief Gets a fully loaded chunk from chunk coordinates.
+* @param w A pointer to a world
+* @param cx Target chunk's x coordinate
+* @param cy Target chunk's y coordinate
+* @param cz Target chunk's z coordinate
+* @return A pointer to the chunk. Returns NULL if chunk isn't fully loaded.
+*/
+chunk_t *world_getFullyLoadedChunk(world_t *w, const int cx, const int cy, const int cz);
 
 /**
  * @brief Tries to assign a new chunk loader id.
@@ -174,11 +232,11 @@ bool world_getBlocki(world_t *w, int x, int y, int z, blockData_t *bd);
 /**
  * @brief Gets a block (if possible) at a position.
  * @param w A pointer to a world
- * @param pos The position you want to check for a block at
+ * @param position The position you want to check for a block at
  * @param bd A block data struct to allocate to
  * @return Whether the operation was successful
  */
-bool world_getBlock(world_t *w, const vec3 pos, blockData_t *bd);
+bool world_getBlock(world_t *w, const vec3 position, blockData_t *bd);
 
 /**
  * @brief Gets all adjacent blocks to a block at a specific position
@@ -191,11 +249,11 @@ void world_getAdjacentBlocks(world_t *w, vec3 position, blockData_t *buf);
 /**
  * @brief gets all blocks within a cuboid defined by two opposite corners
  * @param w a pointer to the world
- * @param bottomLeft bottom left corner of the cuboid
- * @param topRight top right corner of the cuboid
+ * @param minPoint bottom left corner of the cuboid
+ * @param maxPoint top right corner of the cuboid
  * @param buf the array where the blocks are stored
  */
-void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, blockData_t *buf);
+void world_getBlocksInRange(world_t *w, vec3 minPoint, const vec3 maxPoint, blockData_t *buf);
 
 /**
  * @brief Performs raycasting from a point at a specific angle
@@ -283,4 +341,22 @@ block_t getBlockType(world_t *w, vec3 position);
 
 #ifdef ENABLE_AUDIO
 void world_updateEngine(world_t *w, vec3 pos, vec3 lookDir);
+#endif
+
+/**
+ * @brief Loads a chunk.
+ * @param w A pointer to a world
+ * @param cx Chunk x coordinate
+ * @param cy Chunk y coordinate
+ * @param cz Chunk z coordinate
+ * @param ll The load level to load to if the chunk doesn't exist
+ * @param r The reload style of the chunk
+ */
+chunkValue_t *world_loadChunk(world_t *w,
+                     const int cx,
+                     const int cy,
+                     const int cz,
+                     const chunkLoadLevel_e ll,
+                     const reloadData_e r);
+
 #endif

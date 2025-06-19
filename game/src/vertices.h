@@ -1,9 +1,14 @@
-#pragma once
+#ifndef VERTICES_H
+#define VERTICES_H
+
 #include <cglm/cglm.h>
 
+/// A struct containing data about a vertex
 typedef struct {
+    /// x,y and z coordinates
     float x,y,z;
     int texIndex;
+    /// The light value of a vertex
     float lightValue;
 } vertex_t;
 
@@ -34,3 +39,5 @@ extern const unsigned int quadVerticesSize;
 
 extern const float squareVertices[];
 extern const unsigned int squareVerticesSize;
+
+#endif

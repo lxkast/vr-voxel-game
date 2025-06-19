@@ -1,10 +1,18 @@
-#pragma once
-#include <cglm/mat4.h>
+#ifndef INPUT_H
+#define INPUT_H
 
+#include <cglm/mat4.h>
+#include "GLFW/glfw3.h"
 #include "camera.h"
 #include "player.h"
-#include "GLFW/glfw3.h"
 
+// TODO(): Sam can you do this as well
+/**
+ *
+ * @param window
+ * @param wireframe
+ * @param vr
+ */
 void initialiseInput(GLFWwindow *window, void (*wireframe)(), void (*vr)());
 
 /**
@@ -23,3 +31,5 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
  * @param camera A pointer to a camera
  */
 void processCameraInput(GLFWwindow *window, camera_t *camera);
+
+#endif

@@ -1,4 +1,6 @@
-#pragma once
+#ifndef POSTPROCESS_H
+#define POSTPROCESS_H
+
 #include <glad/gl.h>
 
 typedef struct {
@@ -33,3 +35,5 @@ extern void postProcess_draw(postProcess_t *postProcess);
     Can be undone using glBindFramebuffer(GL_FRAMEBUFFER, 0)
 */
 extern void postProcess_bindBuffer(postProcess_buffer_t *buffer);
+
+#endif
