@@ -855,6 +855,7 @@ bool world_placeBlock(world_t *w, const int x, const int y, const int z, const b
     int sunValue = EXTRACT_SUN(cp->lightMap[blockPos[0]][blockPos[1]][blockPos[2]]);
     int torchValue = EXTRACT_TORCH(cp->lightMap[blockPos[0]][blockPos[1]][blockPos[2]]);
     LOG_DEBUG("torch value: %d, sun value: %d", torchValue, sunValue);
+    LOG_DEBUG("block pos %d, %d, %d", blockPos[0], blockPos[1], blockPos[2]);
     if (sunValue > 0) {
         lightQueueItem_t qi = {
             .lightValue = sunValue };

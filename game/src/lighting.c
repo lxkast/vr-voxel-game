@@ -201,7 +201,7 @@ static void processTorchLightInsertion(chunk_t *c, world_t *w) {
     while (c->lightTorchInsertionQueue.size > 0) {
         lightQueueItem_t head = queue_pop(&c->lightTorchInsertionQueue);
         unsigned char lightLevel = LIGHT_TORCH_MASK & c->lightMap[head.pos[0]][head.pos[1]][head.pos[2]];
-        if (!BL_TRANSPARENT(c->blocks[head.pos[0]][head.pos[1]][head.pos[2]]) && c->blocks[head.pos[0]][head.pos[1]][head.pos[2]] != BL_GLOWSTONE) {
+        if ((c->blocks[head.pos[0]][head.pos[1]][head.pos[2]]) != BL_AIR && c->blocks[head.pos[0]][head.pos[1]][head.pos[2]] != BL_GLOWSTONE) {
             continue;
         }
         if (lightLevel < head.lightValue) {
@@ -251,8 +251,11 @@ static void processTorchLightInsertion(chunk_t *c, world_t *w) {
                 if (nChunk == NULL) {
                     nChunk = world_loadChunk(w, cPos[0], cPos[1], cPos[2], LL_INIT, REL_CHILD)->chunk;
                 } else {
-                    if (!BL_TRANSPARENT(nChunk->blocks[nPos[0]][nPos[1]][nPos[2]]) ||
-                    EXTRACT_TORCH(nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]]) >= newLight) {
+                    if ((nChunk->blocks[nPos[0]][nPos[1]][nPos[2]]) != BL_AIR) {
+                        nChunk->tainted = true;
+                        continue;
+                    }
+                    if (EXTRACT_TORCH(nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]]) >= newLight) {
                         continue;
                     }
                     nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]] =
@@ -261,7 +264,6 @@ static void processTorchLightInsertion(chunk_t *c, world_t *w) {
                 lightQueueItem_t nItem = { .lightValue = newLight };
                 memcpy(&nItem.pos, &nPos, sizeof(ivec3));
                 queue_push(&nChunk->lightTorchInsertionQueue, nItem);
-                nChunk->tainted = true;
             }
         }
     }
@@ -330,8 +332,11 @@ static void processSunLightInsertion(chunk_t *c, world_t *w) {
                     continue;
                     nChunk = world_loadChunk(w, cPos[0], cPos[1], cPos[2], LL_INIT, REL_CHILD)->chunk;
                 } else {
-                    if ((nChunk->blocks[nPos[0]][nPos[1]][nPos[2]] != BL_AIR) ||
-                    EXTRACT_SUN(nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]]) >= newNeighbourLevel) {
+                    if (nChunk->blocks[nPos[0]][nPos[1]][nPos[2]] != BL_AIR) {
+                        nChunk->tainted = true;
+                        continue;
+                    }
+                    if (EXTRACT_SUN(nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]]) >= newNeighbourLevel) {
                         continue;
                     }
                     nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]] =
