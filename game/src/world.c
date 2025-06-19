@@ -789,12 +789,15 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
     if (!getBlockAddr(w, x, y, z, &bp, &cp)) return false;
 
     if (*bp == BL_AIR) return false;
+    const worldEntity_t entity = createItemEntity(w, (vec3){(float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f}, BLOCK_TO_ITEM[*bp]);
+    world_addEntity(w, entity);
 
     ivec3 blockPos = { x - ((x >> 4) << 4), y - ((y >> 4) << 4), z - ((z >> 4) << 4) };
 
     unsigned char torchValue = EXTRACT_TORCH(cp->lightMap[blockPos[0]][blockPos[1]][blockPos[2]]);
-
-    if (*bp == BL_GLOWSTONE) {
+    block_t oBlock = *bp;
+    *bp = BL_AIR;
+    if (oBlock == BL_GLOWSTONE) {
         lightQueueItem_t qi = {
             .pos = { x - ((x >> 4) << 4), y - ((y >> 4) << 4), z - ((z >> 4) << 4) },
             .lightValue = torchValue };
@@ -852,12 +855,6 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
             }
         }
     }
-
-
-    const worldEntity_t entity = createItemEntity(w, (vec3){(float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f}, BLOCK_TO_ITEM[*bp]);
-    world_addEntity(w, entity);
-
-    *bp = BL_AIR;
     cp->tainted = true;
 
     return true;
@@ -874,6 +871,7 @@ bool world_placeBlock(world_t *w, const int x, const int y, const int z, const b
 
     ivec3 blockPos = { x - ((x >> 4) << 4), y - ((y >> 4) << 4), z - ((z >> 4) << 4) };
 
+    *bp = block;
     if (block == BL_GLOWSTONE) {
         lightQueueItem_t qi = {
             .lightValue = LIGHT_MAX_VALUE };
@@ -896,7 +894,6 @@ bool world_placeBlock(world_t *w, const int x, const int y, const int z, const b
         memcpy(&qi.pos, &blockPos, sizeof(ivec3));
         queue_push(&cp->lightTorchDeletionQueue, qi);
     }
-    *bp = block;
     cp->tainted = true;
 
     return true;
