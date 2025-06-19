@@ -28,13 +28,14 @@
 
 typedef struct entity_t entity_t;
 
+/// Enum storing the different kinds of entities
 typedef enum {
     WE_NONE,
     WE_PLAYER,
     WE_ITEM,
-    // WE_MOB,   (Not implemented yet)
 } worldEntity_e;
 
+/// A struct containing data about a worldEntity
 typedef struct {
     /// What kind of entity it is
     worldEntity_e type;
@@ -60,19 +61,31 @@ typedef struct world_t {
     } chunkLoaders[MAX_CHUNK_LOADERS];
     /// The hash table used keeping track of chunks
     struct _s_cluster *clusterTable;
+    /// The world's highlight Vao
     GLuint highlightVao;
+    /// The world's highlight Vbo
     GLuint highlightVbo;
+    /// The world's highlight model
     mat4 highlightModel;
+    /// If a current highlight is found in the world
     bool highlightFound;
+    /// The number of entities currently in the world
     int numEntities;
+    /// The array of current entities
     worldEntity_t entities[MAX_NUM_ENTITIES];
+    /// The index of oldest item in the array
     int oldestItem;
+    /// The number of current players in the world
     int numPlayers;
     /// Stores pointers to all current players in the world
     worldEntity_t *players[MAX_NUM_PLAYERS];
+    /// The seed of the world
     uint64_t seed;
+    /// The general RNG
     rng_t generalRng;
+    /// The world's RNG
     rng_t worldRng;
+    /// A noise for the world
     noise_t noise;
 
     struct {
@@ -143,7 +156,7 @@ void world_processQueues(world_t *w);
  * @param cam A pointer to the camera from which to render from
  * @param projection The current projection matrix
  */
-void world_draw(world_t *w, int modelLocation, camera_t *cam, mat4 projection);
+void world_draw(const world_t *w, int modelLocation, camera_t *cam, mat4 projection);
 
 /**
  * @brief Frees the world.
@@ -206,11 +219,11 @@ bool world_getBlocki(world_t *w, int x, int y, int z, blockData_t *bd);
 /**
  * @brief Gets a block (if possible) at a position.
  * @param w A pointer to a world
- * @param pos The position you want to check for a block at
+ * @param position The position you want to check for a block at
  * @param bd A block data struct to allocate to
  * @return Whether the operation was successful
  */
-bool world_getBlock(world_t *w, const vec3 pos, blockData_t *bd);
+bool world_getBlock(world_t *w, const vec3 position, blockData_t *bd);
 
 /**
  * @brief Gets all adjacent blocks to a block at a specific position
@@ -223,11 +236,11 @@ void world_getAdjacentBlocks(world_t *w, vec3 position, blockData_t *buf);
 /**
  * @brief gets all blocks within a cuboid defined by two opposite corners
  * @param w a pointer to the world
- * @param bottomLeft bottom left corner of the cuboid
- * @param topRight top right corner of the cuboid
+ * @param minPoint bottom left corner of the cuboid
+ * @param maxPoint top right corner of the cuboid
  * @param buf the array where the blocks are stored
  */
-void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, blockData_t *buf);
+void world_getBlocksInRange(world_t *w, vec3 minPoint, const vec3 maxPoint, blockData_t *buf);
 
 /**
  * @brief Performs raycasting from a point at a specific angle
