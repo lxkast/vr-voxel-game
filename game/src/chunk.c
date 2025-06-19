@@ -190,11 +190,10 @@ void chunk_generate(chunk_t *c) {
 
 void chunk_checkMesh(chunk_t *c, world_t *w) {
     if (c->tainted) {
-        if (!chunk_createMesh(c, w)) {
-            return;
+        if (chunk_createMesh(c, w)) {
+            // c->tainted = false;
         }
     }
-    c->tainted = false;
 }
 
 void chunk_checkGenMesh(chunk_t *c, world_t *w) {

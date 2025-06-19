@@ -273,43 +273,6 @@ void world_draw(world_t *w, const int modelLocation, camera_t *cam, mat4 project
     double planes[6][4];
     calculatePlanes(cam, projection, planes);
 
-    // process darkness propagation between all chunks
-    while (true) {
-        bool deletionFinished = true;
-        HASH_ITER(hh, w->clusterTable, cluster, tmp) {
-            for (int i = 0; i < C_T * C_T * C_T; i++) {
-                if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
-                if (cluster->cells[i].chunk &&
-                    (cluster->cells[i].chunk->lightTorchDeletionQueue.size > 0
-                     || cluster->cells[i].chunk->lightSunDeletionQueue.size > 0)) {
-                    chunk_processLightDeletion(cluster->cells[i].chunk, w);
-                    deletionFinished = false;
-                }
-            }
-        }
-        if (deletionFinished) {
-            break;
-        }
-    }
-    // process light propagation between all chunks
-    while (true) {
-        bool insertionFinished = true;
-        HASH_ITER(hh, w->clusterTable, cluster, tmp) {
-            for (int i = 0; i < C_T * C_T * C_T; i++) {
-                if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
-                if (cluster->cells[i].chunk &&
-                    (cluster->cells[i].chunk->lightTorchInsertionQueue.size > 0
-                     || cluster->cells[i].chunk->lightSunInsertionQueue.size > 0)) {
-                    chunk_processLightInsertion(cluster->cells[i].chunk, w);
-                    insertionFinished = false;
-                }
-            }
-        }
-        if (insertionFinished) {
-            break;
-        }
-    }
-
     // draw all chunks that are visible
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
         for (int i = 0; i < C_T * C_T * C_T; i++) {
@@ -437,6 +400,44 @@ void world_doChunkLoading(world_t *w) {
             }
         }
     }
+
+    // process darkness propagation between all chunks
+    while (true) {
+        bool deletionFinished = true;
+        HASH_ITER(hh, w->clusterTable, cluster, tmp) {
+            for (int i = 0; i < C_T * C_T * C_T; i++) {
+                if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
+                if (cluster->cells[i].chunk &&
+                    (cluster->cells[i].chunk->lightTorchDeletionQueue.size > 0
+                     || cluster->cells[i].chunk->lightSunDeletionQueue.size > 0)) {
+                    chunk_processLightDeletion(cluster->cells[i].chunk, w);
+                    deletionFinished = false;
+                     }
+            }
+        }
+        if (deletionFinished) {
+            break;
+        }
+    }
+    // process light propagation between all chunks
+    while (true) {
+        bool insertionFinished = true;
+        HASH_ITER(hh, w->clusterTable, cluster, tmp) {
+            for (int i = 0; i < C_T * C_T * C_T; i++) {
+                if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
+                if (cluster->cells[i].chunk &&
+                    (cluster->cells[i].chunk->lightTorchInsertionQueue.size > 0
+                     || cluster->cells[i].chunk->lightSunInsertionQueue.size > 0)) {
+                    chunk_processLightInsertion(cluster->cells[i].chunk, w);
+                    insertionFinished = false;
+                     }
+            }
+        }
+        if (insertionFinished) {
+            break;
+        }
+    }
+    LOG_DEBUG("%d", world_getFullyLoadedChunk(w, 0, 0, 0)->tainted);
 }
 
 bool world_getBlocki(world_t *w, const int x, const int y, const int z, blockData_t *bd) {
