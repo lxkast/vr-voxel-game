@@ -286,7 +286,7 @@ bool world_save(const world_t *w, const char *dir);
 * @param w A pointer to a world
 * @param camera A pointer to a camera
 */
-void world_highlightFace(world_t *w, camera_t *camera);
+void world_highlightFace(world_t *w, camera_t *camera, const player_t *player);
 
 /**
 * @brief Draws the highlighted face

@@ -67,9 +67,9 @@ void player_init(world_t *w, player_t *p) {
         .cameraOffset = {0.3f, 1.8f, 0.3f},
         .hotbar = {
             .slots = {
-                {ITEM_PICKAXE, 1},
-                {ITEM_AXE, 1},
-                {ITEM_SHOVEL, 1},
+                {NOTHING, 0},
+                {NOTHING, 0},
+                {NOTHING, 0},
                 {ITEM_DIRT, 64},
                 {ITEM_GRASS, 32},
                 {ITEM_STONE, 16},
@@ -128,13 +128,13 @@ void player_mineBlock(player_t *p, world_t *w, const double dt) {
             timeInc *= ITEM_PROPERTIES[p->hotbar.currentSlot->type].miningBoost;
         }
         if (glm_vec3_eqv(raycastBlock.blockPosition, p->miningBlockPos)) {
-            p->currMiningTime += timeInc;
+            p->currMiningTime += timeInc / TIME_TO_MINE_BLOCK[block.type];
         } else {
             glm_vec3_copy(raycastBlock.blockPosition, p->miningBlockPos);
-            p->currMiningTime = timeInc;
+            p->currMiningTime = timeInc / TIME_TO_MINE_BLOCK[block.type];
         }
 
-        if (p->currMiningTime > TIME_TO_MINE_BLOCK[block.type]) {
+        if (p->currMiningTime > 1) {
             world_removeBlock(w, block.x, block.y, block.z);
             glm_vec3_copy(INVALID_BLOCK_POSITION, p->miningBlockPos);
             p->currMiningTime = 0;

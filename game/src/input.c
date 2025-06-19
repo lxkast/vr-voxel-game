@@ -69,12 +69,8 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
         player->entity.grounded = false;
     }
 
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-        player_mineBlock(player, w, dt);
-    } else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-        player_placeBlock(player, w);
-    }
-
+    bool mining = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+    bool placing = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
 
     for (char i = 0; i <= 8; i++) {
         if (glfwGetKey(window, GLFW_KEY_1 + i) == GLFW_PRESS) {
@@ -104,14 +100,6 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
                 player->entity.grounded = false;
             }
         }
-        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-            player_mineBlock(player, w, dt);
-        } else {
-            player->currMiningTime = 0;
-            if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-                player_placeBlock(player, w);
-            }
-        }
 
         if (buttons[0] && !hudOpen) {
             open_hud(camera, player);
@@ -119,6 +107,18 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
         } else if (!buttons[0] && hudOpen) {
             close_hud(camera, player);
             hudOpen = false;
+        }
+        mining = buttons[1];
+        placing = buttons[2];
+    }
+
+
+    if (mining) {
+        player_mineBlock(player, w, dt);
+    } else {
+        player->currMiningTime = 0;
+        if (placing) {
+            player_placeBlock(player, w);
         }
     }
 
