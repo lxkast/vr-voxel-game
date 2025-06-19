@@ -38,7 +38,7 @@ static void initCharMesh(void) {
     glBindVertexArray(0);
 }
 
-void font_init(font_t *font, const char *fontPath) {
+void fontInit(font_t *font, const char *fontPath) {
     const GLuint texture = loadTexture(fontPath, GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
     font->texture = texture;
     initCharMesh();
