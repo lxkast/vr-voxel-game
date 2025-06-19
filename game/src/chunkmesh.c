@@ -5,6 +5,7 @@
 #include "chunk.h"
 #include "lighting.h"
 #include "vertices.h"
+#include "GLFW/glfw3.h"
 
 // helper to check if a block's face neighbours air or the chunk edge
 static bool faceIsVisible(world_t *w, chunk_t *c, ivec3 blockPos, direction_e dir) {
@@ -192,24 +193,33 @@ static vertex_t *greedyMeshDirection(world_t *world, chunk_t *c, direction_e dir
     return nextPtr;
 }
 
+void chunk_genMesh(chunk_t *c, world_t *w) {
+    const size_t bytesPerBlock = sizeof(vertex_t) * 36;
+    c->vertices = malloc(CHUNK_SIZE_CUBED * bytesPerBlock);
+    vertex_t *nextPtr = c->vertices;
+    for (direction_e dir = 0; dir < 6; ++dir) {
+        nextPtr = greedyMeshDirection(w, c, dir, nextPtr);
+    }
+    const GLsizeiptr sizeToWrite = sizeof(vertex_t) * (nextPtr - c->vertices);
+    c->meshVertices = sizeToWrite / sizeof(vertex_t);
+}
+
 /**
  * @brief Creates the mesh from a chunk
  * @param c A pointer to a chunk
  * @param w A pointer to a world
  */
-void chunk_createMesh(chunk_t *c, world_t *w) {
-    const size_t bytesPerBlock = sizeof(vertex_t) * 36;
+bool chunk_createMesh(chunk_t *c, world_t *w) {
+    if (!c->verticesValid) return false;
 
-    vertex_t *buf = malloc(CHUNK_SIZE_CUBED * bytesPerBlock);
-    vertex_t *nextPtr = buf;
-    for (direction_e dir = 0; dir < 6; ++dir) {
-        nextPtr = greedyMeshDirection(w, c, dir, nextPtr);
+    if (c->vbo == -1) {
+        glGenBuffers(1, &c->vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, c->vbo);
+        glGenVertexArrays(1, &c->vao);
     }
-    const GLsizeiptr sizeToWrite = sizeof(vertex_t) * (nextPtr - buf);
-    c->meshVertices = sizeToWrite / sizeof(vertex_t);
 
     glBindBuffer(GL_ARRAY_BUFFER, c->vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeToWrite, buf, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, c->meshVertices * sizeof(vertex_t), c->vertices, GL_STATIC_DRAW);
 
     glBindVertexArray(c->vao);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
@@ -222,5 +232,7 @@ void chunk_createMesh(chunk_t *c, world_t *w) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    free(buf);
+    c->verticesValid = false;
+    free(c->vertices);
+    return true;
 }

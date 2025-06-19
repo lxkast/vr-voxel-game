@@ -2,19 +2,21 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <logging.h>
+#include <pthread.h>
+#include <stdatomic.h>
 #include <stdio.h>
+#include <time.h>
 #include "analytics.h"
 #include "camera.h"
 #include "entity.h"
+#include "hud.h"
+#include "input.h"
 #include "player.h"
 #include "postprocess.h"
+#include "rendering.h"
 #include "shaderutil.h"
 #include "texture.h"
 #include "world.h"
-
-#include "input.h"
-#include "hud.h"
-#include "rendering.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #define MINOR_VERSION 2
@@ -77,6 +79,21 @@ void initialiseWindow() {
     initialiseInput(window, toggle_wireframeView, toggle_postprocessing);
 }
 
+struct chunkWorkerData {
+    atomic_bool run;
+    world_t *world;
+};
+void *chunkWorker(void *arg) {
+    struct chunkWorkerData *data = (struct chunkWorkerData *)arg;
+
+    const struct timespec ts = { .tv_sec = 0, .tv_nsec = 10 };
+
+    while (atomic_load_explicit(&data->run, memory_order_acquire)) {
+        nanosleep(&ts, NULL);
+        world_doChunkLoading(data->world);
+    }
+}
+
 int main(void) {
     /*
         Initialisation
@@ -115,17 +132,29 @@ int main(void) {
     analytics_init(&analytics);
     double fpsDisplayAcc = 0;
 
-    glfwSwapInterval(1);
+    struct chunkWorkerData thData = {
+        .world = &world
+    };
+    atomic_store_explicit(&thData.run, false, memory_order_release);
+    pthread_t th;
+    pthread_create(&th, NULL, chunkWorker, &thData);
 
-    while (!glfwWindowShouldClose(window)) {
+    bool shouldClose;
+    while (!((shouldClose = glfwWindowShouldClose(window)))) {
+        if (shouldClose) {
+            atomic_store_explicit(&thData.run, false, memory_order_release);
+        }
+
+        glfwSwapInterval(1);
+
         analytics_startFrame(&analytics);
         processPlayerInput(window, &camera, &player, &world);
         processCameraInput(window, &camera);
-        world_doChunkLoading(&world);
 
         world_updateChunkLoader(&world, cameraLoader, camera.eye);
 
         world_processAllEntities(&world, analytics.dt);
+        main_thread_free(&world.queues.chunkBufferFreeQueue);
 
         player_pickUpItemsCheck(&player, &world);
 

@@ -209,6 +209,8 @@ void world_init(world_t *w, uint64_t seed) {
     rng_init(&w->worldRng, seed);
     rng_init(&w->generalRng, rng_ull(&w->worldRng));
     w->noise.seed = (uint32_t)rng_ull(&w->worldRng);
+
+    spscRing_init(&w->queues.chunkBufferFreeQueue, 1024);
 }
 
 vec3 chunkBounds = {15.f, 15.f, 15.f};
@@ -252,47 +254,23 @@ static void calculatePlanes(camera_t *cam, mat4 projection, double res[6][4]) {
     }
 }
 
-void world_draw(const world_t *w, const int modelLocation, camera_t *cam, mat4 projection) {
+void world_remeshChunks(world_t *w) {
+    cluster_t *cluster, *tmp;
+
+    HASH_ITER(hh, w->clusterTable, cluster, tmp) {
+        for (int i = 0; i < C_T * C_T * C_T; i++) {
+            if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
+            if (cluster->cells[i].chunk) {
+                chunk_checkMesh(cluster->cells[i].chunk, w);
+            }
+        }
+    }
+}
+
+void world_draw(world_t *w, const int modelLocation, camera_t *cam, mat4 projection) {
     cluster_t *cluster, *tmp;
     double planes[6][4];
     calculatePlanes(cam, projection, planes);
-
-    // process darkness propagation between all chunks
-    while (true) {
-        bool deletionFinished = true;
-        HASH_ITER(hh, w->clusterTable, cluster, tmp) {
-            for (int i = 0; i < C_T * C_T * C_T; i++) {
-                if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
-                if (cluster->cells[i].chunk &&
-                    (cluster->cells[i].chunk->lightTorchDeletionQueue.size > 0
-                     || cluster->cells[i].chunk->lightSunDeletionQueue.size > 0)) {
-                    chunk_processLightDeletion(cluster->cells[i].chunk, w);
-                    deletionFinished = false;
-                }
-            }
-        }
-        if (deletionFinished) {
-            break;
-        }
-    }
-    // process light propagation between all chunks
-    while (true) {
-        bool insertionFinished = true;
-        HASH_ITER(hh, w->clusterTable, cluster, tmp) {
-            for (int i = 0; i < C_T * C_T * C_T; i++) {
-                if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
-                if (cluster->cells[i].chunk &&
-                    (cluster->cells[i].chunk->lightTorchInsertionQueue.size > 0
-                     || cluster->cells[i].chunk->lightSunInsertionQueue.size > 0)) {
-                    chunk_processLightInsertion(cluster->cells[i].chunk, w);
-                    insertionFinished = false;
-                }
-            }
-        }
-        if (insertionFinished) {
-            break;
-        }
-    }
 
     // draw all chunks that are visible
     HASH_ITER(hh, w->clusterTable, cluster, tmp) {
@@ -301,7 +279,7 @@ void world_draw(const world_t *w, const int modelLocation, camera_t *cam, mat4 p
             const bool renderingChunk = shouldRender(cam, cluster->cells[i].chunk, planes);
 
             if (cluster->cells[i].chunk && renderingChunk) {
-                chunk_draw(cluster->cells[i].chunk, w, modelLocation);
+                chunk_draw(cluster->cells[i].chunk, modelLocation);
             }
         }
     }
@@ -320,7 +298,7 @@ void world_free(world_t *w) {
         HASH_DEL(w->clusterTable, cluster);
         for (int i = 0; i < C_T * C_T * C_T; i++) {
             if (!cluster->cells[i].chunk) continue;
-            chunk_free(cluster->cells[i].chunk);
+            chunk_free(cluster->cells[i].chunk, &w->queues.chunkBufferFreeQueue);
             free(cluster->cells[i].chunk);
         }
         free(cluster->cells);
@@ -332,6 +310,8 @@ void world_free(world_t *w) {
             freeEntity(&w->entities[i]);
         }
     }
+
+    spscRing_free(&w->queues.chunkBufferFreeQueue);
 }
 
 bool world_genChunkLoader(world_t *w, unsigned int *id) {
@@ -362,7 +342,7 @@ static bool freeCv(world_t *w, cluster_t *cluster, const int i) {
         if (*r == REL_CHILD) *r = REL_TOMBSTONE;
     }
 
-    chunk_free(cv->chunk);
+    chunk_free(cv->chunk, &w->queues.chunkBufferFreeQueue);
     free(cv->chunk);
     cv->chunk = NULL;
     cluster->n--;
@@ -405,6 +385,54 @@ void world_doChunkLoading(world_t *w) {
                 if (!freeCv(w, cluster, i)) break;
             } else if (cv->loadData.reload == REL_TOP_RELOAD) {
                 cv->loadData.reload = REL_TOP_UNLOAD;
+            }
+        }
+    }
+
+
+    // process darkness propagation between all chunks
+    while (true) {
+        bool deletionFinished = true;
+        HASH_ITER(hh, w->clusterTable, cluster, tmp) {
+            for (int i = 0; i < C_T * C_T * C_T; i++) {
+                if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
+                if (cluster->cells[i].chunk &&
+                    (cluster->cells[i].chunk->lightTorchDeletionQueue.size > 0
+                     || cluster->cells[i].chunk->lightSunDeletionQueue.size > 0)) {
+                    chunk_processLightDeletion(cluster->cells[i].chunk, w);
+                    deletionFinished = false;
+                     }
+            }
+        }
+        if (deletionFinished) {
+            break;
+        }
+    }
+    // process light propagation between all chunks
+    while (true) {
+        bool insertionFinished = true;
+        HASH_ITER(hh, w->clusterTable, cluster, tmp) {
+            for (int i = 0; i < C_T * C_T * C_T; i++) {
+                if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
+                if (cluster->cells[i].chunk &&
+                    (cluster->cells[i].chunk->lightTorchInsertionQueue.size > 0
+                     || cluster->cells[i].chunk->lightSunInsertionQueue.size > 0)) {
+                    chunk_processLightInsertion(cluster->cells[i].chunk, w);
+                    insertionFinished = false;
+                     }
+            }
+        }
+        if (insertionFinished) {
+            break;
+        }
+    }
+
+    // void chunk_genMesh(chunk_t *c, world_t *w)
+    HASH_ITER(hh, w->clusterTable, cluster, tmp) {
+        for (int i = 0; i < C_T * C_T * C_T; i++) {
+            if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
+            if (cluster->cells[i].chunk) {
+                chunk_checkGenMesh(cluster->cells[i].chunk, w);
             }
         }
     }
@@ -761,12 +789,15 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
     if (!getBlockAddr(w, x, y, z, &bp, &cp)) return false;
 
     if (*bp == BL_AIR) return false;
+    const worldEntity_t entity = createItemEntity(w, (vec3){(float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f}, BLOCK_TO_ITEM[*bp]);
+    world_addEntity(w, entity);
 
     ivec3 blockPos = { x - ((x >> 4) << 4), y - ((y >> 4) << 4), z - ((z >> 4) << 4) };
 
     unsigned char torchValue = EXTRACT_TORCH(cp->lightMap[blockPos[0]][blockPos[1]][blockPos[2]]);
-
-    if (*bp == BL_GLOWSTONE) {
+    block_t oBlock = *bp;
+    *bp = BL_AIR;
+    if (oBlock == BL_GLOWSTONE) {
         lightQueueItem_t qi = {
             .pos = { x - ((x >> 4) << 4), y - ((y >> 4) << 4), z - ((z >> 4) << 4) },
             .lightValue = torchValue };
@@ -824,12 +855,6 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
             }
         }
     }
-
-
-    const worldEntity_t entity = createItemEntity(w, (vec3){(float)x + 0.5f, (float)y + 0.5f, (float)z + 0.5f}, BLOCK_TO_ITEM[*bp]);
-    world_addEntity(w, entity);
-
-    *bp = BL_AIR;
     cp->tainted = true;
 
     return true;
@@ -846,6 +871,7 @@ bool world_placeBlock(world_t *w, const int x, const int y, const int z, const b
 
     ivec3 blockPos = { x - ((x >> 4) << 4), y - ((y >> 4) << 4), z - ((z >> 4) << 4) };
 
+    *bp = block;
     if (block == BL_GLOWSTONE) {
         lightQueueItem_t qi = {
             .lightValue = LIGHT_MAX_VALUE };
@@ -868,7 +894,6 @@ bool world_placeBlock(world_t *w, const int x, const int y, const int z, const b
         memcpy(&qi.pos, &blockPos, sizeof(ivec3));
         queue_push(&cp->lightTorchDeletionQueue, qi);
     }
-    *bp = block;
     cp->tainted = true;
 
     return true;

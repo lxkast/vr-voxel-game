@@ -8,6 +8,8 @@
 #include "item.h"
 #include "noise.h"
 #include "player.h"
+#include "uthash.h"
+#include "spscqueue.h"
 
 #define MAX_CHUNKS 256
 #define MAX_CHUNK_LOADERS 8
@@ -72,6 +74,10 @@ typedef struct world_t {
     rng_t generalRng;
     rng_t worldRng;
     noise_t noise;
+
+    struct {
+        spscRing_t chunkBufferFreeQueue;
+    } queues;
 } world_t;
 
 /**
@@ -119,13 +125,25 @@ typedef struct chunkValue_t {
 void world_init(world_t *w, uint64_t seed);
 
 /**
+ * @brief Remeshes any chunks that need to be remeshed.
+ * @param w A pointer to a world
+ */
+void world_remeshChunks(world_t *w);
+
+/**
+ * @brief Processes all the concurrent queues of the world
+ * @param w A pointer to a world
+ */
+void world_processQueues(world_t *w);
+
+/**
  * @brief Draws the world.
  * @param w A pointer to a world
  * @param modelLocation The model matrix location in the shader program
  * @param cam A pointer to the camera from which to render from
  * @param projection The current projection matrix
  */
-void world_draw(const world_t *w, int modelLocation, camera_t *cam, mat4 projection);
+void world_draw(world_t *w, int modelLocation, camera_t *cam, mat4 projection);
 
 /**
  * @brief Frees the world.
