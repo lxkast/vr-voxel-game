@@ -13,12 +13,12 @@
 
 #define ANGLE_BETWEEN 0.2617
 
-static versor BLOCK_ORIENTATION = {0.354, 0.354, -0.146, 0.854};
+static versor BLOCK_ORIENTATION = {0.354f, 0.354f, -0.146f, 0.854f};
 static versor GAP_BETWEEN;
 
 static const vec4 PANE_COLOUR = {0.8f, 0.8f, 0.8f, 1.f};
 static const vec4 SELECTED_COLOUR = {0.8f, 0.8f, 0.4f, 1.f};
-static const vec4 TEXT_COLOUR = {0.f, 0.f, 0.f, 1.f};
+static vec4 TEXT_COLOUR = {0.f, 0.f, 0.f, 1.f};
 
 
 static GLuint itemVao;
@@ -120,7 +120,13 @@ void hud_init(void) {
  * @param frameOrientation The orientation of the frame itself
  * @param textureAtlas The texture atlas for blocks
  */
-static void render_block_in_pane(mat4 projview, block_t blockType, vec3 centercoords, versor blockOrientation, float scale, versor frameOrientation, GLuint textureAtlas) {
+static void renderBlockInPane(mat4 projview,
+                                const block_t blockType,
+                                vec3 centercoords,
+                                versor blockOrientation,
+                                const float scale,
+                                versor frameOrientation,
+                                const GLuint textureAtlas) {
     // render a block, first render single block, then orthogonal perspective, then render block itself
     glUseProgram(blockItemProgram);
 
@@ -138,7 +144,7 @@ static void render_block_in_pane(mat4 projview, block_t blockType, vec3 centerco
 
 
     mat4 t;
-    glm_translate_make(t, (vec3) {-0.5, -0.5, -0.5});
+    glm_translate_make(t, (vec3) {-0.5f, -0.5f, -0.5f});
     glm_mat4_mul(model, t, model);
 
 
@@ -160,9 +166,11 @@ static void render_block_in_pane(mat4 projview, block_t blockType, vec3 centerco
     glm_mat4_mul(translate, model, model);
     glm_mat4_mul(frameRot, model, model); // NOTE flipped translate and rot multiply to make orientation around player
 
-    glUniformMatrix4fv(glGetUniformLocation(blockItemProgram, "model"), 1, GL_FALSE, model);
-    glUniformMatrix4fv(glGetUniformLocation(blockItemProgram, "projection"), 1, GL_FALSE, projview);
-    glUniform2f(glGetUniformLocation(blockItemProgram, "texOffset"), TEXTURE_LENGTH * (float) blockType / ATLAS_LENGTH, 0);
+    glUniformMatrix4fv(glGetUniformLocation(blockItemProgram, "model"), 1, GL_FALSE, (const GLfloat*)model);
+    glUniformMatrix4fv(glGetUniformLocation(blockItemProgram, "projection"), 1, GL_FALSE, (const GLfloat*)projview);
+    glUniform2f(glGetUniformLocation(blockItemProgram, "texOffset"),
+                TEXTURE_LENGTH * (float) blockType / ATLAS_LENGTH,
+                0);
     glBindVertexArray(itemVao);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
@@ -176,7 +184,11 @@ static void render_block_in_pane(mat4 projview, block_t blockType, vec3 centerco
  * @param selected Whether the pane is currently selected or not
  * @param frameOrientation The orientation of the frame
  */
-static void render_block_pane(mat4 projview, vec3 centercoords, float scale, bool selected, versor frameOrientation) {
+static void renderBlockPane(mat4 projview,
+                            vec3 centercoords,
+                            const float scale,
+                            const bool selected,
+                            versor frameOrientation) {
     glUseProgram(borderProgram);
     mat4 translate;
     glm_translate_make(translate, centercoords);
@@ -190,8 +202,8 @@ static void render_block_pane(mat4 projview, vec3 centercoords, float scale, boo
 
     glm_mat4_mul(translate, model, model);
     glm_mat4_mul(rot, model, model); // NOTE flipped translate and rot multiply to make orientation around player
-    glUniformMatrix4fv(glGetUniformLocation(borderProgram, "model"), 1, GL_FALSE, model);
-    glUniformMatrix4fv(glGetUniformLocation(borderProgram, "projection"), 1, GL_FALSE, projview);
+    glUniformMatrix4fv(glGetUniformLocation(borderProgram, "model"), 1, GL_FALSE, (const GLfloat*)model);
+    glUniformMatrix4fv(glGetUniformLocation(borderProgram, "projection"), 1, GL_FALSE, (const GLfloat*)projview);
     glUniform4fv(glGetUniformLocation(borderProgram, "colour"), 1, selected ? SELECTED_COLOUR : PANE_COLOUR);
     glBindVertexArray(borderVao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -207,13 +219,18 @@ static void render_block_pane(mat4 projview, vec3 centercoords, float scale, boo
  * @param selected Whether the current frame is seelcted
  * @param textureAtlas The block texture atlas
  */
-static void render_item(mat4 projview, hotbarItem_t item, vec3 centercoords, versor orientation, bool selected, GLuint textureAtlas) {
+static void renderItem(mat4 projview,
+                        const hotbarItem_t item,
+                        vec3 centercoords,
+                        versor orientation,
+                        const bool selected,
+                        const GLuint textureAtlas) {
 #define SCALE 0.2f
     glClear(GL_DEPTH_BUFFER_BIT);
-    render_block_pane(projview, centercoords, SCALE, selected, orientation);
+    renderBlockPane(projview, centercoords, SCALE, selected, orientation);
     glClear(GL_DEPTH_BUFFER_BIT);
     if (item.type != NOTHING) {
-        render_block_in_pane(projview, ITEM_TO_BLOCK[item.type], centercoords, BLOCK_ORIENTATION, SCALE , orientation, textureAtlas);
+        renderBlockInPane(projview, ITEM_TO_BLOCK[item.type], centercoords, BLOCK_ORIENTATION, SCALE , orientation, textureAtlas);
     }
 
     if (item.type != NOTHING) {
@@ -224,9 +241,9 @@ static void render_item(mat4 projview, hotbarItem_t item, vec3 centercoords, ver
         mat4 translate;
         glm_translate_make(translate, centercoords);
         mat4 scaleM;
-        vec3 t = {0.11, -0.15, 0};
+        vec3 t = {0.11f, -0.15f, 0.f};
         glm_translate_make(scaleM, t);
-        glm_scale_uni(scaleM, 0.03);
+        glm_scale_uni(scaleM, 0.03f);
         mat4 res;
         glm_mat4_mul(translate, scaleM, res);
         glm_mat4_mul(rot, res, res);
@@ -247,7 +264,7 @@ static void render_item(mat4 projview, hotbarItem_t item, vec3 centercoords, ver
  * @param n The number of times
  * @param dest The quaternion to apply it to
  */
-static void apply_rotation_n_times(versor q, int n, versor dest) {
+static void applyRotationNTimes(versor q, const int n, versor dest) {
     for (int i = 0; i < n; i++) {
         glm_quat_mul(dest, q, dest);
     }
@@ -258,7 +275,7 @@ static void apply_rotation_n_times(versor q, int n, versor dest) {
  * @param camera The current camera
  * @return An index in 0..<HOTBARSLOTS representing the current hotbar slot.
  */
-static int calculate_looking_at(versor camera) {
+static int calculateLookingAt(versor camera) {
     vec3 right = {1, 0, 0};
 
     vec3 newDir;
@@ -272,20 +289,20 @@ static int calculate_looking_at(versor camera) {
 
     // remove y direction
     newDir[1] = 0.f;
-    double angle = atan2(newDir[2], newDir[0]);
+    const double angle = atan2f(newDir[2], newDir[0]);
 
-    int lookingAt = roundf(angle / ANGLE_BETWEEN);
+    int lookingAt = (int)round(angle / ANGLE_BETWEEN);
     if (lookingAt < 0) lookingAt = 0;
     if (lookingAt > HOTBAR_SLOTS-1) lookingAt = HOTBAR_SLOTS - 1;
     return lookingAt;
 }
 
-void hud_render(mat4 perspective, vec3 offset, camera_t *camera, player_t *player, GLuint textureAtlas) {
+void hud_render(mat4 perspective, vec3 offset, camera_t *camera, const player_t *player, const GLuint textureAtlas) {
     if (!shouldRender) return;
     vec3 centercoords = {0, 0, -2};
     versor orientation = {0, 0, 0, 1};
 
-    int at = calculate_looking_at(camera->ori);
+    const int at = calculateLookingAt(camera->ori);
 
     mat4 view;
     versor inverted;
@@ -307,23 +324,23 @@ void hud_render(mat4 perspective, vec3 offset, camera_t *camera, player_t *playe
 
     glm_quat_normalize(orientation);
     for (int i = 0; i < HOTBAR_SLOTS; i++) {
-        render_item(projview, player->hotbar.slots[i], centercoords, orientation, i == at, textureAtlas);
+        renderItem(projview, player->hotbar.slots[i], centercoords, orientation, i == at, textureAtlas);
         glm_quat_mul(orientation, GAP_BETWEEN, orientation);
     }
 }
 
-void open_hud(camera_t *camera, player_t *player) {
+void open_hud(camera_t *camera, const player_t *player) {
     shouldRender = true;
     glm_quat_copy(camera->ori, initialRot);
 
     versor inv;
     glm_quat_inv(GAP_BETWEEN, inv);
-    apply_rotation_n_times(inv, player->hotbar.currentSlotIndex, initialRot);
+    applyRotationNTimes(inv, player->hotbar.currentSlotIndex, initialRot);
 }
 
 void close_hud(camera_t *camera, player_t *player) {
-    int lookingAt = calculate_looking_at(camera->ori);
-    player->hotbar.currentSlotIndex = lookingAt;
+    const int lookingAt = calculateLookingAt(camera->ori);
+    player->hotbar.currentSlotIndex = (char)lookingAt;
     player->hotbar.currentSlot = &(player->hotbar.slots[lookingAt]);
     shouldRender = false;
 }

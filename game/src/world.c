@@ -1,10 +1,10 @@
-#include "world.h"
 #include <uthash.h>
 #include <cglm/cglm.h>
 #include <errno.h>
 #include <logging.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include "world.h"
 #include "chunk.h"
 #include "entity.h"
 #include "lighting.h"
@@ -91,8 +91,8 @@ static void world_decorateChunk(world_t *w, chunkValue_t *cv);
 chunk_t *world_getFullyLoadedChunk(world_t *w, const int cx, const int cy, const int cz) {
     size_t offset;
 
-    cluster_t *cluster = clusterGet(w, cx, cy, cz, true, &offset);
-    chunkValue_t *cv = &cluster->cells[offset];
+    const cluster_t *cluster = clusterGet(w, cx, cy, cz, true, &offset);
+    const chunkValue_t *cv = &cluster->cells[offset];
 
     return cv->chunk && cv->ll > LL_PARTIAL ? cv->chunk : NULL;
 }
@@ -196,7 +196,7 @@ static void highlightInit(world_t *w) {
     glBindVertexArray(0);
 }
 
-void world_init(world_t *w, uint64_t seed) {
+void world_init(world_t *w, const uint64_t seed) {
     memset(w, 0, sizeof(world_t));
     w->clusterTable = NULL;
     highlightInit(w);
@@ -215,13 +215,13 @@ void world_init(world_t *w, uint64_t seed) {
 
 vec3 chunkBounds = {15.f, 15.f, 15.f};
 
-static bool completelyOutsidePlane(double plane[4], const chunk_t *chunk) {
-    double testPoint[3] = {
+static bool completelyOutsidePlane(const double plane[4], const chunk_t *chunk) {
+    const double testPoint[3] = {
         (chunk->cx << 4) + (plane[0] > 0 ? 16 : 0),
         (chunk->cy << 4) + (plane[1] > 0 ? 16 : 0),
         (chunk->cz << 4) + (plane[2] > 0 ? 16 : 0),
     };
-    double dot = testPoint[0] * plane[0] + testPoint[1] * plane[1] + testPoint[2] * plane[2];
+    const double dot = testPoint[0] * plane[0] + testPoint[1] * plane[1] + testPoint[2] * plane[2];
     return dot < -plane[3];
 }
 
@@ -267,7 +267,7 @@ void world_remeshChunks(world_t *w) {
     }
 }
 
-void world_draw(world_t *w, const int modelLocation, camera_t *cam, mat4 projection) {
+void world_draw(const world_t *w, const int modelLocation, camera_t *cam, mat4 projection) {
     cluster_t *cluster, *tmp;
     double planes[6][4];
     calculatePlanes(cam, projection, planes);
@@ -451,10 +451,10 @@ bool world_getBlocki(world_t *w, const int x, const int y, const int z, blockDat
     return true;
 }
 
-bool world_getBlock(world_t *w, const vec3 pos, blockData_t *bd) {
-    const int x = (int)floorf(pos[0]);
-    const int y = (int)floorf(pos[1]);
-    const int z = (int)floorf(pos[2]);
+bool world_getBlock(world_t *w, const vec3 position, blockData_t *bd) {
+    const int x = (int)floorf(position[0]);
+    const int y = (int)floorf(position[1]);
+    const int z = (int)floorf(position[2]);
 
     return world_getBlocki(w, x, y, z, bd);
 }
@@ -478,17 +478,17 @@ void world_getAdjacentBlocks(world_t *w, vec3 position, blockData_t *buf) {
     }
 }
 
-void world_getBlocksInRange(world_t *w, vec3 bottomLeft, const vec3 topRight, blockData_t *buf) {
+void world_getBlocksInRange(world_t *w, vec3 minPoint, const vec3 maxPoint, blockData_t *buf) {
     int index = 0;
 
-    for (int dx = 0; dx < (int)(topRight[0] - bottomLeft[0]); dx++) {
-        for (int dy = 0; dy < (int)(topRight[1] - bottomLeft[1]); dy++) {
-            for (int dz = 0; dz < (int)(topRight[2] - bottomLeft[2]); dz++) {
+    for (int dx = 0; dx < (int)(maxPoint[0] - minPoint[0]); dx++) {
+        for (int dy = 0; dy < (int)(maxPoint[1] - minPoint[1]); dy++) {
+            for (int dz = 0; dz < (int)(maxPoint[2] - minPoint[2]); dz++) {
                 vec3 delta = {(float)dx, (float)dy, (float)dz};
 
                 vec3 newBlockPosition;
 
-                glm_vec3_add(bottomLeft, delta, newBlockPosition);
+                glm_vec3_add(minPoint, delta, newBlockPosition);
 
                 world_getBlock(w, newBlockPosition, &buf[index]);
                 index++;
@@ -516,7 +516,11 @@ static void decorator_init(decorator_t *d, chunkValue_t *origin, const int x, co
     d->oz = z;
 }
 
-static bool decorator_initSurface(decorator_t *d, chunkValue_t *origin, const int x, const int z, const block_t block) {
+static bool decorator_initSurface(decorator_t *d,
+                                  chunkValue_t *origin,
+                                  const int x,
+                                  const int z,
+                                  const block_t block) {
     for (int y = CHUNK_SIZE - 1; y >= 0; y--) {
         if (origin->chunk->blocks[x][y][z] == block) {
             decorator_init(d, origin, x, y + 1, z);
@@ -567,7 +571,13 @@ static bool decorator_testBlock(decorator_t *d, world_t *world, int x, int y, in
 }
 
 
-static bool world_initStructure(world_t *w, structure_t *structure, chunkValue_t *origin, const int x, const int z, const block_t block, const bool flat) {
+static bool world_initStructure(world_t *w,
+                                structure_t *structure,
+                                chunkValue_t *origin,
+                                const int x,
+                                const int z,
+                                const block_t block,
+                                const bool flat) {
     decorator_t d;
     if (!decorator_initSurface(&d, origin, x, z, block)) {
         return false;
@@ -644,7 +654,13 @@ static void decorator_placeBlock(decorator_t *d,
 static void world_placeStructure(world_t *world, structure_t *structure) {
     for (int i = 0; i < structure->numBlocks; i++) {
         const structureBlock_t block = structure->blocks[i];
-        decorator_placeBlock(&structure->decorator, world, block.x, block.y, block.z, block.type, block.chanceToAppear);
+        decorator_placeBlock(&structure->decorator,
+                             world,
+                             block.x,
+                             block.y,
+                             block.z,
+                             block.type,
+                             block.chanceToAppear);
     }
 }
 
@@ -1100,7 +1116,7 @@ void world_drawHighlight(const world_t *w, const int modelLocation) {
     }
     glBindVertexArray(w->highlightVao);
 
-    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, w->highlightModel);
+    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (const GLfloat *)w->highlightModel);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
@@ -1128,7 +1144,7 @@ void world_drawAllEntities(const world_t *w, const int modelLocation) {
         if (w->entities[i].type == WE_ITEM) {
             mat4 model;
             glm_translate_make(model, w->entities[i].entity->position);
-            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
+            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (const GLfloat *)model);
             glBindVertexArray(w->entities[i].vao);
             glDrawArrays(GL_TRIANGLES, 0, 36);
             glBindVertexArray(0);

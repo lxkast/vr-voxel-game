@@ -1,9 +1,9 @@
-#include "chunk.h"
 #include <cglm/cglm.h>
 #include <logging.h>
 #include <string.h>
 #include <math.h>
 #include "vertices.h"
+#include "chunk.h"
 #include "noise.h"
 
 #define LIGHT_MAX_VALUE 15
@@ -16,12 +16,12 @@ static float smoothstep(const float min, const float max, float x) {
     return x * x * (3.0f - 2.0f * x);
 }
 
-static float getHumidity(chunk_t *c, const float h, const int x, const int z) {
+static float getHumidity(const chunk_t *c, const float h, const int x, const int z) {
     const float n = noise_smoothValue(&c->noise, 0.005f * (float)x - 1024.f, 0.005f * (float)z + 1024.f);
     return 20.f * n;
 }
 
-static float getTemperature(chunk_t *c, const float h, const int x, const int z) {
+static float getTemperature(const chunk_t *c, const float h, const int x, const int z) {
     const float n = noise_smoothValue(&c->noise, 0.003f * (float)x + 1024.f, 0.003f * (float)z - 1024.f);
     return 15.f * n;
 }
@@ -104,7 +104,7 @@ void chunk_init(chunk_t *c, const rng_t rng, const noise_t noise, const int cx, 
 }
 
 void chunk_fill(chunk_t *c, const block_t block) {
-    int *ptr = c->blocks;
+    block_t *ptr = c->blocks;
     for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE; i++) {
         ptr[i] = block;
     }
@@ -206,10 +206,10 @@ void chunk_checkGenMesh(chunk_t *c, world_t *w) {
 void chunk_draw(const chunk_t *c, const int modelLocation) {
     if (c->vbo == -1) { return; }
     mat4 model;
-    const vec3 cPos = { c->cx * CHUNK_SIZE, c->cy * CHUNK_SIZE, c->cz * CHUNK_SIZE };
+    vec3 cPos = { (float)c->cx * CHUNK_SIZE, (float)c->cy * CHUNK_SIZE, (float)c->cz * CHUNK_SIZE };
     glm_translate_make(model, cPos);
 
-    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
+    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (const GLfloat*)model);
 
     glBindVertexArray(c->vao);
     glDrawArrays(GL_TRIANGLES, 0, c->meshVertices);
@@ -221,7 +221,7 @@ typedef struct {
     GLuint vbo;
 } MainThreadFrees_t;
 
-void chunk_free(const chunk_t *c, spscRing_t *freeQueue) {
+void chunk_free(chunk_t *c, spscRing_t *freeQueue) {
     MainThreadFrees_t *toFree = malloc(sizeof(MainThreadFrees_t));
     toFree->vbo = c->vbo;
     toFree->vao = c->vao;
@@ -246,7 +246,7 @@ void main_thread_free(spscRing_t *freeQueue) {
     }
 }
 
-void chunk_serialise(chunk_t *c, FILE *fp) {
+void chunk_serialise(const chunk_t *c, FILE *fp) {
     fwrite(&c->cx, sizeof(int), 1, fp);
     fwrite(&c->cy, sizeof(int), 1, fp);
     fwrite(&c->cz, sizeof(int), 1, fp);

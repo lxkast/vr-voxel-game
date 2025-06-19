@@ -1,7 +1,7 @@
 #ifndef HUD_H
 #define HUD_H
-#include <cglm/mat4.h>
 
+#include <cglm/mat4.h>
 #include "player.h"
 
 /**
@@ -17,14 +17,14 @@ void hud_init(void);
  * @param player A pointer to the player
  * @param textureAtlas The block texture atlas
  */
-void hud_render(mat4 perspective, vec3 offset, camera_t *camera, player_t *player, GLuint textureAtlas);
+void hud_render(mat4 perspective, vec3 offset, camera_t *camera, const player_t *player, GLuint textureAtlas);
 
 /**
  * @brief Open the HUD
  * @param camera A pointer to the camera
  * @param player A pointer to the player
  */
-void open_hud(camera_t *camera, player_t *player);
+void open_hud(camera_t *camera, const player_t *player);
 
 /**
  * @brief Close the HUD

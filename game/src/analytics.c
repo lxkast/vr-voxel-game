@@ -10,7 +10,7 @@ static void fpsUpdate(analytics_t *a) {
 
     int removed = 0;
     while (a->fpsTimestampsCount > 0) {
-        int iOldest = (a->fpsTimestampsHead - a->fpsTimestampsCount + 1 + FPS_QUEUE_SIZE) % FPS_QUEUE_SIZE;
+        const int iOldest = (a->fpsTimestampsHead - a->fpsTimestampsCount + 1 + FPS_QUEUE_SIZE) % FPS_QUEUE_SIZE;
         if (a->currentTime - a->fpsTimestamps[iOldest] > 1.0) {
             a->fpsTimestampsCount--;
             removed++;

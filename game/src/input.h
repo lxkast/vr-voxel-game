@@ -1,10 +1,10 @@
 #ifndef INPUT_H
 #define INPUT_H
-#include <cglm/mat4.h>
 
+#include <cglm/mat4.h>
+#include "GLFW/glfw3.h"
 #include "camera.h"
 #include "player.h"
-#include "GLFW/glfw3.h"
 
 /**
  * @brief Initialise game input

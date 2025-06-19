@@ -65,7 +65,7 @@ typedef struct {
  * @return float The random noise value
  * @note Output range is [-1, 1]
  */
-float noise_value(noise_t *n, int x, int z);
+float noise_value(const noise_t *n, int x, int z);
 
 /**
  * @brief A function to generate smooth value noise
@@ -76,7 +76,7 @@ float noise_value(noise_t *n, int x, int z);
  * @return float The random noise value
  * @note Output range is [-1, 1]
  */
-float noise_smoothValue(noise_t *n, float x, float y);
+float noise_smoothValue(const noise_t *n, float x, float y);
 
 /**
  * @brief A fractal brownian motion function

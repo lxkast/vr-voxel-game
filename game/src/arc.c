@@ -1,7 +1,7 @@
 #include "arc.h"
 
 arc_t *arc_new(void *p, arc_destructor d) {
-    arc_t *a = (arc_t *)malloc(sizeof(arc_t));
+    arc_t *a = malloc(sizeof(arc_t));
     if (!a) {
         return NULL;
     }

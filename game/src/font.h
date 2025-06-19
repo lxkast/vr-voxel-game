@@ -1,4 +1,5 @@
-#pragma once
+#ifndef FONT_H
+#define FONT_H
 
 #include <cglm/mat4.h>
 #include <glad/gl.h>
@@ -23,3 +24,5 @@ void font_init(font_t *font, const char *filename);
  * @param colour The colour of the text to render
  */
 void font_render(font_t *font, const char *data, mat4 projview, mat4 rotation, vec4 colour);
+
+#endif

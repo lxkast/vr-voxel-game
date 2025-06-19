@@ -1,6 +1,6 @@
-#include "queue.h"
 #include <logging.h>
 #include <string.h>
+#include "queue.h"
 
 void queue_initQueue(lightQueue_t *queue) {
     queue->size = 0;

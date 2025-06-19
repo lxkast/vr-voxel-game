@@ -2,7 +2,6 @@
 #define QUEUE_H
 
 #include <cglm/cglm.h>
-#include <stdlib.h>
 
 typedef struct {
     ivec3 pos;
