@@ -19,6 +19,7 @@ typedef struct {
     int ox, oy, oz;
 } decorator_t;
 
+/// A struct containing data about each block in a structure
 typedef struct {
     /// The type of the block
     block_t type;
@@ -30,6 +31,7 @@ typedef struct {
     bool allowOverlap;
 } structureBlock_t;
 
+/// A struct containing data anout a structure
 typedef struct {
     /// The decorator for the structure
     decorator_t decorator;
@@ -39,7 +41,7 @@ typedef struct {
     structureBlock_t *blocks;
 } structure_t;
 
-static const structureBlock_t cactusPattern[] = {
+static structureBlock_t cactusPattern[] = {
     {BL_CACTUS, 0, 0, 0, 1.f, true},
     {BL_CACTUS, 0, 1, 0, 1.f, true},
     {BL_CACTUS, 0, 2, 0, 0.5f, true},
@@ -50,7 +52,7 @@ const structure_t cactusStructure = {
     .blocks = cactusPattern,
 };
 
-static const structureBlock_t treePattern[] = {
+static structureBlock_t treePattern[] = {
     // Tree trunk
     {BL_LOG, 0,0,0, 1.f, false},
     {BL_LOG, 0,1,0, 1.f, false},
@@ -84,7 +86,7 @@ const structure_t treeStructure = {
     .blocks = treePattern,
 };
 
-static const structureBlock_t jungleTreePattern[] = {
+static structureBlock_t jungleTreePattern[] = {
     // Tree trunk
     {BL_JUNGLE_LOG, 0,0,0, 1.f, false},
     {BL_JUNGLE_LOG, 0,1,0, 1.f, false},
@@ -124,7 +126,7 @@ const structure_t jungleTreeStructure = {
 };
 
 // second structure for testing purposes
-static const structureBlock_t stoneTPattern[] = {
+static structureBlock_t stoneTPattern[] = {
     {BL_STONE, 0, 0, 0, 1.f, false},
     {BL_STONE, 0, 1, 0, 1.f, false},
     {BL_STONE, 0, 2, 0, 1.f, false},
@@ -137,7 +139,7 @@ const structure_t stoneTStructure = {
     .blocks = stoneTPattern,
 };
 
-static const structureBlock_t woodenHousePattern[] = {
+static structureBlock_t woodenHousePattern[] = {
     {5, -1, 0, -2, 1.f, false},
     {5, -1, 0, 2, 1.f, false},
     {5, -1, 1, -2, 1.f, false},
@@ -180,7 +182,7 @@ const structure_t woodenHouseStructure = {
     .blocks = woodenHousePattern,
 };
 
-static const structureBlock_t iglooPattern[] = {
+static structureBlock_t iglooPattern[] = {
     {8, -3, 0, -1, 1.f, false},
     {8, -3, 0, 1, 1.f, false},
     {8, -3, 1, -1, 1.f, false},

@@ -150,7 +150,7 @@ static void render_world(world_t *world, camera_t *camera) {
 }
 
 
-static void render_with_postprocessing(world_t *world, camera_t *camera, player_t *player) {
+static void render_with_postprocessing(world_t *world, camera_t *camera, const player_t *player) {
     glViewport(0, 0, postProcess.buffer_width, postProcess.buffer_height);
     postProcess_bindBuffer(&postProcess.leftFramebuffer);
     glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
@@ -174,7 +174,7 @@ static void render_with_postprocessing(world_t *world, camera_t *camera, player_
     camera_translateX(camera, -EYE_OFFSET);
 }
 
-static void render_without_postprocessing(world_t *world, camera_t *camera, player_t *player) {
+static void render_without_postprocessing(world_t *world, camera_t *camera, const player_t *player) {
     glViewport(0, 0, width, height);
 
     render_world(world, camera);
@@ -182,7 +182,7 @@ static void render_without_postprocessing(world_t *world, camera_t *camera, play
     hud_render(projection, offset, camera, player, blockAtlasTexture);
 }
 
-void rendering_render(world_t *world, camera_t *camera, player_t *player, bool wireframeView, bool postProcessing) {
+void rendering_render(world_t *world, camera_t *camera, const player_t *player, const bool wireframeView, const bool postProcessing) {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
