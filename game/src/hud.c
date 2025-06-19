@@ -18,7 +18,7 @@ static versor GAP_BETWEEN;
 
 static const vec4 PANE_COLOUR = {0.8f, 0.8f, 0.8f, 1.f};
 static const vec4 SELECTED_COLOUR = {0.8f, 0.8f, 0.4f, 1.f};
-static const vec4 TEXT_COLOUR = {0.f, 0.f, 0.f, 1.f};
+static vec4 TEXT_COLOUR = {0.f, 0.f, 0.f, 1.f};
 
 
 static GLuint itemVao;
@@ -153,7 +153,7 @@ static void renderBlockInPane(mat4 projview,
     glm_mat4_mul(translate, model, model);
     glm_mat4_mul(frameRot, model, model); // NOTE flipped translate and rot multiply to make orientation around player
 
-    glUniformMatrix4fv(glGetUniformLocation(blockItemProgram, "model"), 1, GL_FALSE, model);
+    glUniformMatrix4fv(glGetUniformLocation(blockItemProgram, "model"), 1, GL_FALSE, (const GLfloat*)model);
     glUniformMatrix4fv(glGetUniformLocation(blockItemProgram, "projection"), 1, GL_FALSE, (const GLfloat*)projview);
     glUniform2f(glGetUniformLocation(blockItemProgram, "texOffset"),
                 TEXTURE_LENGTH * (float) blockType / ATLAS_LENGTH,
@@ -181,7 +181,7 @@ static void renderBlockPane(mat4 projview,
 
     glm_mat4_mul(translate, model, model);
     glm_mat4_mul(rot, model, model); // NOTE flipped translate and rot multiply to make orientation around player
-    glUniformMatrix4fv(glGetUniformLocation(borderProgram, "model"), 1, GL_FALSE, model);
+    glUniformMatrix4fv(glGetUniformLocation(borderProgram, "model"), 1, GL_FALSE, (const GLfloat*)model);
     glUniformMatrix4fv(glGetUniformLocation(borderProgram, "projection"), 1, GL_FALSE, (const GLfloat*)projview);
     glUniform4fv(glGetUniformLocation(borderProgram, "colour"), 1, selected ? SELECTED_COLOUR : PANE_COLOUR);
     glBindVertexArray(borderVao);

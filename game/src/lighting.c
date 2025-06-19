@@ -145,7 +145,6 @@ static void processTorchLightDeletion(chunk_t *c, world_t *w) {
             ivec3 nPos;
             glm_ivec3_add(head.pos, dirVec, nPos);
 
-            bool validNeighbour = true;
             ivec3 offset = {0, 0, 0};
             for (int i = 0; i < 3; i++) {
                 if (nPos[i] < 0) {
@@ -303,7 +302,6 @@ static void processSunLightInsertion(chunk_t *c, world_t *w) {
             ivec3 nPos;
             glm_ivec3_add(head.pos, dirVec, nPos);
 
-            bool validNeighbour = true;
             ivec3 offset = {0, 0, 0};
             for (int i = 0; i < 3; i++) {
                 if (nPos[i] < 0) {
