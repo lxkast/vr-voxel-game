@@ -780,8 +780,10 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
         for (int i = 0; i < 3; ++i) {
             if (nPos[i] < 0) {
                 chunkOffset[i] = -1;
+                nPos[i] = CHUNK_SIZE - 1;
             } else if (nPos[i] >= CHUNK_SIZE) {
                 chunkOffset[i] = 1;
+                nPos[i] = 0;
             }
         }
         if (chunkOffset[0] != 0 || chunkOffset[1] != 0 || chunkOffset[2] != 0) {
@@ -789,7 +791,36 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
             glm_ivec3_add(cPos, chunkOffset, cPos);
             chunk_t *nChunk = world_getFullyLoadedChunk(w, cPos[0], cPos[1], cPos[2]);
             if (nChunk) {
-                nChunk->tainted = true;
+                if (!BL_TRANSPARENT(nChunk->blocks[nPos[0]][nPos[1]][nPos[2]])) {
+                    nChunk->tainted = true;
+                }
+                if (nChunk->blocks[nPos[0]][nPos[1]][nPos[2]]) {
+                    unsigned char light = EXTRACT_SUN(nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]]);
+                    if (light > 0) {
+                        lightQueueItem_t qi = { .lightValue = light };
+                        memcpy(qi.pos, nPos, sizeof(ivec3));
+                        queue_push(&nChunk->lightSunInsertionQueue, qi);
+                    }
+                    light = EXTRACT_TORCH(nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]]);
+                    if (light > 0) {
+                        lightQueueItem_t qi = { .lightValue = light };
+                        memcpy(qi.pos, nPos, sizeof(ivec3));
+                        queue_push(&nChunk->lightTorchInsertionQueue, qi);
+                    }
+                }
+            }
+        } else {
+            unsigned char light = EXTRACT_SUN(cp->lightMap[nPos[0]][nPos[1]][nPos[2]]);
+            if (light > 0) {
+                lightQueueItem_t qi = { .lightValue = light };
+                memcpy(qi.pos, nPos, sizeof(ivec3));
+                queue_push(&cp->lightSunInsertionQueue, qi);
+            }
+            light = EXTRACT_TORCH(cp->lightMap[nPos[0]][nPos[1]][nPos[2]]);
+            if (light > 0) {
+                lightQueueItem_t qi = { .lightValue = light };
+                memcpy(qi.pos, nPos, sizeof(ivec3));
+                queue_push(&cp->lightTorchInsertionQueue, qi);
             }
         }
     }
@@ -824,13 +855,14 @@ bool world_placeBlock(world_t *w, const int x, const int y, const int z, const b
     int sunValue = EXTRACT_SUN(cp->lightMap[blockPos[0]][blockPos[1]][blockPos[2]]);
     int torchValue = EXTRACT_TORCH(cp->lightMap[blockPos[0]][blockPos[1]][blockPos[2]]);
     LOG_DEBUG("torch value: %d, sun value: %d", torchValue, sunValue);
-    if (sunValue > 0 && block != BL_LEAF) {
+    LOG_DEBUG("block pos %d, %d, %d", blockPos[0], blockPos[1], blockPos[2]);
+    if (sunValue > 0) {
         lightQueueItem_t qi = {
             .lightValue = sunValue };
         memcpy(&qi.pos, &blockPos, sizeof(ivec3));
         queue_push(&cp->lightSunDeletionQueue, qi);
     }
-    if (torchValue > 0 && block != BL_LEAF) {
+    if (torchValue > 0) {
         lightQueueItem_t qi = {
             .lightValue = torchValue };
         memcpy(&qi.pos, &blockPos, sizeof(ivec3));
