@@ -1,9 +1,7 @@
-#include "chunk.h"
 #include <cglm/cglm.h>
 #include <logging.h>
 #include <string.h>
-#include <math.h>
-#include "vertices.h"
+#include "chunk.h"
 #include "noise.h"
 
 #define LIGHT_MAX_VALUE 15
@@ -206,7 +204,7 @@ void chunk_checkGenMesh(chunk_t *c, world_t *w) {
 void chunk_draw(const chunk_t *c, const int modelLocation) {
     if (c->vbo == -1) { return; }
     mat4 model;
-    const vec3 cPos = { c->cx * CHUNK_SIZE, c->cy * CHUNK_SIZE, c->cz * CHUNK_SIZE };
+    const vec3 cPos = { (float)c->cx * CHUNK_SIZE, (float)c->cy * CHUNK_SIZE, (float)c->cz * CHUNK_SIZE };
     glm_translate_make(model, cPos);
 
     glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
@@ -221,7 +219,7 @@ typedef struct {
     GLuint vbo;
 } MainThreadFrees_t;
 
-void chunk_free(const chunk_t *c, spscRing_t *freeQueue) {
+void chunk_free(chunk_t *c, spscRing_t *freeQueue) {
     MainThreadFrees_t *toFree = malloc(sizeof(MainThreadFrees_t));
     toFree->vbo = c->vbo;
     toFree->vao = c->vao;
@@ -246,7 +244,7 @@ void main_thread_free(spscRing_t *freeQueue) {
     }
 }
 
-void chunk_serialise(chunk_t *c, FILE *fp) {
+void chunk_serialise(const chunk_t *c, FILE *fp) {
     fwrite(&c->cx, sizeof(int), 1, fp);
     fwrite(&c->cy, sizeof(int), 1, fp);
     fwrite(&c->cz, sizeof(int), 1, fp);
