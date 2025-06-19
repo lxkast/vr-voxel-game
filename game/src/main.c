@@ -85,7 +85,7 @@ struct chunkWorkerData {
 void *chunkWorker(void *arg) {
     struct chunkWorkerData data = *(struct chunkWorkerData *)arg;
 
-    const struct timespec ts = { .tv_sec = 1, .tv_nsec = 0 };
+    const struct timespec ts = { .tv_sec = 0, .tv_nsec = 10 };
 
     while (true) {
         nanosleep(&ts, NULL);
