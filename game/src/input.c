@@ -38,7 +38,7 @@ static bool hudOpen = false;
 void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, world_t *w) {
     vec3 acceleration = { 0.f, GRAVITY_ACCELERATION, 0.f };
 
-    const float sprintMultiplier = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? SPRINT_MULTIPLIER : 1.f ;
+    const float sprintMultiplier = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? SPRINT_MULTIPLIER : 1.f;
 
     vec3 direction = {0.0f, 0.0f, 0.0f};
 
@@ -241,7 +241,7 @@ void processCameraInput(GLFWwindow *window, camera_t *camera) {
 /*
  * This function uses a callback meaning that it is much better for instantaneous presses, e.g. switching wireframe mode
  */
-static void key_callback(GLFWwindow *window, const int key, int scancode, const int action, int mods) {
+static void keyCallback(GLFWwindow *window, const int key, int scancode, const int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     } else if (key == GLFW_KEY_O && action == GLFW_PRESS) {
@@ -257,7 +257,7 @@ void initialiseInput(GLFWwindow *window, void (*wireframe)(), void (*vr)()) {
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwGetCursorPos(window, previousMouse, previousMouse + 1);
     glfwSetJoystickCallback(joystickEvent);
-    glfwSetKeyCallback(window, key_callback);
+    glfwSetKeyCallback(window, keyCallback);
 
     #ifdef BUILD_FOR_RPI
         startOrientationThread();

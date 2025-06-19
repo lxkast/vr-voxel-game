@@ -1,11 +1,8 @@
+#include <logging.h>
 #include <string.h>
-
-#include "world.h"
 #include "lighting.h"
 
-#include <logging.h>
-
-static void sumLight(world_t *w, chunk_t *c, ivec3 nPos, int *sum, int *count) {
+static void sumLight(world_t *w, const chunk_t *c, ivec3 nPos, int *sum, int *count) {
     ivec3 chunkOffset = { 0, 0, 0 };
     for (int n = 0; n < 3; ++n) {
         if (nPos[n] < 0) {
@@ -17,15 +14,15 @@ static void sumLight(world_t *w, chunk_t *c, ivec3 nPos, int *sum, int *count) {
         }
     }
     if (chunkOffset[0] == 0 && chunkOffset[1] == 0 && chunkOffset[2] == 0) {
-        int lv = c->lightMap[nPos[0]][nPos[1]][nPos[2]];
+        const int lv = c->lightMap[nPos[0]][nPos[1]][nPos[2]];
         *sum += glm_imax(lv & LIGHT_TORCH_MASK, (lv & LIGHT_SUN_MASK) >> 4);
         (*count)++;
     } else {
         ivec3 cPos = { c->cx, c->cy, c->cz };
         glm_ivec3_add(cPos, chunkOffset, cPos);
-        chunk_t *nChunk = world_getFullyLoadedChunk(w, cPos[0], cPos[1], cPos[2]);
+        const chunk_t *nChunk = world_getFullyLoadedChunk(w, cPos[0], cPos[1], cPos[2]);
         if (nChunk) {
-            int lv = nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]];
+            const int lv = nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]];
             *sum += glm_imax(lv & LIGHT_TORCH_MASK, (lv & LIGHT_SUN_MASK) >> 4);
             (*count)++;
         }
