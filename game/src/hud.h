@@ -2,6 +2,7 @@
 #define HUD_H
 
 #include "player.h"
+#include <cglm/mat4.h>
 
 void hud_init(void);
 void hud_render(mat4 perspective, vec3 offset, camera_t *camera, const player_t *player, GLuint textureAtlas);

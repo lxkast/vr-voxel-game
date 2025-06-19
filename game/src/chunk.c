@@ -1,6 +1,8 @@
 #include <cglm/cglm.h>
 #include <logging.h>
 #include <string.h>
+#include <math.h>
+#include "vertices.h"
 #include "chunk.h"
 #include "noise.h"
 
@@ -14,12 +16,12 @@ static float smoothstep(const float min, const float max, float x) {
     return x * x * (3.0f - 2.0f * x);
 }
 
-static float getHumidity(chunk_t *c, const float h, const int x, const int z) {
+static float getHumidity(const chunk_t *c, const float h, const int x, const int z) {
     const float n = noise_smoothValue(&c->noise, 0.005f * (float)x - 1024.f, 0.005f * (float)z + 1024.f);
     return 20.f * n;
 }
 
-static float getTemperature(chunk_t *c, const float h, const int x, const int z) {
+static float getTemperature(const chunk_t *c, const float h, const int x, const int z) {
     const float n = noise_smoothValue(&c->noise, 0.003f * (float)x + 1024.f, 0.003f * (float)z - 1024.f);
     return 15.f * n;
 }

@@ -1,7 +1,3 @@
-//
-// Created by sam on 18/06/2025.
-//
-
 #include "rendering.h"
 
 #include <logging.h>
