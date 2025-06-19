@@ -38,56 +38,12 @@ static bool hudOpen = false;
 void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, world_t *w) {
     vec3 acceleration = { 0.f, GRAVITY_ACCELERATION, 0.f };
 
-    const float sprintMultiplier = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? SPRINT_MULTIPLIER : 1.f ;
-
-    vec3 direction = {0.0f, 0.0f, 0.0f};
-
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) direction[2] += 1.0f;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) direction[2] -= 1.0f;
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) direction[0] -= 1.0f;
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) direction[0] += 1.0f;
-
-    if (joystickID == -1) {
-        if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !hudOpen) {
-            open_hud(camera, player);
-            hudOpen = true;
-        } else if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE && hudOpen) {
-            close_hud(camera, player);
-            hudOpen = false;
-        }
-    }
-
-    glm_vec3_normalize(direction);
-
-    const float accelVal = player->entity.grounded ? GROUND_ACCELERATION : AIR_ACCELERATION;
-    acceleration[0] += direction[0] * accelVal * sprintMultiplier;
-    acceleration[2] += direction[2] * accelVal * sprintMultiplier;
-
-
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && player->entity.grounded) {
-        player->entity.velocity[1] = 5;
-        player->entity.grounded = false;
-    }
-
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-        player_removeBlock(player, w);
-    } else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-        player_placeBlock(player, w);
-    }
-
-
-    for (char i = 0; i <= 8; i++) {
-        if (glfwGetKey(window, GLFW_KEY_1 + i) == GLFW_PRESS) {
-            player->hotbar.currentSlotIndex = i;
-            player->hotbar.currentSlot = &(player->hotbar.slots[i]);
-            player_printHotbar(player);
-            break;
-        }
-    }
-
     if (joystickID != -1) {
         int axisCount;
         const float* axes = glfwGetJoystickAxes(joystickID, &axisCount);
+
+        vec3 direction = { axes[0], 0.f, axes[1] };
+        glm_vec3_normalize(direction);
 
         int buttonCount;
         const unsigned char *buttons = glfwGetJoystickButtons(joystickID, &buttonCount);
@@ -96,8 +52,8 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
             joystickID = -1;
         } else {
             const float joySprintMultiplier = buttons[3] ? SPRINT_MULTIPLIER : 1.f;
-            acceleration[2] += -axes[1] * (player->entity.grounded ? GROUND_ACCELERATION : AIR_ACCELERATION) * joySprintMultiplier;
-            acceleration[0] += axes[0] * (player->entity.grounded ? GROUND_ACCELERATION : AIR_ACCELERATION) * joySprintMultiplier;
+
+            glm_vec3_scale(direction, (player->entity.grounded ? GROUND_ACCELERATION : AIR_ACCELERATION) * joySprintMultiplier, acceleration);
 
             if (buttons[4] && player->entity.grounded) {
                 player->entity.velocity[1] = 5;
@@ -114,6 +70,50 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
             open_hud(camera, player);
             hudOpen = true;
         } else if (!buttons[0] && hudOpen) {
+            close_hud(camera, player);
+            hudOpen = false;
+        }
+    } else {
+        const float sprintMultiplier = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? SPRINT_MULTIPLIER : 1.f ;
+
+        vec3 direction = {0.0f, 0.0f, 0.0f};
+
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) direction[2] += 1.0f;
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) direction[2] -= 1.0f;
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) direction[0] -= 1.0f;
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) direction[0] += 1.0f;
+
+        glm_vec3_normalize(direction);
+
+        const float accelVal = player->entity.grounded ? GROUND_ACCELERATION : AIR_ACCELERATION;
+        acceleration[0] += direction[0] * accelVal * sprintMultiplier;
+        acceleration[2] += direction[2] * accelVal * sprintMultiplier;
+
+
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && player->entity.grounded) {
+            player->entity.velocity[1] = 5;
+            player->entity.grounded = false;
+        }
+
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+            player_removeBlock(player, w);
+        } else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+            player_placeBlock(player, w);
+        }
+
+        for (char i = 0; i <= 8; i++) {
+            if (glfwGetKey(window, GLFW_KEY_1 + i) == GLFW_PRESS) {
+                player->hotbar.currentSlotIndex = i;
+                player->hotbar.currentSlot = &(player->hotbar.slots[i]);
+                player_printHotbar(player);
+                break;
+            }
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !hudOpen) {
+            open_hud(camera, player);
+            hudOpen = true;
+        } else if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE && hudOpen) {
             close_hud(camera, player);
             hudOpen = false;
         }
