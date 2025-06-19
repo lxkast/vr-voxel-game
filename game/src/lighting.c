@@ -243,6 +243,7 @@ static void processTorchLightInsertion(chunk_t *c, world_t *w) {
                     memcpy(&nItem.pos, &nPos, sizeof(ivec3));
                     queue_push(&c->lightTorchInsertionQueue, nItem);
                 }
+                c->tainted = true;
             } else {
                 ivec3 cPos = { c->cx, c->cy, c->cz };
                 glm_ivec3_add(cPos, offset, cPos);
@@ -320,6 +321,7 @@ static void processSunLightInsertion(chunk_t *c, world_t *w) {
                     lightQueueItem_t nItem = { .lightValue = newNeighbourLevel };
                     memcpy(&nItem.pos, &nPos, sizeof(ivec3));
                     queue_push(&c->lightSunInsertionQueue, nItem);
+                    c->tainted = true;
                 }
             } else {
                 // propagate light to neighbouring chunk
