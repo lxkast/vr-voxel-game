@@ -57,7 +57,7 @@ typedef struct {
     vertex_t *vertices;
     bool verticesValid;
 
-    /// An rng for use in terrain generation
+    /// A rng for use in terrain generation
     rng_t rng;
     /// A noise object
     noise_t noise;
@@ -110,11 +110,17 @@ void chunk_generate(chunk_t *c);
  * @param w A pointer to a world
  */
 void chunk_checkMesh(chunk_t *c, world_t *w);
+
+/**
+ * @brief Checks if a mesh is invalid, and if so generates one.
+ * @param c A pointer to a chunk
+ * @param w A pointer to a world
+ */
 void chunk_checkGenMesh(chunk_t *c, world_t *w);
+
 /**
  * @brief Draws a chunk.
  * @param c A pointer to a chunk
- * @param w A pointer to a world
  * @param modelLocation The location of the model matrix in the shader program
  */
 void chunk_draw(const chunk_t *c, int modelLocation);
@@ -122,8 +128,9 @@ void chunk_draw(const chunk_t *c, int modelLocation);
 /**
 * @brief A function for freeing a chunk
 * @param c A pointer to a chunk
+* @param freeQueue A queue of VBOs to free
 */
-void chunk_free(const chunk_t *c, spscRing_t *freeQueue);
+void chunk_free(chunk_t *c, spscRing_t *freeQueue);
 
 void main_thread_free(spscRing_t *freeQueue);
 
@@ -132,6 +139,6 @@ void main_thread_free(spscRing_t *freeQueue);
 * @param c A pointer to a chunk
 * @param fp A file pointer
 */
-void chunk_serialise(chunk_t *c, FILE *fp);
+void chunk_serialise(const chunk_t *c, FILE *fp);
 
 #endif

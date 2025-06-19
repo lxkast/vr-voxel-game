@@ -1,7 +1,3 @@
-//
-// Created by sam on 18/06/2025.
-//
-
 #include "rendering.h"
 
 #include <logging.h>
@@ -33,10 +29,18 @@ static mat4 projection;
 static postProcess_t postProcess;
 static int width, height;
 
-void update_projection(const bool postProcessingEnabled, const float fov, const int screenWidth, const int screenHeight, const float renderDistance) {
+void rendering_updateProjection(const bool postProcessingEnabled,
+                                const float fov,
+                                const int screenWidth,
+                                const int screenHeight,
+                                const float renderDistance) {
     width = screenWidth;
     height = screenHeight;
-    glm_perspective(fov, (float)screenWidth / (float)((postProcessingEnabled ? 2 : 1) * screenHeight), 0.1f, 16.f * (renderDistance + 1), projection);
+    glm_perspective(fov,
+                    (float)screenWidth / (float)((postProcessingEnabled ? 2 : 1) * screenHeight),
+                    0.1f,
+                    16.f * (renderDistance + 1),
+                    projection);
 }
 
 static void shader_init(void) {
@@ -121,7 +125,7 @@ static void render_world(world_t *world, camera_t *camera) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, blockAtlasTexture);
     glUniform1i(glGetUniformLocation(chunkShader, "uTextureAtlas"), 0);
-    glUniformMatrix4fv(glGetUniformLocation(chunkShader, "projection"), 1, false, projection);
+    glUniformMatrix4fv(glGetUniformLocation(chunkShader, "projection"), 1, false, (const GLfloat *)projection);
     glUniform1f(glGetUniformLocation(chunkShader, "fogStart"), FOG_START);
     glUniform1f(glGetUniformLocation(chunkShader, "fogEnd"), FOG_END);
 
@@ -136,7 +140,7 @@ static void render_world(world_t *world, camera_t *camera) {
     glUseProgram(0);
 
     glUseProgram(blockEntityShader);
-    glUniformMatrix4fv(glGetUniformLocation(blockEntityShader, "projection"), 1, false, projection);
+    glUniformMatrix4fv(glGetUniformLocation(blockEntityShader, "projection"), 1, false, (const GLfloat *)projection);
     camera_setView(camera, blockEntityShader);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, blockAtlasTexture);
@@ -146,7 +150,7 @@ static void render_world(world_t *world, camera_t *camera) {
 }
 
 
-static void render_with_postprocessing(world_t *world, camera_t *camera, player_t *player) {
+static void render_with_postprocessing(world_t *world, camera_t *camera, const player_t *player) {
     glViewport(0, 0, postProcess.buffer_width, postProcess.buffer_height);
     postProcess_bindBuffer(&postProcess.leftFramebuffer);
     glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
@@ -170,7 +174,7 @@ static void render_with_postprocessing(world_t *world, camera_t *camera, player_
     camera_translateX(camera, -EYE_OFFSET);
 }
 
-static void render_without_postprocessing(world_t *world, camera_t *camera, player_t *player) {
+static void render_without_postprocessing(world_t *world, camera_t *camera, const player_t *player) {
     glViewport(0, 0, width, height);
 
     render_world(world, camera);
@@ -178,7 +182,7 @@ static void render_without_postprocessing(world_t *world, camera_t *camera, play
     hud_render(projection, offset, camera, player, blockAtlasTexture);
 }
 
-void rendering_render(world_t *world, camera_t *camera, player_t *player, bool wireframeView, bool postProcessing) {
+void rendering_render(world_t *world, camera_t *camera, const player_t *player, const bool wireframeView, const bool postProcessing) {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

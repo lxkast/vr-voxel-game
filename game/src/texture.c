@@ -3,7 +3,11 @@
 #include "stb_image.h"
 #include "texture.h"
 
-GLuint loadTexture(const char *path, GLint wrapS, GLint wrapT, GLint minFilter, GLint magFilter) {
+GLuint loadTexture(const char *path,
+                   const GLint wrapS,
+                   const GLint wrapT,
+                   const GLint minFilter,
+                   const GLint magFilter) {
     int width, height, nrChannels;
     stbi_set_flip_vertically_on_load(1);
     unsigned char* data = stbi_load(path, &width, &height, &nrChannels, 0);

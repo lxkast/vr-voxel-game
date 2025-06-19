@@ -1,9 +1,7 @@
-#include "font.h"
-
 #include <logging.h>
 #include <string.h>
 #include <cglm/mat4.h>
-
+#include "font.h"
 #include "shaderutil.h"
 #include "texture.h"
 #include "vertices.h"
@@ -17,6 +15,9 @@ static GLuint fontProgram;
 #define ROWS 16
 #define COLS 16
 
+/**
+ * @brief Initialises a mash for a character
+ */
 static void initCharMesh(void) {
     glGenVertexArrays(1, &charVAO);
     glGenBuffers(1, &charVBO);
@@ -37,8 +38,8 @@ static void initCharMesh(void) {
     glBindVertexArray(0);
 }
 
-void font_init(font_t *font, const char *font_path) {
-    const GLuint texture = loadTexture(font_path, GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
+void font_init(font_t *font, const char *fontPath) {
+    const GLuint texture = loadTexture(fontPath, GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
     font->texture = texture;
     initCharMesh();
 
@@ -55,15 +56,23 @@ void font_init(font_t *font, const char *font_path) {
     );
 }
 
-static void render_char(font_t *font, char character, mat4 projview, mat4 model, vec4 colour) {
+/**
+ *
+ * @param font A pointer to a font
+ * @param character The character to render
+ * @param projview
+ * @param model
+ * @param colour The colour of the character
+ */
+static void renderChar(const font_t *font, const char character, mat4 projview, mat4 model, vec4 colour) {
     glUseProgram(fontProgram);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, font->texture);
     glUniform1i(glGetUniformLocation(fontProgram, "uTextureAtlas"), 0);
 
-    glUniformMatrix4fv(glGetUniformLocation(fontProgram, "model"), 1, GL_FALSE, model);
-    glUniformMatrix4fv(glGetUniformLocation(fontProgram, "projection"), 1, GL_FALSE, projview);
+    glUniformMatrix4fv(glGetUniformLocation(fontProgram, "model"), 1, GL_FALSE, (const GLfloat*)model);
+    glUniformMatrix4fv(glGetUniformLocation(fontProgram, "projection"), 1, GL_FALSE, (const GLfloat*)projview);
 
     const int row = ROWS - 1 - (character / ROWS);
     const int col = character % ROWS;
@@ -75,7 +84,7 @@ static void render_char(font_t *font, char character, mat4 projview, mat4 model,
     glBindVertexArray(0);
 }
 
-void font_render(font_t *font, const char *data, mat4 projview, mat4 rotation, vec4 colour) {
+void fontRender(const font_t *font, const char *data, mat4 projview, mat4 rotation, vec4 colour) {
     vec3 character = {2, 0, 0};
 
     mat4 transPerCharM;
@@ -85,7 +94,7 @@ void font_render(font_t *font, const char *data, mat4 projview, mat4 rotation, v
     glm_mat4_copy(projview, everything);
 
     while (*data != '\0') {
-        render_char(font, data[0], everything, rotation, colour);
+        renderChar(font, data[0], everything, rotation, colour);
         glm_mat4_mul(everything, transPerCharM, everything);
         data++;
     }
