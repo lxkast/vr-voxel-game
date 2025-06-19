@@ -2,21 +2,21 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <logging.h>
-#include <stdio.h>
 #include <pthread.h>
+#include <stdatomic.h>
+#include <stdio.h>
 #include <time.h>
 #include "analytics.h"
 #include "camera.h"
 #include "entity.h"
+#include "hud.h"
+#include "input.h"
 #include "player.h"
 #include "postprocess.h"
+#include "rendering.h"
 #include "shaderutil.h"
 #include "texture.h"
 #include "world.h"
-
-#include "input.h"
-#include "hud.h"
-#include "rendering.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #define MINOR_VERSION 2
@@ -80,17 +80,17 @@ void initialiseWindow() {
 }
 
 struct chunkWorkerData {
+    atomic_bool run;
     world_t *world;
 };
 void *chunkWorker(void *arg) {
-    struct chunkWorkerData data = *(struct chunkWorkerData *)arg;
+    struct chunkWorkerData *data = (struct chunkWorkerData *)arg;
 
     const struct timespec ts = { .tv_sec = 0, .tv_nsec = 10 };
 
-    while (true) {
+    while (atomic_load_explicit(&data->run, memory_order_acquire)) {
         nanosleep(&ts, NULL);
-        // LOG_DEBUG("Loading chunks.");
-        world_doChunkLoading(data.world);
+        world_doChunkLoading(data->world);
     }
 }
 
@@ -135,10 +135,16 @@ int main(void) {
     struct chunkWorkerData thData = {
         .world = &world
     };
+    atomic_store_explicit(&thData.run, false, memory_order_release);
     pthread_t th;
     pthread_create(&th, NULL, chunkWorker, &thData);
 
-    while (!glfwWindowShouldClose(window)) {
+    bool shouldClose;
+    while (!((shouldClose = glfwWindowShouldClose(window)))) {
+        if (shouldClose) {
+            atomic_store_explicit(&thData.run, false, memory_order_release);
+        }
+
         analytics_startFrame(&analytics);
         processPlayerInput(window, &camera, &player, &world);
         processCameraInput(window, &camera);
