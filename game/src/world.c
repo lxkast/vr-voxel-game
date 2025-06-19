@@ -1184,6 +1184,6 @@ void world_drawAllEntities(const world_t *w, const int modelLocation) {
 #ifdef ENABLE_AUDIO
 void world_updateEngine(world_t *w, vec3 pos, vec3 lookDir) {
     ma_engine_listener_set_position(&w->engine, 0, pos[0], pos[1], pos[2]);
-    ma_engine_listener_set_direction(&w->engine, 0, -lookDir[2], lookDir[1], -lookDir[0]);
+    ma_engine_listener_set_direction(&w->engine, 0, lookDir[2], lookDir[1], -lookDir[0]);
 }
 #endif
