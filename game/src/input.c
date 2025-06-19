@@ -14,6 +14,7 @@
 #include "hardware/orientation.h"
 #endif
 
+#define UNUSED(x) (void)(x);
 #define SPRINT_MULTIPLIER 1.3f
 #define GROUND_ACCELERATION 35.f
 #define AIR_ACCELERATION 10.f
@@ -242,6 +243,8 @@ void processCameraInput(GLFWwindow *window, camera_t *camera) {
  * This function uses a callback meaning that it is much better for instantaneous presses, e.g. switching wireframe mode
  */
 static void key_callback(GLFWwindow *window, const int key, int scancode, const int action, int mods) {
+    UNUSED(scancode);
+    UNUSED(mods);
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     } else if (key == GLFW_KEY_O && action == GLFW_PRESS) {

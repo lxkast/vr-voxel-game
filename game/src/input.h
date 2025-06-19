@@ -6,6 +6,12 @@
 #include "player.h"
 #include "GLFW/glfw3.h"
 
+/**
+ * @brief Initialise game input
+ * @param window A pointer ot a window
+ * @param wireframe A callback for toggling wireframe mode
+ * @param vr A callback for toggling post-processing
+ */
 void initialiseInput(GLFWwindow *window, void (*wireframe)(), void (*vr)());
 
 /**

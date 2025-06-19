@@ -32,6 +32,9 @@ static versor initialRot;
 bool shouldRender = false;
 font_t font;
 
+/**
+ * @brief Initialise an item entity mesh
+ */
 static void meshItemEntity(void) {
     glGenVertexArrays(1, &itemVao);
     glGenBuffers(1, &itemVbo);
@@ -53,6 +56,9 @@ static void meshItemEntity(void) {
     free(mesh);
 }
 
+/**
+ * @brief initialise the border mesh
+ */
 static void initBorder(void) {
     glGenVertexArrays(1, &borderVao);
     glGenBuffers(1, &borderVbo);
@@ -73,6 +79,7 @@ static void initBorder(void) {
 
 static GLuint blockItemProgram;
 static GLuint borderProgram;
+
 void hud_init(void) {
     BUILD_SHADER_PROGRAM(
         &blockItemProgram, {
@@ -103,6 +110,16 @@ void hud_init(void) {
     glm_quat_init(initialRot, 0.f, 0.f, 0.f, 1.f);
 }
 
+/**
+ * @brief Render the block inside the pane
+ * @param projview The projection and view matrices
+ * @param blockType The current block type
+ * @param centercoords The center coords of the block pane
+ * @param blockOrientation The orientation of the block within the frame
+ * @param scale The scale of the block within the frame
+ * @param frameOrientation The orientation of the frame itself
+ * @param textureAtlas The texture atlas for blocks
+ */
 static void render_block_in_pane(mat4 projview, block_t blockType, vec3 centercoords, versor blockOrientation, float scale, versor frameOrientation, GLuint textureAtlas) {
     // render a block, first render single block, then orthogonal perspective, then render block itself
     glUseProgram(blockItemProgram);
@@ -151,6 +168,14 @@ static void render_block_in_pane(mat4 projview, block_t blockType, vec3 centerco
     glBindVertexArray(0);
 }
 
+/**
+ * @brief Render the background pane
+ * @param projview The projection and view matrices
+ * @param centercoords The center coords of the pane
+ * @param scale The scale of the pane
+ * @param selected Whether the pane is currently selected or not
+ * @param frameOrientation The orientation of the frame
+ */
 static void render_block_pane(mat4 projview, vec3 centercoords, float scale, bool selected, versor frameOrientation) {
     glUseProgram(borderProgram);
     mat4 translate;
@@ -173,10 +198,14 @@ static void render_block_pane(mat4 projview, vec3 centercoords, float scale, boo
     glBindVertexArray(0);
 }
 
-
-/*
- * The orientation represents the orientation around the player, the transform for centercoords is carried out before
- * orientation, so orientation rotates around the player.
+/**
+ * @brief Render a pane and item, orientation is applied after centercoords to make it easy to rotate around the player.
+ * @param projview The projection and view matrices
+ * @param item The hotbar item to be rendered
+ * @param centercoords The center coords of the rendering, this is applied before orientation
+ * @param orientation The orientation around the player, applyed after center coords
+ * @param selected Whether the current frame is seelcted
+ * @param textureAtlas The block texture atlas
  */
 static void render_item(mat4 projview, hotbarItem_t item, vec3 centercoords, versor orientation, bool selected, GLuint textureAtlas) {
 #define SCALE 0.2f
@@ -212,12 +241,23 @@ static void render_item(mat4 projview, hotbarItem_t item, vec3 centercoords, ver
     }
 }
 
+/**
+ * @brief Applies the quaternion q n times to the destination quaternion.
+ * @param q The quaternion
+ * @param n The number of times
+ * @param dest The quaternion to apply it to
+ */
 static void apply_rotation_n_times(versor q, int n, versor dest) {
     for (int i = 0; i < n; i++) {
         glm_quat_mul(dest, q, dest);
     }
 }
 
+/**
+ * @brief Calculate which hotbar slot the player is currently looking at
+ * @param camera The current camera
+ * @return An index in 0..<HOTBARSLOTS representing the current hotbar slot.
+ */
 static int calculate_looking_at(versor camera) {
     vec3 right = {1, 0, 0};
 
