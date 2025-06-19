@@ -15,7 +15,7 @@ typedef struct {
  * @param font A pointer to a font
  * @param fontPath The file name to get the font from
  */
-void fontInit(font_t *font, const char *fontPath);
+void font_init(font_t *font, const char *fontPath);
 
 /**
  * @brief Renders the font on the screen

@@ -97,7 +97,7 @@ void hud_init(void) {
         "shaders/blockFrame.frag"
     );
 
-    fontInit(&font, "textures/font.png");
+    font_init(&font, "textures/font.png");
     meshItemEntity();
     initBorder();
     glm_quat_init(initialRot, 0.f, 0.f, 0.f, 1.f);
