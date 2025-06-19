@@ -60,7 +60,7 @@ void initialiseWindow() {
     const int screenWidth = SCREEN_WIDTH;
     const int screenHeight = SCREEN_HEIGHT;
 
-    window = glfwCreateWindow((int)(screenWidth), (int)(screenHeight), "Hello, Window!", USING_RASPBERRY_PI ? primaryMonitor : NULL, NULL);
+    window = glfwCreateWindow((int)(screenWidth), (int)(screenHeight), "Voxel Game", USING_RASPBERRY_PI ? primaryMonitor : NULL, NULL);
 
     if (window == NULL) {
         LOG_FATAL("Failed to create GLFW window");
@@ -144,6 +144,8 @@ int main(void) {
         if (shouldClose) {
             atomic_store_explicit(&thData.run, false, memory_order_release);
         }
+
+        glfwSwapInterval(1);
 
         analytics_startFrame(&analytics);
         processPlayerInput(window, &camera, &player, &world);
