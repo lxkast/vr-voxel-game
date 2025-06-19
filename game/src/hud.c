@@ -207,7 +207,7 @@ static void render_item(mat4 projview, hotbarItem_t item, vec3 centercoords, ver
 
         char quantityString[5];
         snprintf(quantityString, 5, "%d", item.count);
-        font_render(&font, quantityString, res, ident, TEXT_COLOUR);
+        fontRender(&font, quantityString, res, ident, TEXT_COLOUR);
         glEnable(GL_DEPTH_TEST);
     }
 }

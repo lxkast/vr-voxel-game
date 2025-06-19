@@ -104,7 +104,7 @@ static vertex_t *writeFace(world_t *w,
     return buf + 6;
 }
 
-//TODO(): Lukas please write documentation for these
+//TODO(): Sam, please can you write documentation for these?
 /**
  * @brief Helper for greedy meshing to compute next coordinate for width and height expansion based on direction
  * @param out The output ivec3
