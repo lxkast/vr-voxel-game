@@ -1,9 +1,9 @@
-#include "input.h"
 #include <cglm/cglm.h>
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <logging.h>
 #include <stdio.h>
+#include "input.h"
 #include "camera.h"
 #include "entity.h"
 #include "player.h"
