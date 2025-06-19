@@ -210,8 +210,7 @@ void world_init(world_t *w, uint64_t seed) {
     rng_init(&w->generalRng, rng_ull(&w->worldRng));
     w->noise.seed = (uint32_t)rng_ull(&w->worldRng);
 
-    spscRing_init(&w->queues.chunkBufferCreationQueue, 64);
-    spscRing_init(&w->queues.chunkBufferFreeQueue, 64);
+    spscRing_init(&w->queues.chunkBufferFreeQueue, 1024);
 }
 
 vec3 chunkBounds = {15.f, 15.f, 15.f};
@@ -299,7 +298,7 @@ void world_free(world_t *w) {
         HASH_DEL(w->clusterTable, cluster);
         for (int i = 0; i < C_T * C_T * C_T; i++) {
             if (!cluster->cells[i].chunk) continue;
-            chunk_free(cluster->cells[i].chunk);
+            chunk_free(cluster->cells[i].chunk, &w->queues.chunkBufferFreeQueue);
             free(cluster->cells[i].chunk);
         }
         free(cluster->cells);
@@ -312,7 +311,6 @@ void world_free(world_t *w) {
         }
     }
 
-    spscRing_free(&w->queues.chunkBufferCreationQueue);
     spscRing_free(&w->queues.chunkBufferFreeQueue);
 }
 
@@ -344,7 +342,7 @@ static bool freeCv(world_t *w, cluster_t *cluster, const int i) {
         if (*r == REL_CHILD) *r = REL_TOMBSTONE;
     }
 
-    chunk_free(cv->chunk);
+    chunk_free(cv->chunk, &w->queues.chunkBufferFreeQueue);
     free(cv->chunk);
     cv->chunk = NULL;
     cluster->n--;
@@ -391,15 +389,6 @@ void world_doChunkLoading(world_t *w) {
         }
     }
 
-    // void chunk_genMesh(chunk_t *c, world_t *w)
-    HASH_ITER(hh, w->clusterTable, cluster, tmp) {
-        for (int i = 0; i < C_T * C_T * C_T; i++) {
-            if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
-            if (cluster->cells[i].chunk) {
-                chunk_checkGenMesh(cluster->cells[i].chunk, w);
-            }
-        }
-    }
 
     // process darkness propagation between all chunks
     while (true) {
@@ -437,7 +426,16 @@ void world_doChunkLoading(world_t *w) {
             break;
         }
     }
-    LOG_DEBUG("%d", world_getFullyLoadedChunk(w, 0, 0, 0)->tainted);
+
+    // void chunk_genMesh(chunk_t *c, world_t *w)
+    HASH_ITER(hh, w->clusterTable, cluster, tmp) {
+        for (int i = 0; i < C_T * C_T * C_T; i++) {
+            if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
+            if (cluster->cells[i].chunk) {
+                chunk_checkGenMesh(cluster->cells[i].chunk, w);
+            }
+        }
+    }
 }
 
 bool world_getBlocki(world_t *w, const int x, const int y, const int z, blockData_t *bd) {

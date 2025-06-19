@@ -8,6 +8,7 @@
 #include "block.h"
 #include "queue.h"
 #include "noise.h"
+#include "spscqueue.h"
 #include "vertices.h"
 
 #define CHUNK_SIZE 16
@@ -122,7 +123,9 @@ void chunk_draw(const chunk_t *c, int modelLocation);
 * @brief A function for freeing a chunk
 * @param c A pointer to a chunk
 */
-void chunk_free(const chunk_t *c);
+void chunk_free(const chunk_t *c, spscRing_t *freeQueue);
+
+void main_thread_free(spscRing_t *freeQueue);
 
 /**
 * @brief A function to serialise a chunk to a file

@@ -191,7 +191,7 @@ void chunk_generate(chunk_t *c) {
 void chunk_checkMesh(chunk_t *c, world_t *w) {
     if (c->tainted) {
         if (chunk_createMesh(c, w)) {
-            // c->tainted = false;
+            c->tainted = false;
         }
     }
 }
@@ -216,9 +216,17 @@ void chunk_draw(const chunk_t *c, const int modelLocation) {
     glBindVertexArray(0);
 }
 
-void chunk_free(const chunk_t *c) {
-    glDeleteVertexArrays(1, &c->vbo);
-    glDeleteBuffers(1, &c->vao);
+typedef struct {
+    GLuint vao;
+    GLuint vbo;
+} MainThreadFrees_t;
+
+void chunk_free(const chunk_t *c, spscRing_t *freeQueue) {
+    MainThreadFrees_t *toFree = malloc(sizeof(MainThreadFrees_t));
+    toFree->vbo = c->vbo;
+    toFree->vao = c->vao;
+    spscRing_offer(freeQueue, toFree);
+
     if (c->verticesValid) {
         free(c->vertices);
     }
@@ -226,6 +234,16 @@ void chunk_free(const chunk_t *c) {
     queue_freeQueue(&c->lightTorchDeletionQueue);
     queue_freeQueue(&c->lightSunInsertionQueue);
     queue_freeQueue(&c->lightSunDeletionQueue);
+}
+
+
+void main_thread_free(spscRing_t *freeQueue) {
+    MainThreadFrees_t *toFree;
+    while (spscRing_poll(freeQueue, (void**) &toFree)) {
+        glDeleteVertexArrays(1, &toFree->vbo);
+        glDeleteBuffers(1, &toFree->vao);
+        free(toFree);
+    }
 }
 
 void chunk_serialise(chunk_t *c, FILE *fp) {

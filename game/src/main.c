@@ -146,6 +146,7 @@ int main(void) {
         world_updateChunkLoader(&world, cameraLoader, camera.eye);
 
         world_processAllEntities(&world, analytics.dt);
+        main_thread_free(&world.queues.chunkBufferFreeQueue);
 
         player_pickUpItemsCheck(&player, &world);
 

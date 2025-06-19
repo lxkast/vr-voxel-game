@@ -76,7 +76,6 @@ typedef struct world_t {
     noise_t noise;
 
     struct {
-        spscRing_t chunkBufferCreationQueue;
         spscRing_t chunkBufferFreeQueue;
     } queues;
 } world_t;
