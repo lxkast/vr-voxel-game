@@ -20,7 +20,7 @@ bool spscRing_init(spscRing_t *r, const size_t cap) {
 
 bool spscRing_offer(spscRing_t *r, void *item) {
     size_t tail = atomic_load_explicit(&r->tail, memory_order_relaxed);
-    size_t next = (tail + 1) % r->mask;
+    size_t next = (tail + 1) & r->mask;
 
     if (next == atomic_load_explicit(&r->head, memory_order_acquire)) {
         return false;
