@@ -11,7 +11,7 @@ ivec3 directions[6] = {
 
 const unsigned int faceVerticesSize = 6 * sizeof(vertex_t);
 
-// vertices used for rendering blocks in chunks
+/// vertices used for rendering blocks in chunks
 const vertex_t blockVertices[6][6] = {
     {
         {1.0f, 0.0f, 0.0f, 2},
@@ -63,7 +63,7 @@ const vertex_t blockVertices[6][6] = {
     },
 };
 
-// vertices used for rendering item entities (dropped blocks)
+/// vertices used for rendering item entities (dropped blocks)
 const float itemBlockVertices[] = {
     // right
     1.0f, 0.0f, 0.0f,  1.0f, 0.5f,

@@ -135,7 +135,7 @@ int main(void) {
 
     atomic_store_explicit(&thData.run, true, memory_order_release);
     pthread_t th;
-    pthread_create(&th, NULL, chunkWorker, &thData);
+    pthread_create(&th, NULL, (void *)chunkWorker, &thData);
 
     bool shouldClose;
     while (!((shouldClose = glfwWindowShouldClose(window)))) {

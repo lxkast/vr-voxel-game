@@ -104,7 +104,7 @@ void chunk_init(chunk_t *c, const rng_t rng, const noise_t noise, const int cx, 
 }
 
 void chunk_fill(chunk_t *c, const block_t block) {
-    int *ptr = c->blocks;
+    block_t *ptr = c->blocks;
     for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE; i++) {
         ptr[i] = block;
     }
@@ -206,10 +206,10 @@ void chunk_checkGenMesh(chunk_t *c, world_t *w) {
 void chunk_draw(const chunk_t *c, const int modelLocation) {
     if (c->vbo == -1) { return; }
     mat4 model;
-    const vec3 cPos = { (float)c->cx * CHUNK_SIZE, (float)c->cy * CHUNK_SIZE, (float)c->cz * CHUNK_SIZE };
+    vec3 cPos = { (float)c->cx * CHUNK_SIZE, (float)c->cy * CHUNK_SIZE, (float)c->cz * CHUNK_SIZE };
     glm_translate_make(model, cPos);
 
-    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
+    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (const GLfloat*)model);
 
     glBindVertexArray(c->vao);
     glDrawArrays(GL_TRIANGLES, 0, c->meshVertices);

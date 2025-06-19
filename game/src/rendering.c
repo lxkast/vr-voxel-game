@@ -125,7 +125,7 @@ static void render_world(world_t *world, camera_t *camera) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, blockAtlasTexture);
     glUniform1i(glGetUniformLocation(chunkShader, "uTextureAtlas"), 0);
-    glUniformMatrix4fv(glGetUniformLocation(chunkShader, "projection"), 1, false, projection);
+    glUniformMatrix4fv(glGetUniformLocation(chunkShader, "projection"), 1, false, (const GLfloat *)projection);
     glUniform1f(glGetUniformLocation(chunkShader, "fogStart"), FOG_START);
     glUniform1f(glGetUniformLocation(chunkShader, "fogEnd"), FOG_END);
 
@@ -140,7 +140,7 @@ static void render_world(world_t *world, camera_t *camera) {
     glUseProgram(0);
 
     glUseProgram(blockEntityShader);
-    glUniformMatrix4fv(glGetUniformLocation(blockEntityShader, "projection"), 1, false, projection);
+    glUniformMatrix4fv(glGetUniformLocation(blockEntityShader, "projection"), 1, false, (const GLfloat *)projection);
     camera_setView(camera, blockEntityShader);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, blockAtlasTexture);

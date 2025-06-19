@@ -1,8 +1,7 @@
 #include <logging.h>
+#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "texture.h"
-
-#define STB_IMAGE_IMPLEMENTATION
 
 GLuint loadTexture(const char *path,
                    const GLint wrapS,
