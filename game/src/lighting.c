@@ -160,7 +160,7 @@ static void processTorchLightDeletion(chunk_t *c, world_t *w) {
             if (offset[0] == 0 && offset[1] == 0 && offset[2] == 0) {
                 // propagate darkness within current chunk
                 if (BL_TRANSPARENT(c->blocks[nPos[0]][nPos[1]][nPos[2]])) {
-                    unsigned char neighbourLight = EXTRACT_TORCH(c->lightMap[nPos[0]][nPos[1]][nPos[2]]);
+                    const unsigned char neighbourLight = EXTRACT_TORCH(c->lightMap[nPos[0]][nPos[1]][nPos[2]]);
                     lightQueueItem_t nItem = { .lightValue = neighbourLight };
                     memcpy(&nItem.pos, &nPos, sizeof(ivec3));
                     if (neighbourLight < lightLevel && neighbourLight != 0) {

@@ -9,13 +9,9 @@
 #include "analytics.h"
 #include "camera.h"
 #include "entity.h"
-#include "hud.h"
 #include "input.h"
 #include "player.h"
-#include "postprocess.h"
 #include "rendering.h"
-#include "shaderutil.h"
-#include "texture.h"
 #include "world.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
@@ -83,6 +79,7 @@ struct chunkWorkerData {
     atomic_bool run;
     world_t *world;
 };
+
 void chunkWorker(void *arg) {
     struct chunkWorkerData *data = (struct chunkWorkerData *)arg;
 
@@ -135,6 +132,7 @@ int main(void) {
     struct chunkWorkerData thData = {
         .world = &world
     };
+
     atomic_store_explicit(&thData.run, true, memory_order_release);
     pthread_t th;
     pthread_create(&th, NULL, chunkWorker, &thData);
