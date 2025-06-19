@@ -1,9 +1,9 @@
-#include "input.h"
 #include <cglm/cglm.h>
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <logging.h>
 #include <stdio.h>
+#include "input.h"
 #include "camera.h"
 #include "entity.h"
 #include "player.h"
@@ -38,7 +38,7 @@ static bool hudOpen = false;
 void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, world_t *w, const double dt) {
     vec3 acceleration = { 0.f, GRAVITY_ACCELERATION, 0.f };
 
-    const float sprintMultiplier = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? SPRINT_MULTIPLIER : 1.f ;
+    const float sprintMultiplier = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? SPRINT_MULTIPLIER : 1.f;
 
     vec3 direction = {0.0f, 0.0f, 0.0f};
 
@@ -178,21 +178,20 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
 
         world_getBlocksInRange(w, minPoint, maxPoint, buf);
 
-        printf("static const structureBlock_t generated[] = {\n");
+        printf("static const structureBlock_t generatedPattern[] = {\n");
 
         for (int i = 0; i < numBlocks; i++) {
             const blockData_t block = buf[i];
             if (block.type!= BL_AIR) {
-                printf("    {%d, %d, %d, %d, 1.f},\n", block.type, block.x - (int)origin[0], block.y - (int)origin[1], block.z - (int)origin[2]);
+                printf("    {%d, %d, %d, %d, 1.f, false},\n", block.type, block.x - (int)origin[0], block.y - (int)origin[1], block.z - (int)origin[2]);
             }
         }
 
         printf("};\n\n");
 
         printf("const structure_t generatedStructure = {\n");
-        printf("    .numBlocks = %d,\n", numBlocks);
-        printf("    .blocks = generated,\n");
-        printf("    .base = %d,\n};\n\n", originBlock);
+        printf("    .numBlocks = STRUCTURE_SIZE(generatedPattern),\n");
+        printf("    .blocks = generatedPattern,\n};\n\n");
     }
     #endif
 
@@ -245,7 +244,7 @@ void processCameraInput(GLFWwindow *window, camera_t *camera) {
 /*
  * This function uses a callback meaning that it is much better for instantaneous presses, e.g. switching wireframe mode
  */
-static void key_callback(GLFWwindow *window, const int key, int scancode, const int action, int mods) {
+static void keyCallback(GLFWwindow *window, const int key, int scancode, const int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     } else if (key == GLFW_KEY_O && action == GLFW_PRESS) {
@@ -261,7 +260,7 @@ void initialiseInput(GLFWwindow *window, void (*wireframe)(), void (*vr)()) {
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwGetCursorPos(window, previousMouse, previousMouse + 1);
     glfwSetJoystickCallback(joystickEvent);
-    glfwSetKeyCallback(window, key_callback);
+    glfwSetKeyCallback(window, keyCallback);
 
     #ifdef BUILD_FOR_RPI
         startOrientationThread();

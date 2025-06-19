@@ -1,10 +1,10 @@
-#pragma once
+#ifndef PLAYER_H
+#define PLAYER_H
 
 #include <cglm/cglm.h>
 #include "camera.h"
 #include "entity.h"
 #include "item.h"
-#include "world.h"
 
 #define BLOCK_COOLDOWN_TIME 0.5
 #define HOTBAR_SLOTS 9
@@ -53,29 +53,30 @@ void player_init(world_t *w, player_t *p);
 void player_attachCamera(player_t *p, camera_t *camera);
 
 /**
- * @brief Places a block where the player is looking
+ * @brief Removes the block a player is looking at, if the player is off cooldown.
+ * @param p A pointer to a player
+ * @param w A pointer to a world
+ */
+void player_removeBlock(player_t *p, world_t *w);
+
+/**
+ * @brief Places a block where a player is looking at, if the player is off cooldown.
  * @param p A pointer to a player
  * @param w A pointer to a world
  */
 void player_placeBlock(player_t *p, world_t *w);
 
 /**
- * @brief Prints a text-based representation of the hotbar to the terminal
+ * @brief Prints a player's hotbar to the terminal
  * @param p A pointer to a player
  */
 void player_printHotbar(const player_t *p);
 
 /**
- * @brief Checks if a player can pick up items, and if so adds it to the hotbar
+ * @brief Checks if a player should pick up any items
  * @param p A pointer to a player
  * @param w A pointer to a world
  */
 void player_pickUpItemsCheck(player_t *p, world_t *w);
 
-/**
- * @brief Mines the block the player is looking at
- * @param p A pointer to a player
- * @param w A pointer to a world
- * @param dt The time since the last frame
- */
-void player_mineBlock(player_t *p, world_t *w, double dt);
+#endif

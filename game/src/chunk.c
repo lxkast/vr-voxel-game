@@ -1,24 +1,27 @@
-#include "chunk.h"
 #include <cglm/cglm.h>
 #include <logging.h>
 #include <string.h>
 #include <math.h>
 #include "vertices.h"
+#include "chunk.h"
 #include "noise.h"
 
-extern void chunk_createMesh(chunk_t *c);
+#define LIGHT_MAX_VALUE 15
+
+extern bool chunk_createMesh(chunk_t *c, world_t *w);
+extern void chunk_genMesh(chunk_t *c, world_t *w);
 
 static float smoothstep(const float min, const float max, float x) {
     x = glm_clamp((x - min) / (max - min), 0.f, 1.f);
     return x * x * (3.0f - 2.0f * x);
 }
 
-static float getHumidity(chunk_t *c, const float h, const int x, const int z) {
+static float getHumidity(const chunk_t *c, const float h, const int x, const int z) {
     const float n = noise_smoothValue(&c->noise, 0.005f * (float)x - 1024.f, 0.005f * (float)z + 1024.f);
     return 20.f * n;
 }
 
-static float getTemperature(chunk_t *c, const float h, const int x, const int z) {
+static float getTemperature(const chunk_t *c, const float h, const int x, const int z) {
     const float n = noise_smoothValue(&c->noise, 0.003f * (float)x + 1024.f, 0.003f * (float)z - 1024.f);
     return 15.f * n;
 }
@@ -96,12 +99,12 @@ void chunk_init(chunk_t *c, const rng_t rng, const noise_t noise, const int cx, 
     queue_initQueue(&c->lightSunDeletionQueue);
     memset(c->lightMap, 0, CHUNK_SIZE_CUBED * sizeof(unsigned char));
 
-    glGenBuffers(1, &c->vbo);
-    glGenVertexArrays(1, &c->vao);
+    c->vbo = -1;
+    c->vao = -1;
 }
 
 void chunk_fill(chunk_t *c, const block_t block) {
-    int *ptr = c->blocks;
+    block_t *ptr = c->blocks;
     for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE; i++) {
         ptr[i] = block;
     }
@@ -117,6 +120,18 @@ void chunk_createDeserialise(chunk_t *c, FILE *fp) {
     fread(&c->blocks, sizeof(int), CHUNK_SIZE_CUBED, fp);
 
     c->tainted = true;
+}
+
+void chunk_initSun(chunk_t *c) {
+    // return;
+    for (int i = 0; i < CHUNK_SIZE; ++i) {
+        for (int j = 0; j < CHUNK_SIZE; ++j) {
+            if (c->blocks[i][CHUNK_SIZE - 1][j] == BL_AIR || c->blocks[i][CHUNK_SIZE - 1][j] == BL_LEAF) {
+                lightQueueItem_t nItem = { .pos = { i, CHUNK_SIZE - 1, j }, .lightValue = LIGHT_MAX_VALUE };
+                queue_push(&c->lightSunInsertionQueue, nItem);
+            }
+        }
+    }
 }
 
 void chunk_generate(chunk_t *c) {
@@ -173,31 +188,65 @@ void chunk_generate(chunk_t *c) {
     c->tainted = true;
 }
 
-void chunk_draw(chunk_t *c, const int modelLocation) {
-    if (c->tainted) chunk_createMesh(c);
-    c->tainted = false;
+void chunk_checkMesh(chunk_t *c, world_t *w) {
+    if (c->tainted) {
+        if (chunk_createMesh(c, w)) {
+            c->tainted = false;
+        }
+    }
+}
 
+void chunk_checkGenMesh(chunk_t *c, world_t *w) {
+    if (c->tainted && !c->verticesValid) {
+        chunk_genMesh(c, w);
+        c->verticesValid = true;
+    }
+}
+
+void chunk_draw(const chunk_t *c, const int modelLocation) {
+    if (c->vbo == -1) { return; }
     mat4 model;
-    const vec3 cPos = { c->cx * CHUNK_SIZE, c->cy * CHUNK_SIZE, c->cz * CHUNK_SIZE };
+    vec3 cPos = { (float)c->cx * CHUNK_SIZE, (float)c->cy * CHUNK_SIZE, (float)c->cz * CHUNK_SIZE };
     glm_translate_make(model, cPos);
 
-    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, model);
+    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (const GLfloat*)model);
 
     glBindVertexArray(c->vao);
     glDrawArrays(GL_TRIANGLES, 0, c->meshVertices);
     glBindVertexArray(0);
 }
 
-void chunk_free(const chunk_t *c) {
-    glDeleteVertexArrays(1, &c->vbo);
-    glDeleteBuffers(1, &c->vao);
+typedef struct {
+    GLuint vao;
+    GLuint vbo;
+} MainThreadFrees_t;
+
+void chunk_free(chunk_t *c, spscRing_t *freeQueue) {
+    MainThreadFrees_t *toFree = malloc(sizeof(MainThreadFrees_t));
+    toFree->vbo = c->vbo;
+    toFree->vao = c->vao;
+    spscRing_offer(freeQueue, toFree);
+
+    if (c->verticesValid) {
+        free(c->vertices);
+    }
     queue_freeQueue(&c->lightTorchInsertionQueue);
     queue_freeQueue(&c->lightTorchDeletionQueue);
     queue_freeQueue(&c->lightSunInsertionQueue);
     queue_freeQueue(&c->lightSunDeletionQueue);
 }
 
-void chunk_serialise(chunk_t *c, FILE *fp) {
+
+void main_thread_free(spscRing_t *freeQueue) {
+    MainThreadFrees_t *toFree;
+    while (spscRing_poll(freeQueue, (void**) &toFree)) {
+        glDeleteVertexArrays(1, &toFree->vbo);
+        glDeleteBuffers(1, &toFree->vao);
+        free(toFree);
+    }
+}
+
+void chunk_serialise(const chunk_t *c, FILE *fp) {
     fwrite(&c->cx, sizeof(int), 1, fp);
     fwrite(&c->cy, sizeof(int), 1, fp);
     fwrite(&c->cz, sizeof(int), 1, fp);

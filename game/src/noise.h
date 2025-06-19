@@ -1,4 +1,5 @@
-#pragma once
+#ifndef NOISE_H
+#define NOISE_H
 
 #include <stdint.h>
 
@@ -64,7 +65,7 @@ typedef struct {
  * @return float The random noise value
  * @note Output range is [-1, 1]
  */
-float noise_value(noise_t *n, int x, int z);
+float noise_value(const noise_t *n, int x, int z);
 
 /**
  * @brief A function to generate smooth value noise
@@ -75,7 +76,7 @@ float noise_value(noise_t *n, int x, int z);
  * @return float The random noise value
  * @note Output range is [-1, 1]
  */
-float noise_smoothValue(noise_t *n, float x, float y);
+float noise_smoothValue(const noise_t *n, float x, float y);
 
 /**
  * @brief A fractal brownian motion function
@@ -89,3 +90,5 @@ float noise_smoothValue(noise_t *n, float x, float y);
  * @return float The value from the noise
  */
 float noise_fbm(noise_t *n, float x, float y, int octaves, float persistence, float baseFrequency);
+
+#endif

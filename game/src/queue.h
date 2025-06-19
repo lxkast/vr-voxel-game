@@ -1,6 +1,7 @@
-#pragma once
+#ifndef QUEUE_H
+#define QUEUE_H
+
 #include <cglm/cglm.h>
-#include <stdlib.h>
 
 typedef struct {
     ivec3 pos;
@@ -26,3 +27,5 @@ extern void queue_freeQueue(lightQueue_t *queue);
 extern void queue_push(lightQueue_t *queue, lightQueueItem_t item);
 extern lightQueueItem_t queue_pop(lightQueue_t *queue);
 extern int queue_tests();
+
+#endif

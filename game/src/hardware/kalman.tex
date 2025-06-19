@@ -1,0 +1,39 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{amsmath}
+\begin{document}
+
+
+    \section{Equations}
+
+    Our state ($x_t$) is represented by a quaternion in w, x, y, z ordering.
+
+    \subsection{Predict}
+    Let $\theta$ represent the change in angle since the last predict.
+    Let $x_t$ represent the current state at time t.
+
+    $$x_t = x_t \otimes \theta_t $$
+    $$F_t = \begin{bmatrix}
+                \theta_0 & -\theta_1 & -\theta_2 & -\theta_3 \\
+                \theta_1 & \theta_0 & \theta_3 & \theta_2 \\
+                \theta_2 & \theta_3 & \theta_0 & -\theta_1 \\
+                \theta_3 & -\theta_2 & \theta_1 & \theta_0 \\
+    \end{bmatrix}$$
+    $$P_t = F_tP_{t-1}F^T_t$$
+
+    \subsection{Update}
+    $z_t$ represents the accelerometer reading.
+
+
+    $$\hat{z_t} = x_t \otimes \begin{bmatrix} 0 \\ -1 \\ 0 \\ 0 \\ \end{bmatrix}$$
+    $$y_t = z_t - \hat{z_t}$$
+    $$H_t = \begin{bmatrix}
+                -2{x_t}_3 & -2{x_t}_2 & -2{x_t}_1 & -2{x_t}_0 \\
+                -2{x_t}_0 & 2{x_t}_1 & -2{x_t}_2 & -2{x_t}_3 \\
+                2{x_t}_1 & 2{x_t}_0 & -2{x_t}_3 & -2{x_t}_2 \\
+    \end{bmatrix}$$
+    $$S_t = H_t P_tH^T_t + R_t$$
+    $$K_t = P_tH^T_t S^{-1}_t$$
+    $$\hat{x_t} = x_t + K_ty_t$$
+    $$\hat{P_t} = (I - K_tH_t)P_t$$
+\end{document}

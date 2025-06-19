@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BLOCK_H_
+#define BLOCK_H_
 
 #include <cglm/cglm.h>
 
@@ -36,14 +37,21 @@ static const float TIME_TO_MINE_BLOCK[] = {
     [BL_JUNGLE_LEAF] = 0.1f,
 };
 
+#define BL_TRANSPARENT(x) (x == BL_AIR || x == BL_LEAF || x == BL_JUNGLE_LEAF)
+
 /**
  * @brief Struct that holds data about a single block.
  */
 typedef struct {
+    /// The x, y and z coordinates of the block
     int x, y, z;
+    /// The type of the block
     block_t type;
 } blockData_t;
 
+/**
+ * @brief Enum for each face of a block from a raycast
+ */
 typedef enum {
     POS_X_FACE,
     NEG_X_FACE,
@@ -59,8 +67,10 @@ typedef enum {
 typedef struct {
     /// The position of the block found by the raycast (if it finds one)
     vec3 blockPosition;
-    /// The face the raycast hits
+    /// The face of the block the player is looking at
     raycastFace_e face;
-    /// Wether a raycast is actually found
+    /// If a valid block was found
     bool found;
 } raycast_t;
+
+#endif

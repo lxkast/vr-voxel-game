@@ -1,4 +1,5 @@
-#pragma once
+#ifndef FUTIL_H
+#define FUTIL_H
 
 #include <stdint.h>
 #include <stdio.h>
@@ -52,3 +53,5 @@ unsigned int futil_readBinary(futil_file_t *fp, uint32_t *buf, unsigned int n);
     Returns the number of 32 bit chunks written.
 */
 unsigned int futil_writeBinary(futil_file_t *fp, const uint32_t *buf, int n);
+
+#endif

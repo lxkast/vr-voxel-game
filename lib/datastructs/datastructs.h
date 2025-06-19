@@ -1,4 +1,5 @@
-#pragma once
+#ifndef DATASTRUCTS_H
+#define DATASTRUCTS_H
 
 #include <stdbool.h>
 
@@ -33,3 +34,5 @@ extern void arraylist_append(resizingArrayList_t *arrList, void *element);
 extern bool arraylist_remove(resizingArrayList_t *arrList, const void *element);
 extern void *arraylist_get(const resizingArrayList_t *arrList, int index);
 extern int arraylist_size(const resizingArrayList_t *arrList);
+
+#endif
