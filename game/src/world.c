@@ -911,19 +911,20 @@ bool world_placeBlock(world_t *w, const int x, const int y, const int z, const b
         return false;
     }
 
-    // audio found here: https://pixabay.com/sound-effects/stone-effect-254998/
-    play3DAudio(w, "../../src/audio/block_place.mp3", (float)x, (float)y, (float)z);
+    // audio found here: https://pixabay.com/sound-effects/stone-effect-254998/ (block_place.mp3)
+    // audio found here: https://pixabay.com/sound-effects/wood-effect-254997/ (block_place2.mp3)
+    play3DAudio(w, "../../src/audio/block_place2.mp3", (float)x, (float)y, (float)z);
 
-    ivec3 blockPos = { x - ((x >> 4) << 4), y - ((y >> 4) << 4), z - ((z >> 4) << 4) };
+    const ivec3 blockPos = { x - ((x >> 4) << 4), y - ((y >> 4) << 4), z - ((z >> 4) << 4) };
 
     *bp = block;
     if (block == BL_GLOWSTONE) {
         lightQueueItem_t qi = {
-            .lightValue = LIGHT_MAX_VALUE };
+            .lightValue = LIGHT_MAX_VALUE};
         memcpy(&qi.pos, &blockPos, sizeof(ivec3));
         queue_push(&cp->lightTorchInsertionQueue, qi);
     }
-    int sunValue = EXTRACT_SUN(cp->lightMap[blockPos[0]][blockPos[1]][blockPos[2]]);
+    const int sunValue = EXTRACT_SUN(cp->lightMap[blockPos[0]][blockPos[1]][blockPos[2]]);
     int torchValue = EXTRACT_TORCH(cp->lightMap[blockPos[0]][blockPos[1]][blockPos[2]]);
     LOG_DEBUG("torch value: %d, sun value: %d", torchValue, sunValue);
     LOG_DEBUG("block pos %d, %d, %d", blockPos[0], blockPos[1], blockPos[2]);
