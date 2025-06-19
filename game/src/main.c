@@ -83,7 +83,7 @@ struct chunkWorkerData {
     atomic_bool run;
     world_t *world;
 };
-void *chunkWorker(void *arg) {
+void chunkWorker(void *arg) {
     struct chunkWorkerData *data = (struct chunkWorkerData *)arg;
 
     const struct timespec ts = { .tv_sec = 0, .tv_nsec = 10 };
@@ -135,7 +135,7 @@ int main(void) {
     struct chunkWorkerData thData = {
         .world = &world
     };
-    atomic_store_explicit(&thData.run, false, memory_order_release);
+    atomic_store_explicit(&thData.run, true, memory_order_release);
     pthread_t th;
     pthread_create(&th, NULL, chunkWorker, &thData);
 
