@@ -427,6 +427,16 @@ void world_doChunkLoading(world_t *w) {
             }
         }
     }
+
+    // void chunk_genMesh(chunk_t *c, world_t *w)
+    HASH_ITER(hh, w->clusterTable, cluster, tmp) {
+        for (int i = 0; i < C_T * C_T * C_T; i++) {
+            if (!cluster->cells[i].chunk || cluster->cells[i].ll != LL_TOTAL) {continue;}
+            if (cluster->cells[i].chunk) {
+                chunk_checkGenMesh(cluster->cells[i].chunk, w);
+            }
+        }
+    }
 }
 
 bool world_getBlocki(world_t *w, const int x, const int y, const int z, blockData_t *bd) {

@@ -8,6 +8,7 @@
 #include "block.h"
 #include "queue.h"
 #include "noise.h"
+#include "vertices.h"
 
 #define CHUNK_SIZE 16
 #define CHUNK_SIZE_CUBED 4096
@@ -51,6 +52,10 @@ typedef struct {
     int meshVertices;
     /// Holds whether the mesh needs to be regenerated.
     bool tainted;
+
+    vertex_t *vertices;
+    bool verticesValid;
+
     /// An rng for use in terrain generation
     rng_t rng;
     /// A noise object
@@ -104,7 +109,7 @@ void chunk_generate(chunk_t *c);
  * @param w A pointer to a world
  */
 void chunk_checkMesh(chunk_t *c, world_t *w);
-
+void chunk_checkGenMesh(chunk_t *c, world_t *w);
 /**
  * @brief Draws a chunk.
  * @param c A pointer to a chunk

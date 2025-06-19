@@ -89,7 +89,7 @@ void *chunkWorker(void *arg) {
 
     while (true) {
         nanosleep(&ts, NULL);
-        LOG_DEBUG("Loading chunks.");
+        // LOG_DEBUG("Loading chunks.");
         world_doChunkLoading(data.world);
     }
 }

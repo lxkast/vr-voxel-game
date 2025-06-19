@@ -8,7 +8,8 @@
 
 #define LIGHT_MAX_VALUE 15
 
-extern void chunk_createMesh(chunk_t *c, world_t *w);
+extern bool chunk_createMesh(chunk_t *c, world_t *w);
+extern void chunk_genMesh(chunk_t *c, world_t *w);
 
 static float smoothstep(const float min, const float max, float x) {
     x = glm_clamp((x - min) / (max - min), 0.f, 1.f);
@@ -98,8 +99,8 @@ void chunk_init(chunk_t *c, const rng_t rng, const noise_t noise, const int cx, 
     queue_initQueue(&c->lightSunDeletionQueue);
     memset(c->lightMap, 0, CHUNK_SIZE_CUBED * sizeof(unsigned char));
 
-    glGenBuffers(1, &c->vbo);
-    glGenVertexArrays(1, &c->vao);
+    c->vbo = -1;
+    c->vao = -1;
 }
 
 void chunk_fill(chunk_t *c, const block_t block) {
@@ -189,12 +190,22 @@ void chunk_generate(chunk_t *c) {
 
 void chunk_checkMesh(chunk_t *c, world_t *w) {
     if (c->tainted) {
-        chunk_createMesh(c, w);
+        if (!chunk_createMesh(c, w)) {
+            return;
+        }
     }
     c->tainted = false;
 }
 
+void chunk_checkGenMesh(chunk_t *c, world_t *w) {
+    if (c->tainted && !c->verticesValid) {
+        chunk_genMesh(c, w);
+        c->verticesValid = true;
+    }
+}
+
 void chunk_draw(const chunk_t *c, const int modelLocation) {
+    if (c->vbo == -1) { return; }
     mat4 model;
     const vec3 cPos = { c->cx * CHUNK_SIZE, c->cy * CHUNK_SIZE, c->cz * CHUNK_SIZE };
     glm_translate_make(model, cPos);
@@ -209,6 +220,9 @@ void chunk_draw(const chunk_t *c, const int modelLocation) {
 void chunk_free(const chunk_t *c) {
     glDeleteVertexArrays(1, &c->vbo);
     glDeleteBuffers(1, &c->vao);
+    if (c->verticesValid) {
+        free(c->vertices);
+    }
     queue_freeQueue(&c->lightTorchInsertionQueue);
     queue_freeQueue(&c->lightTorchDeletionQueue);
     queue_freeQueue(&c->lightSunInsertionQueue);

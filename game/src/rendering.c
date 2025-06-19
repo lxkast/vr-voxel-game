@@ -128,12 +128,12 @@ static void render_world(world_t *world, camera_t *camera) {
     world_highlightFace(world, camera);
     camera_setView(camera, chunkShader);
 
-    world_draw(world, chunkShaderModelLocation, camera, projection);
     world_remeshChunks(world);
+
+    world_draw(world, chunkShaderModelLocation, camera, projection);
     world_drawHighlight(world, chunkShaderModelLocation);
 
     glUseProgram(0);
-
 
     glUseProgram(blockEntityShader);
     glUniformMatrix4fv(glGetUniformLocation(blockEntityShader, "projection"), 1, false, projection);
