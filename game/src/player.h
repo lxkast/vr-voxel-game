@@ -10,7 +10,7 @@
 #define HOTBAR_SLOTS 9
 
 /**
- * @breif A struct containing hotbar data
+ * @brief A struct containing hotbar data
  */
 typedef struct {
     /// each of the slots in the hotbar
