@@ -1,9 +1,9 @@
-#include "input.h"
 #include <cglm/cglm.h>
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <logging.h>
 #include <stdio.h>
+#include "input.h"
 #include "camera.h"
 #include "entity.h"
 #include "player.h"
@@ -241,7 +241,7 @@ void processCameraInput(GLFWwindow *window, camera_t *camera) {
 /*
  * This function uses a callback meaning that it is much better for instantaneous presses, e.g. switching wireframe mode
  */
-static void key_callback(GLFWwindow *window, const int key, int scancode, const int action, int mods) {
+static void keyCallback(GLFWwindow *window, const int key, int scancode, const int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     } else if (key == GLFW_KEY_O && action == GLFW_PRESS) {
@@ -257,7 +257,7 @@ void initialiseInput(GLFWwindow *window, void (*wireframe)(), void (*vr)()) {
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwGetCursorPos(window, previousMouse, previousMouse + 1);
     glfwSetJoystickCallback(joystickEvent);
-    glfwSetKeyCallback(window, key_callback);
+    glfwSetKeyCallback(window, keyCallback);
 
     #ifdef BUILD_FOR_RPI
         startOrientationThread();

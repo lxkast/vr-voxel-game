@@ -40,37 +40,49 @@
     ```
 */
 
-/*
-    SU_VERTEX: Vertex shader
-    SU_FRAGMENT: Fragment shader
-    SU_DETERMINE: Will try and determine from filename
-*/
+/// Enum containing the different types of shader
 typedef enum {
+    /// Vertex shader
     SU_VERTEX,
+    /// Fragment shader
     SU_FRAGMENT,
+    /// Will try to determine from file name
     SU_DETERMINE
 } su_shader_t;
 
-/*
-    Creates and compiles a shader corresponding to the filename.
-    The shader will try and compile to the kind corresponding to type.
-*/
+/**
+ * @brief Creates and compiles a shader corresponding to the filename.The shader will try and compile to the kind
+ *        corresponding to type.
+ * @param shader A pointer to a shader
+ * @param fileName The filename corresponding to the shader
+ * @param type The type of shader
+ * @return 0 on success, -1 on failure
+ */
 int su_initialiseShader(GLuint *shader, const char *fileName, su_shader_t type);
 
-/*
-    Creates a shader program given an array of size n of shader objects.
-*/
+/**
+ * @brief Creates a shader program given an array of size n of shader objects.
+ * @param program A pointer to a program
+ * @param n The number of shader objects
+ * @param shaderHandles The array of shader objects
+ * @return 0 on success, -1 on failure
+ */
 int su_createProgramFromHandles(GLuint *program, int n, const GLuint *shaderHandles);
 
-/*
-    Creates a shader program based of varargs of filenames.
-    Automatically determines the type for each shader.
-*/
+/**
+ * @brief Creates a shader program based of varargs of filenames. Automatically determines the type for each shader.
+ * @param program A pointer to a program
+ * @param n The number of filenames
+ * @param ... The filenames
+ * @return 0 on success, -1 on fail
+ */
 int su_createProgramFromFilenames(GLuint *program, int n, ...);
 
-/*
-    Links the shader program.
-*/
+/**
+ * @brief Links the shader program
+ * @param program The program
+ * @return 0 on success, -1 on failure
+ */
 int su_linkProgram(GLuint program);
 
 #define _VA_COUNT_IMPL_( \

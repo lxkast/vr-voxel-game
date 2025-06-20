@@ -26,10 +26,15 @@ typedef enum {
  * @brief Struct that holds data about a single block.
  */
 typedef struct {
+    /// The x, y and z coordinates of the block
     int x, y, z;
+    /// The type of the block
     block_t type;
 } blockData_t;
 
+/**
+ * @brief Enum for each face of a block from a raycast
+ */
 typedef enum {
     POS_X_FACE,
     NEG_X_FACE,
@@ -43,8 +48,11 @@ typedef enum {
  * @brief Struct that holds data about the result of a raycast
  */
 typedef struct {
+    /// The position of the block
     vec3 blockPosition;
+    /// The face of the block the player is looking at
     raycastFace_e face;
+    /// If a valid block was found
     bool found;
 } raycast_t;
 

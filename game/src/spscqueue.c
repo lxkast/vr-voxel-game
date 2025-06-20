@@ -1,5 +1,5 @@
-#include "spscqueue.h"
 #include <stdlib.h>
+#include "spscqueue.h"
 
 bool spscRing_init(spscRing_t *r, const size_t cap) {
     if ((cap & (cap - 1)) != 0) {

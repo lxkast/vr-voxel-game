@@ -4,11 +4,9 @@
 #include <stdarg.h>
 #include <logging.h>
 #include <string.h>
-
-
 #include "shaderutil.h"
 
-int loadShaderSource(const GLuint shader, const char *fileName) {
+static int loadShaderSource(const GLuint shader, const char *fileName) {
     FILE *fp = fopen(fileName, "rb");
     if (!fp) {
         LOG_ERROR("Error opening file %s", fileName);
@@ -37,14 +35,14 @@ int loadShaderSource(const GLuint shader, const char *fileName) {
 
     buf[fileSize] = '\0';
 
-    glShaderSource(shader, 1, &buf, NULL);
+    glShaderSource(shader, 1, (const GLchar * const*)&buf, NULL);
 
     free(buf);
 
     return 0;
 }
 
-GLenum findShaderType(const char *fileName) {
+static GLenum findShaderType(const char *fileName) {
     char *extension = strrchr(fileName, '.');
     if (!extension) return -1;
     if (strcmp(extension, ".vert") == 0) {
@@ -77,7 +75,7 @@ int su_initialiseShader(GLuint *shader, const char *fileName, su_shader_t type) 
     int success;
     char infoLog[512];
 
-    GLuint shaderHandle = glCreateShader(realType);
+    const GLuint shaderHandle = glCreateShader(realType);
 
 
     if (loadShaderSource(shaderHandle, fileName) != 0) {
@@ -96,7 +94,10 @@ int su_initialiseShader(GLuint *shader, const char *fileName, su_shader_t type) 
 }
 
 int su_createProgramFromHandles(GLuint *program, const int n, const GLuint *shaderHandles) {
-    int success;
+    if (!shaderHandles) {
+        LOG_ERROR("Error creating shader program");
+        return -1;
+    }
 
     const GLuint programHandle = glCreateProgram();
 
