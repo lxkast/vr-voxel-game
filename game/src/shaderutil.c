@@ -35,7 +35,7 @@ static int loadShaderSource(const GLuint shader, const char *fileName) {
 
     buf[fileSize] = '\0';
 
-    glShaderSource(shader, 1, (const GLchar * const*)&buf, NULL);
+    glShaderSource(shader, 1, (const GLchar * const *)&buf, NULL);
 
     free(buf);
 
