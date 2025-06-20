@@ -6,12 +6,11 @@
 #include "camera.h"
 #include "player.h"
 
-// TODO(): Sam can you do this as well
 /**
- *
- * @param window
- * @param wireframe
- * @param vr
+ * @brief Initialise game input
+ * @param window A pointer ot a window
+ * @param wireframe A callback for toggling wireframe mode
+ * @param vr A callback for toggling post-processing
  */
 void initialiseInput(GLFWwindow *window, void (*wireframe)(), void (*vr)());
 
