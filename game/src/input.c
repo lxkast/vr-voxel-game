@@ -42,7 +42,7 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
         int axisCount;
         const float* axes = glfwGetJoystickAxes(joystickID, &axisCount);
 
-        vec3 direction = {axes[0], 0.f, axes[1]};
+        vec3 direction = {axes[0], 0.f, -axes[1]};
         const float magnitude = glm_vec3_norm(direction);
         glm_vec3_normalize(direction);
         glm_vec3_scale(direction, magnitude, direction);
