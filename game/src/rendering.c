@@ -38,7 +38,7 @@ void rendering_updateProjection(const bool postProcessingEnabled,
     height = screenHeight;
     glm_perspective(fov,
                     (float)screenWidth / (float)((postProcessingEnabled ? 2 : 1) * screenHeight),
-                    0.1f,
+                    0.01f,
                     16.f * (renderDistance + 1),
                     projection);
 }
