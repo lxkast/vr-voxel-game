@@ -14,6 +14,9 @@
 #include "rendering.h"
 #include "world.h"
 
+#include "input.h"
+#include "hud.h"
+
 #if defined(__APPLE__) && defined(__MACH__)
 #define MINOR_VERSION 2
 #else
@@ -146,7 +149,7 @@ int main(void) {
         glfwSwapInterval(1);
 
         analytics_startFrame(&analytics);
-        processPlayerInput(window, &camera, &player, &world);
+        processPlayerInput(window, &camera, &player, &world, analytics.dt);
         processCameraInput(window, &camera);
 
         world_updateChunkLoader(&world, cameraLoader, camera.eye);

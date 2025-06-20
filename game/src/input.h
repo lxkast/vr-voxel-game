@@ -20,9 +20,10 @@ void initialiseInput(GLFWwindow *window, void (*wireframe)(), void (*vr)());
  * @param camera A pointer to a camera
  * @param player A pointer to a player
  * @param w A pointer to a world
+ * @param dt The time since the last frame
  * @note This function uses polling, this means that it is better for "continuous" presses, ie holding W
  */
-void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, world_t *w);
+void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, world_t *w, double dt);
 
 /**
  * @brief Gets camera inputs (either mouse or headset) and updates look direction

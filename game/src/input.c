@@ -36,9 +36,10 @@ static bool hudOpen = false;
 /*
  * This function uses polling, this means that it is better for "continuous" presses, ie holding W
  */
-void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, world_t *w) {
+void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, world_t *w, const double dt) {
     vec3 acceleration = { 0.f, GRAVITY_ACCELERATION, 0.f };
-
+    bool mining = false;
+    bool placing = false;
     if (joystickID != -1) {
         int axisCount;
         const float* axes = glfwGetJoystickAxes(joystickID, &axisCount);
@@ -63,11 +64,6 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
                 player->entity.grounded = false;
             }
         }
-        if (buttons[1]) {
-            player_removeBlock(player, w);
-        } else if (buttons[2]) {
-            player_placeBlock(player, w);
-        }
 
         if (buttons[0] && !hudOpen) {
             open_hud(camera, player);
@@ -76,6 +72,9 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
             close_hud(camera, player);
             hudOpen = false;
         }
+
+        mining = buttons[1];
+        placing = buttons[2];
     } else {
         const float sprintMultiplier = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? SPRINT_MULTIPLIER : 1.f ;
 
@@ -99,9 +98,9 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
         }
 
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-            player_removeBlock(player, w);
+            mining = true;
         } else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-            player_placeBlock(player, w);
+            placing = true;
         }
 
         for (char i = 0; i <= 8; i++) {
@@ -113,12 +112,15 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
             }
         }
 
-        if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !hudOpen) {
-            open_hud(camera, player);
-            hudOpen = true;
-        } else if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE && hudOpen) {
-            close_hud(camera, player);
-            hudOpen = false;
+
+    }
+
+    if (mining) {
+        player_mineBlock(player, w, dt);
+    } else {
+        player->currMiningTime = 0;
+        if (placing) {
+            player_placeBlock(player, w);
         }
     }
 

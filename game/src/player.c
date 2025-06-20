@@ -7,6 +7,8 @@
 
 static const int faceToBlock[6][3] = {{-1,0,0}, {1,0,0}, {0,-1,0}, {0,1,0}, {0,0,-1}, {0,0,1} };
 
+static const vec3 INVALID_BLOCK_POSITION = {0.1f, 0.1f, 0.1f};
+
 /**
  * @brief Sets a player's block cooldown time.
  * @param p A pointer to a player
@@ -48,10 +50,10 @@ void player_init(world_t *w, player_t *p) {
         world_getBlock(w, start, &bd);
         if (bd.type != BL_AIR) {
             break;
-        } else {
-            start[1]--;
         }
+        start[1]--;
     }
+
     *p = (player_t){
         .entity = {
             .position = {start[0], start[1]+1.2f, start[2]},
@@ -69,14 +71,17 @@ void player_init(world_t *w, player_t *p) {
                 {ITEM_GRASS, 32},
                 {ITEM_STONE, 16},
                 {ITEM_GLOWSTONE, 64},
-                {ITEM_SNOW, 64},
                 {NOTHING, 0},
                 {NOTHING, 0},
                 {NOTHING, 0},
-                {NOTHING, 0}
+                {NOTHING, 0},
+                {NOTHING, 0},
             },
             .currentSlotIndex = 0
-        }
+        },
+        // Using an invalid block position to avoid errors
+        .miningBlockPos = {0.1f, 0.1f, 0.1f},
+        .currMiningTime = 0,
     };
 
     p->hotbar.currentSlot = &(p->hotbar.slots[0]);
@@ -106,28 +111,38 @@ void player_attachCamera(player_t *p, camera_t *camera) {
     glm_vec3_copy(camera->ruf[2], p->lookVector);
 }
 
-void player_removeBlock(player_t *p, world_t *w) {
-    if (onBlockCooldown(p)) {
-        return;
-    }
-
+void player_mineBlock(player_t *p, world_t *w, const double dt) {
     vec3 camPos;
 
     glm_vec3_add(p->entity.position, p->cameraOffset, camPos);
 
-    // remove minus sign later
     vec3 lookVector;
     glm_vec3_scale(p->lookVector, -1, lookVector);
 
-    const raycast_t raycastBlock = world_raycast(w, camPos, lookVector, 6.f);
+    raycast_t raycastBlock = world_raycast(w, camPos, lookVector, 6.f);
 
-    if (raycastBlock.found) {
-        world_removeBlock(w,
-                          (int)raycastBlock.blockPosition[0],
-                          (int)raycastBlock.blockPosition[1],
-                          (int)raycastBlock.blockPosition[2]);
+    blockData_t block;
+    if (world_getBlock(w, raycastBlock.blockPosition, &block)) {
+        double timeInc = dt;
+        if (p->hotbar.currentSlot->type == BLOCK_TO_TOOL[block.type]) {
+            timeInc *= ITEM_PROPERTIES[p->hotbar.currentSlot->type].miningBoost;
+        }
+        if (glm_vec3_eqv(raycastBlock.blockPosition, p->miningBlockPos)) {
+            p->currMiningTime += timeInc / TIME_TO_MINE_BLOCK[block.type];
+        } else {
+            glm_vec3_copy(raycastBlock.blockPosition, p->miningBlockPos);
+            p->currMiningTime = timeInc / TIME_TO_MINE_BLOCK[block.type];
+        }
 
-        setBlockCooldown(p);
+        if (p->currMiningTime > 1) {
+            world_removeBlock(w, block.x, block.y, block.z);
+            glm_vec3_copy(INVALID_BLOCK_POSITION, p->miningBlockPos);
+            p->currMiningTime = 0;
+        }
+
+    } else {
+        glm_vec3_copy(INVALID_BLOCK_POSITION, p->miningBlockPos);
+        p->currMiningTime = 0;
     }
 }
 
@@ -182,11 +197,6 @@ static void repN(const char ch, const unsigned long long num) {
     }
 }
 
-/**
- * @brief This displays the player's hotbar in the terminal. This is so
- *        the code can be tested before we implement the hotbar visually.
- * @param p the player whose hotbar we want to print
- */
 void player_printHotbar(const player_t *p) {
     char printStrings[9][30];
 
