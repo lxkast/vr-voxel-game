@@ -77,10 +77,11 @@ void initialiseWindow() {
 
 struct chunkWorkerData {
     atomic_bool run;
+    atomic_bool finished;
     world_t *world;
 };
 
-void chunkWorker(void *arg) {
+void *chunkWorker(void *arg) {
     struct chunkWorkerData *data = (struct chunkWorkerData *)arg;
 
     const struct timespec ts = { .tv_sec = 0, .tv_nsec = 10 };
@@ -89,6 +90,9 @@ void chunkWorker(void *arg) {
         nanosleep(&ts, NULL);
         world_doChunkLoading(data->world);
     }
+    atomic_store_explicit(&data->finished, true, memory_order_release);
+
+    return (void *) 0;
 }
 
 int main(void) {
@@ -132,14 +136,17 @@ int main(void) {
     struct chunkWorkerData thData = {
         .world = &world
     };
-
     atomic_store_explicit(&thData.run, true, memory_order_release);
+    atomic_store_explicit(&thData.finished, false, memory_order_release);
+
     pthread_t th;
     pthread_create(&th, NULL, (void *)chunkWorker, &thData);
 
-    bool shouldClose;
-    while (!((shouldClose = glfwWindowShouldClose(window)))) {
-        if (shouldClose) {
+    while (true) {
+        if (glfwWindowShouldClose(window)) {
+            if (atomic_load_explicit(&thData.finished, memory_order_acquire)) {
+                break;
+            }
             atomic_store_explicit(&thData.run, false, memory_order_release);
         }
 
