@@ -21,20 +21,20 @@ typedef enum {
 } block_t;
 
 static const float TIME_TO_MINE_BLOCK[] = {
-    [BL_AIR] = 0.f,
-    [BL_GRASS] = 0.5f,
-    [BL_DIRT] = 0.5f,
-    [BL_SAND] = 0.4f,
-    [BL_STONE] = 3.f,
-    [BL_LOG] = 1.f,
-    [BL_LEAF] = 0.1f,
-    [BL_GLOWSTONE] = 0.3f,
-    [BL_SNOW] = 0.5f,
+    [BL_AIR]          = 0.f,
+    [BL_GRASS]        = 0.5f,
+    [BL_DIRT]         = 0.5f,
+    [BL_SAND]         = 0.4f,
+    [BL_STONE]        = 3.f,
+    [BL_LOG]          = 1.f,
+    [BL_LEAF]         = 0.1f,
+    [BL_GLOWSTONE]    = 0.3f,
+    [BL_SNOW]         = 0.5f,
     [BL_JUNGLE_GRASS] = 0.5f,
-    [BL_MUD] = 0.75f,
-    [BL_CACTUS] = 0.4f,
-    [BL_JUNGLE_LOG] = 1.f,
-    [BL_JUNGLE_LEAF] = 0.1f,
+    [BL_MUD]          = 0.75f,
+    [BL_CACTUS]       = 0.4f,
+    [BL_JUNGLE_LOG]   = 1.f,
+    [BL_JUNGLE_LEAF]  = 0.1f,
 };
 
 #define BL_TRANSPARENT(x) (x == BL_AIR || x == BL_LEAF || x == BL_JUNGLE_LEAF)
