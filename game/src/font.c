@@ -16,7 +16,7 @@ static GLuint fontProgram;
 #define COLS 16
 
 /**
- * @brief Initialises a mash for a character
+ * @brief Initialises the charVAO, VBO with a "simple" square mesh.
  */
 static void initCharMesh(void) {
     glGenVertexArrays(1, &charVAO);
@@ -57,12 +57,12 @@ void font_init(font_t *font, const char *fontPath) {
 }
 
 /**
- *
- * @param font A pointer to a font
+ * @brief Render a single char in the given font
+ * @param font A pointer to the font to render with
  * @param character The character to render
- * @param projview
- * @param model
- * @param colour The colour of the character
+ * @param projview The projection and view matrix
+ * @param model The model matrix to use
+ * @param colour The colour of final text
  */
 static void renderChar(const font_t *font, const char character, mat4 projview, mat4 model, vec4 colour) {
     glUseProgram(fontProgram);
@@ -84,11 +84,11 @@ static void renderChar(const font_t *font, const char character, mat4 projview, 
     glBindVertexArray(0);
 }
 
-void fontRender(const font_t *font, const char *data, mat4 projview, mat4 rotation, vec4 colour) {
-    vec3 character = {2, 0, 0};
+void font_render(font_t *font, const char *data, mat4 projview, mat4 rotation, vec4 colour) {
+    static vec3 characterWidth = {2, 0, 0};
 
     mat4 transPerCharM;
-    glm_translate_make(transPerCharM, character);
+    glm_translate_make(transPerCharM, characterWidth);
 
     mat4 everything;
     glm_mat4_copy(projview, everything);
