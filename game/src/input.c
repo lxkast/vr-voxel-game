@@ -38,7 +38,8 @@ static bool hudOpen = false;
  */
 void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, world_t *w, const double dt) {
     vec3 acceleration = { 0.f, GRAVITY_ACCELERATION, 0.f };
-
+    bool mining = false;
+    bool placing = false;
     if (joystickID != -1) {
         int axisCount;
         const float* axes = glfwGetJoystickAxes(joystickID, &axisCount);
@@ -63,11 +64,6 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
                 player->entity.grounded = false;
             }
         }
-        if (buttons[1]) {
-            player_removeBlock(player, w);
-        } else if (buttons[2]) {
-            player_placeBlock(player, w);
-        }
 
         if (buttons[0] && !hudOpen) {
             open_hud(camera, player);
@@ -76,6 +72,9 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
             close_hud(camera, player);
             hudOpen = false;
         }
+
+        mining = buttons[1];
+        placing = buttons[2];
     } else {
         const float sprintMultiplier = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? SPRINT_MULTIPLIER : 1.f ;
 
@@ -99,9 +98,9 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
         }
 
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-            player_removeBlock(player, w);
+            mining = true;
         } else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-            player_placeBlock(player, w);
+            placing = true;
         }
 
         for (char i = 0; i <= 8; i++) {
@@ -113,42 +112,8 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
             }
         }
 
-    if (joystickID != -1) {
-        int axisCount;
-        const float* axes = glfwGetJoystickAxes(joystickID, &axisCount);
 
-        int buttonCount;
-        const unsigned char *buttons = glfwGetJoystickButtons(joystickID, &buttonCount);
-        if (buttonCount != 5 || axisCount != 2) {
-            LOG_DEBUG("Joystick is not our controller, has been swapped out, buttons: %d, axis: %d", buttonCount, axisCount);
-            joystickID = -1;
-        } else {
-            const float joySprintMultiplier = buttons[3] ? SPRINT_MULTIPLIER : 1.f;
-            acceleration[2] += -axes[1] * (player->entity.grounded ? GROUND_ACCELERATION : AIR_ACCELERATION) * joySprintMultiplier;
-            acceleration[0] += axes[0] * (player->entity.grounded ? GROUND_ACCELERATION : AIR_ACCELERATION) * joySprintMultiplier;
-
-            if (buttons[4] && player->entity.grounded) {
-                player->entity.velocity[1] = 5;
-                player->entity.grounded = false;
-            }
-        }
-        if (buttons[1]) {
-            player_removeBlock(player, w);
-        } else if (buttons[2]) {
-            player_placeBlock(player, w);
-        }
-
-        if (buttons[0] && !hudOpen) {
-            open_hud(camera, player);
-            hudOpen = true;
-        } else if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE && hudOpen) {
-            close_hud(camera, player);
-            hudOpen = false;
-        }
-        mining = buttons[1];
-        placing = buttons[2];
     }
-
 
     if (mining) {
         player_mineBlock(player, w, dt);
