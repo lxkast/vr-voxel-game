@@ -67,14 +67,14 @@ void player_init(world_t *w, player_t *p) {
         .cameraOffset = {0.3f, 1.8f, 0.3f},
         .hotbar = {
             .slots = {
-                {NOTHING, 0},
-                {NOTHING, 0},
-                {NOTHING, 0},
                 {ITEM_DIRT, 64},
                 {ITEM_GRASS, 32},
                 {ITEM_STONE, 16},
                 {ITEM_GLOWSTONE, 64},
-                {ITEM_SNOW, 64},
+                {NOTHING, 0},
+                {NOTHING, 0},
+                {NOTHING, 0},
+                {NOTHING, 0},
                 {NOTHING, 0},
             },
             .currentSlotIndex = 0
