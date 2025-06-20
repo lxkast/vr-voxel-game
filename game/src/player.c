@@ -56,7 +56,7 @@ void player_init(world_t *w, player_t *p) {
         .entity = {
             .position = {start[0], start[1]+1.2f, start[2]},
             .velocity = {0.f, 0.f, 0.f},
-            .size = {0.6f, 1.8f, 0.6f},
+            .size = {0.6f, 1.85f, 0.6f},
             .acceleration = {0.f, 0.f, 0.f},
             .grounded = false,
             .yaw = 0,
