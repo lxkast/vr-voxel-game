@@ -9,6 +9,9 @@
 #define BLOCK_COOLDOWN_TIME 0.5
 #define HOTBAR_SLOTS 9
 
+/**
+ * @brief A struct containing hotbar data
+ */
 typedef struct {
     /// each of the slots in the hotbar
     hotbarItem_t slots[HOTBAR_SLOTS];
@@ -32,6 +35,10 @@ typedef struct {
     double blockCooldown;
     /// The player's hotbar
     hotbar_t hotbar;
+    /// The block the player is currently mining
+    vec3 miningBlockPos;
+    /// How long the player has been mining for
+    double currMiningTime;
 } player_t;
 
 /**
@@ -49,11 +56,12 @@ void player_init(world_t *w, player_t *p);
 void player_attachCamera(player_t *p, camera_t *camera);
 
 /**
- * @brief Removes the block a player is looking at, if the player is off cooldown.
+ * @brief Mines the block a player is looking at
  * @param p A pointer to a player
  * @param w A pointer to a world
+ * @param dt The time since the last frame
  */
-void player_removeBlock(player_t *p, world_t *w);
+void player_mineBlock(player_t *p, world_t *w, double dt);
 
 /**
  * @brief Places a block where a player is looking at, if the player is off cooldown.

@@ -864,22 +864,18 @@ bool world_removeBlock(world_t *w, const int x, const int y, const int z) {
             glm_ivec3_add(cPos, chunkOffset, cPos);
             chunk_t *nChunk = world_getFullyLoadedChunk(w, cPos[0], cPos[1], cPos[2]);
             if (nChunk) {
-                if (!BL_TRANSPARENT(nChunk->blocks[nPos[0]][nPos[1]][nPos[2]])) {
-                    nChunk->tainted = true;
+                nChunk->tainted = true;
+                unsigned char light = EXTRACT_SUN(nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]]);
+                if (light > 0) {
+                    lightQueueItem_t qi = { .lightValue = light };
+                    memcpy(qi.pos, nPos, sizeof(ivec3));
+                    queue_push(&nChunk->lightSunInsertionQueue, qi);
                 }
-                if (nChunk->blocks[nPos[0]][nPos[1]][nPos[2]]) {
-                    unsigned char light = EXTRACT_SUN(nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]]);
-                    if (light > 0) {
-                        lightQueueItem_t qi = { .lightValue = light };
-                        memcpy(qi.pos, nPos, sizeof(ivec3));
-                        queue_push(&nChunk->lightSunInsertionQueue, qi);
-                    }
-                    light = EXTRACT_TORCH(nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]]);
-                    if (light > 0) {
-                        lightQueueItem_t qi = { .lightValue = light };
-                        memcpy(qi.pos, nPos, sizeof(ivec3));
-                        queue_push(&nChunk->lightTorchInsertionQueue, qi);
-                    }
+                light = EXTRACT_TORCH(nChunk->lightMap[nPos[0]][nPos[1]][nPos[2]]);
+                if (light > 0) {
+                    lightQueueItem_t qi = { .lightValue = light };
+                    memcpy(qi.pos, nPos, sizeof(ivec3));
+                    queue_push(&nChunk->lightTorchInsertionQueue, qi);
                 }
             }
         } else {
@@ -1094,7 +1090,7 @@ raycast_t world_raycast(world_t *w, vec3 startPosition, vec3 viewDirection, cons
     };
 }
 
-void world_highlightFace(world_t *w, camera_t *camera) {
+void world_highlightFace(world_t *w, camera_t *camera, const player_t *player) {
     vec3 ray;
     glm_vec3_scale(camera->ruf[2], -1.0f, ray);
 
@@ -1107,31 +1103,66 @@ void world_highlightFace(world_t *w, camera_t *camera) {
 
     vec3 delta = { 0.f, 0.f, 0.f };
     memcpy(buffer, blockVertices[res.face], faceVerticesSize);
+    vec3 scale;
+        float scaleFactor = 1.f - player->currMiningTime;
     switch (res.face) {
         case POS_X_FACE:
             delta[0] += 0.001f;
+            scale[0] = 1.f;
+            scale[1] = scaleFactor;
+            scale[2] = scaleFactor;
             break;
         case NEG_X_FACE:
             delta[0] -= 0.001f;
+            scale[0] = 1.f;
+            scale[1] = scaleFactor;
+            scale[2] = scaleFactor;
             break;
         case POS_Y_FACE:
             delta[1] += 0.001f;
+            scale[0] = scaleFactor;
+            scale[1] = 1.f;
+            scale[2] = scaleFactor;
             break;
         case NEG_Y_FACE:
             delta[1] -= 0.001f;
+            scale[0] = scaleFactor;
+            scale[1] = 1.f;
+            scale[2] = scaleFactor;
             break;
         case POS_Z_FACE:
             delta[2] += 0.001f;
+
+            scale[0] = scaleFactor;
+            scale[1] = scaleFactor;
+            scale[2] = 1.f;
             break;
         case NEG_Z_FACE:
             delta[2] -= 0.001f;
+            scale[0] = scaleFactor;
+            scale[1] = scaleFactor;
+            scale[2] = 1.f;
             break;
         default: LOG_FATAL("invalid face type");
     }
 
     glm_vec3_add(res.blockPosition, delta, res.blockPosition);
 
+    mat4 scaleM;
+
+    vec3 translateAmount = { scale[0] != 1.f ? -0.5f : 0.f, scale[1] != 1.f ? -0.5f : 0.f, scale[2] != 1.f ? -0.5f : 0.f};
+    mat4 tr;
+    glm_translate_make(tr, translateAmount);
+    mat4 trI;
+    glm_mat4_inv(tr, trI);
+
+    glm_scale_make(scaleM, scale);
+
+    glm_mat4_mul(scaleM, tr, scaleM);
+    glm_mat4_mul(trI, scaleM, scaleM);
+
     glm_translate_make(w->highlightModel, res.blockPosition);
+    glm_mat4_mul(w->highlightModel, scaleM, w->highlightModel);
 
     glBindBuffer(GL_ARRAY_BUFFER, w->highlightVbo);
     glBufferData(GL_ARRAY_BUFFER, faceVerticesSize, buffer, GL_STATIC_DRAW);

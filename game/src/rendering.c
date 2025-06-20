@@ -38,7 +38,7 @@ void rendering_updateProjection(const bool postProcessingEnabled,
     height = screenHeight;
     glm_perspective(fov,
                     (float)screenWidth / (float)((postProcessingEnabled ? 2 : 1) * screenHeight),
-                    0.1f,
+                    0.01f,
                     16.f * (renderDistance + 1),
                     projection);
 }
@@ -129,14 +129,12 @@ static void render_world(world_t *world, camera_t *camera) {
     glUniform1f(glGetUniformLocation(chunkShader, "fogStart"), FOG_START);
     glUniform1f(glGetUniformLocation(chunkShader, "fogEnd"), FOG_END);
 
-    world_highlightFace(world, camera);
     camera_setView(camera, chunkShader);
 
     world_remeshChunks(world);
 
     world_draw(world, chunkShaderModelLocation, camera, projection);
     world_drawHighlight(world, chunkShaderModelLocation);
-
     glUseProgram(0);
 
     glUseProgram(blockEntityShader);
@@ -160,6 +158,8 @@ static void render_with_postprocessing(world_t *world, camera_t *camera, const p
     vec3 offset = {-EYE_OFFSET, 0.f, 0.f};
     hud_render(projection, offset, camera, player, blockAtlasTexture);
 
+    world_highlightFace(world, camera, player);
+
     postProcess_bindBuffer(&postProcess.rightFramebuffer);
     glClearColor(135.f/255.f, 206.f/255.f, 235.f/255.f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -176,6 +176,8 @@ static void render_with_postprocessing(world_t *world, camera_t *camera, const p
 
 static void render_without_postprocessing(world_t *world, camera_t *camera, const player_t *player) {
     glViewport(0, 0, width, height);
+
+    world_highlightFace(world, camera, player);
 
     render_world(world, camera);
     vec3 offset = {0.f, 0.f, 0.f};

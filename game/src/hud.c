@@ -33,7 +33,7 @@ bool shouldRender = false;
 font_t font;
 
 /**
- * @brief Meshes an item entity
+ * @brief Initialise an item entity mesh
  */
 static void meshItemEntity(void) {
     glGenVertexArrays(1, &itemVao);
@@ -56,6 +56,9 @@ static void meshItemEntity(void) {
     free(mesh);
 }
 
+/**
+ * @brief initialise the border mesh
+ */
 static void initBorder(void) {
     glGenVertexArrays(1, &borderVao);
     glGenBuffers(1, &borderVbo);
@@ -107,6 +110,16 @@ void hud_init(void) {
     glm_quat_init(initialRot, 0.f, 0.f, 0.f, 1.f);
 }
 
+/**
+ * @brief Render the block inside the pane
+ * @param projview The projection and view matrices
+ * @param blockType The current block type
+ * @param centercoords The center coords of the block pane
+ * @param blockOrientation The orientation of the block within the frame
+ * @param scale The scale of the block within the frame
+ * @param frameOrientation The orientation of the frame itself
+ * @param textureAtlas The texture atlas for blocks
+ */
 static void renderBlockInPane(mat4 projview,
                                 const block_t blockType,
                                 vec3 centercoords,
@@ -163,6 +176,14 @@ static void renderBlockInPane(mat4 projview,
     glBindVertexArray(0);
 }
 
+/**
+ * @brief Render the background pane
+ * @param projview The projection and view matrices
+ * @param centercoords The center coords of the pane
+ * @param scale The scale of the pane
+ * @param selected Whether the pane is currently selected or not
+ * @param frameOrientation The orientation of the frame
+ */
 static void renderBlockPane(mat4 projview,
                             vec3 centercoords,
                             const float scale,
@@ -189,10 +210,14 @@ static void renderBlockPane(mat4 projview,
     glBindVertexArray(0);
 }
 
-
-/*
- * The orientation represents the orientation around the player, the transform for centercoords is carried out before
- * orientation, so orientation rotates around the player.
+/**
+ * @brief Render a pane and item, orientation is applied after centercoords to make it easy to rotate around the player.
+ * @param projview The projection and view matrices
+ * @param item The hotbar item to be rendered
+ * @param centercoords The center coords of the rendering, this is applied before orientation
+ * @param orientation The orientation around the player, applyed after center coords
+ * @param selected Whether the current frame is seelcted
+ * @param textureAtlas The block texture atlas
  */
 static void renderItem(mat4 projview,
                         const hotbarItem_t item,
@@ -228,17 +253,28 @@ static void renderItem(mat4 projview,
 
         char quantityString[5];
         snprintf(quantityString, 5, "%d", item.count);
-        fontRender(&font, quantityString, res, ident, TEXT_COLOUR);
+        font_render(&font, quantityString, res, ident, TEXT_COLOUR);
         glEnable(GL_DEPTH_TEST);
     }
 }
 
+/**
+ * @brief Applies the quaternion q n times to the destination quaternion.
+ * @param q The quaternion
+ * @param n The number of times
+ * @param dest The quaternion to apply it to
+ */
 static void applyRotationNTimes(versor q, const int n, versor dest) {
     for (int i = 0; i < n; i++) {
         glm_quat_mul(dest, q, dest);
     }
 }
 
+/**
+ * @brief Calculate which hotbar slot the player is currently looking at
+ * @param camera The current camera
+ * @return An index in 0..<HOTBARSLOTS representing the current hotbar slot.
+ */
 static int calculateLookingAt(versor camera) {
     vec3 right = {1, 0, 0};
 
