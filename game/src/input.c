@@ -111,8 +111,6 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
                 break;
             }
         }
-
-
     }
 
     if (mining) {
