@@ -7,8 +7,24 @@ The game can be played either on a computer or on the headset we designed, worki
 
 #### Setup Instructions
 
-#TODO
+We do not distribute prebuilt versions, so you have to build it yourself.
 
+Running on a Raspberry Pi:
+1. Install dependencies:
+   `sudo apt install -y build-essential cmake libglm-dev libglfw3-dev libgl1-mesa-dev mesa-utils`
+2. Clone this repository:
+   `git clone --recursive https://github.com/lxkast/vr-voxel-game.git`
+3. Build:
+  `cd vr-voxel-game/`
+  `cmake -DBUILD_FOR_RPI=ON -B build`
+  `cmake --build build`
+4. Run:
+   `cd build/game`
+   `./game`
+
+For the above to work you will have to have an ICM-42688 connected as shown on the following wiring diagram:
+
+![headset electronics drawio](https://github.com/user-attachments/assets/0c210079-015f-408b-aa73-c655c1c78981)
 
 #### Controls
 
