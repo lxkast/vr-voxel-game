@@ -1,12 +1,9 @@
-[submodule "extension/external/glfw"]
-	path = extension/external/glfw
+[submodule "game/external/glfw"]
+	path = game/external/glfw
 	url = https://github.com/glfw/glfw
-[submodule "extension/external/cglm"]
-	path = extension/external/cglm
+[submodule "game/external/cglm"]
+	path = game/external/cglm
 	url = https://github.com/recp/cglm
-[submodule "external/miniaudio"]
-	path = external/miniaudio
-	url = https://github.com/mackron/miniaudio.git
-[submodule "extension/external/miniaudio"]
-	path = extension/external/miniaudio
+[submodule "game/external/miniaudio"]
+	path = game/external/miniaudio
 	url = https://github.com/mackron/miniaudio.git
