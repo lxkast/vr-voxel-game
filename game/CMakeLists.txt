@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(extension C)
+project(game C)
 
 set(CMAKE_C_STANDARD 17)
 
@@ -15,5 +15,3 @@ file(
         COPY ${CMAKE_CURRENT_SOURCE_DIR}/textures
         DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/src
 )
-
-add_subdirectory(${PARENT_SRC} ${PARENT_BUILD})

@@ -11,7 +11,7 @@ if (BUILD_FOR_RPI)
 endif()
 
 list(REMOVE_ITEM SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/hardware/test.c")
-add_executable(extension
+add_executable(game
         ${SRC_FILES}
 )
 
