@@ -19,6 +19,7 @@ Running on a Raspberry Pi:
    `git clone --recursive https://github.com/lxkast/vr-voxel-game.git`
    
 3. Build:
+
   `cd vr-voxel-game/`
 
   `cmake -DBUILD_FOR_RPI=ON -B build`
@@ -26,6 +27,7 @@ Running on a Raspberry Pi:
   `cmake --build build`
   
 4. Run:
+
    `cd build/game`
    
    `./game`
