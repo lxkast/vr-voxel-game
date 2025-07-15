@@ -16,10 +16,13 @@ Running on a Raspberry Pi:
    `git clone --recursive https://github.com/lxkast/vr-voxel-game.git`
 3. Build:
   `cd vr-voxel-game/`
+
   `cmake -DBUILD_FOR_RPI=ON -B build`
+
   `cmake --build build`
-4. Run:
+5. Run:
    `cd build/game`
+   
    `./game`
 
 For the above to work you will have to have an ICM-42688 connected as shown on the following wiring diagram:
