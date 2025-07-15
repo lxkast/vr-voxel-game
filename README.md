@@ -11,16 +11,21 @@ We do not distribute prebuilt versions, so you have to build it yourself.
 
 Running on a Raspberry Pi:
 1. Install dependencies:
+   
    `sudo apt install -y build-essential cmake libglm-dev libglfw3-dev libgl1-mesa-dev mesa-utils`
+   
 2. Clone this repository:
+   
    `git clone --recursive https://github.com/lxkast/vr-voxel-game.git`
+   
 3. Build:
   `cd vr-voxel-game/`
 
   `cmake -DBUILD_FOR_RPI=ON -B build`
 
   `cmake --build build`
-5. Run:
+  
+4. Run:
    `cd build/game`
    
    `./game`
