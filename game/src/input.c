@@ -103,6 +103,14 @@ void processPlayerInput(GLFWwindow *window, camera_t *camera, player_t *player, 
             placing = true;
         }
 
+        if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !hudOpen) {
+            open_hud(camera, player);
+            hudOpen = true;
+        } else if (glfwGetKey(window, GLFW_KEY_B) != GLFW_PRESS && hudOpen) {
+            close_hud(camera, player);
+            hudOpen = false;
+        }
+
         for (char i = 0; i <= 8; i++) {
             if (glfwGetKey(window, GLFW_KEY_1 + i) == GLFW_PRESS) {
                 player->hotbar.currentSlotIndex = i;
