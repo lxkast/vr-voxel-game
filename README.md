@@ -22,6 +22,8 @@ https://github.com/user-attachments/assets/068f9dd2-8918-490c-8be2-e46a97b15cb6
 
 # Features
 - Procedural terrain generation (infinite world).
+- Multiple biomes.
+- Trees, cacti and igloo structures
 - Vertex lighting.
 - Breaking and placing blocks.
 - Physics system.
